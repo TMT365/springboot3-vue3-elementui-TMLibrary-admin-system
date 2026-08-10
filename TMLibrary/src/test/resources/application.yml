@@ -1,0 +1,29 @@
+# 集成测试专用配置 — 跑 H2 内存库,避免污染真实 MySQL
+# 加载顺序:application.yml → application-test.yml → 命令行 -D 参数
+
+spring:
+  datasource:
+    # H2 内存库,关闭持久化(进程退出即清空)
+    # MODE=MySQL:让 H2 接受 MySQL 风格的字段字面量('2024-01-01')和函数
+    url: jdbc:h2:mem:tmlibrary_test;MODE=MySQL;DB_CLOSE_DELAY=-1
+    driver-class-name: org.h2.Driver
+    username: sa
+    password: ""
+  sql:
+    init:
+      mode: always                          # 启动时只跑 schema
+      schema-locations: classpath:db/schema.sql
+      # data 由 @BeforeEach 通过 bookMapper.insertBook() 注入(Spring 4.x 不支持 JSON data init)
+
+mybatis:
+  mapper-locations: classpath:mapper/*.xml
+  type-aliases-package: com.tmt.TMLibrary.entity
+  # log-impl 字段由 MyBatisConfig 用 @Value("${mybatis.log-impl:...}") 读,
+  # 这里不再覆盖,让默认值 StdOutImpl 生效(测试时方便看 SQL)
+
+logging:
+  level:
+    # 集成测试时把 SQL DEBUG 打开,便于看 SQL 怎么拼的
+    com.tmt.TMLibrary.mapper: DEBUG
+    # 但 mybatis 自己包的日志级别保持 WARN(避免没必要的 sql 字节码日志)
+    org.mybatis: WARN

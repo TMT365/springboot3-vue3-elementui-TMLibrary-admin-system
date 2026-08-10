@@ -1,0 +1,82 @@
+[
+  {
+    "title": "Effective Java",
+    "author": "Joshua Bloch",
+    "isbn": "9780134685991",
+    "price": 42.00,
+    "publishedDate": "2018-01-06",
+    "stockQuantity": 100
+  },
+  {
+    "title": "Clean Code",
+    "author": "Robert C. Martin",
+    "isbn": "9780132350884",
+    "price": 39.95,
+    "publishedDate": "2008-08-01",
+    "stockQuantity": 80
+  },
+  {
+    "title": "Design Patterns",
+    "author": "Gang of Four",
+    "isbn": "9780201633610",
+    "price": 54.99,
+    "publishedDate": "1994-10-31",
+    "stockQuantity": 60
+  },
+  {
+    "title": "The Pragmatic Programmer",
+    "author": "Andrew Hunt",
+    "isbn": "9780201616224",
+    "price": 39.95,
+    "publishedDate": "1999-10-30",
+    "stockQuantity": 70
+  },
+  {
+    "title": "Refactoring",
+    "author": "Martin Fowler",
+    "isbn": "9780134757599",
+    "price": 47.95,
+    "publishedDate": "2018-11-20",
+    "stockQuantity": 50
+  },
+  {
+    "title": "三体",
+    "author": "刘慈欣",
+    "isbn": "9787229030933",
+    "price": 38.00,
+    "publishedDate": "2008-01-01",
+    "stockQuantity": 200
+  },
+  {
+    "title": "活着",
+    "author": "余华",
+    "isbn": "9787506365437",
+    "price": 28.00,
+    "publishedDate": "2012-08-01",
+    "stockQuantity": 300
+  },
+  {
+    "title": "1984",
+    "author": "George Orwell",
+    "isbn": "9780451524935",
+    "price": 9.99,
+    "publishedDate": "1961-08-01",
+    "stockQuantity": 250
+  },
+  {
+    "title": "Animal Farm",
+    "author": "George Orwell",
+    "isbn": "9780451526342",
+    "price": 8.99,
+    "publishedDate": "1946-08-17",
+    "stockQuantity": 200
+  },
+  {
+    "title": "Code Complete",
+    "author": "Steve McConnell",
+    "isbn": "9780735619678",
+    "price": 49.95,
+    "publishedDate": "2004-06-19",
+    "stockQuantity": 45
+  }
+]

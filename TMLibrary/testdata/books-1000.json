@@ -1,0 +1,8002 @@
+[
+  {
+    "title": "Effective Java",
+    "author": "Joshua Bloch",
+    "isbn": "9780134685991",
+    "price": 42.00,
+    "publishedDate": "2018-01-06",
+    "stockQuantity": 100
+  },
+  {
+    "title": "Clean Code",
+    "author": "Robert C. Martin",
+    "isbn": "9780132350884",
+    "price": 39.95,
+    "publishedDate": "2008-08-01",
+    "stockQuantity": 80
+  },
+  {
+    "title": "Design Patterns",
+    "author": "Gang of Four",
+    "isbn": "9780201633610",
+    "price": 54.99,
+    "publishedDate": "1994-10-31",
+    "stockQuantity": 60
+  },
+  {
+    "title": "The Pragmatic Programmer",
+    "author": "Andrew Hunt",
+    "isbn": "9780201616224",
+    "price": 39.95,
+    "publishedDate": "1999-10-30",
+    "stockQuantity": 70
+  },
+  {
+    "title": "Refactoring",
+    "author": "Martin Fowler",
+    "isbn": "9780134757599",
+    "price": 47.95,
+    "publishedDate": "2018-11-20",
+    "stockQuantity": 50
+  },
+  {
+    "title": "Domain-Driven Design",
+    "author": "Eric Evans",
+    "isbn": "9780321125217",
+    "price": 54.99,
+    "publishedDate": "2003-08-30",
+    "stockQuantity": 40
+  },
+  {
+    "title": "Working Effectively with Legacy Code",
+    "author": "Michael Feathers",
+    "isbn": "9780131177055",
+    "price": 49.95,
+    "publishedDate": "2004-09-01",
+    "stockQuantity": 30
+  },
+  {
+    "title": "The Mythical Man-Month",
+    "author": "Frederick P. Brooks",
+    "isbn": "9780201835953",
+    "price": 29.99,
+    "publishedDate": "1995-08-12",
+    "stockQuantity": 25
+  },
+  {
+    "title": "Code Complete",
+    "author": "Steve McConnell",
+    "isbn": "9780735619678",
+    "price": 49.95,
+    "publishedDate": "2004-06-19",
+    "stockQuantity": 45
+  },
+  {
+    "title": "Structure and Interpretation of Computer Programs",
+    "author": "Harold Abelson",
+    "isbn": "9780262510875",
+    "price": 75.00,
+    "publishedDate": "1996-07-25",
+    "stockQuantity": 20
+  },
+  {
+    "title": "三体",
+    "author": "刘慈欣",
+    "isbn": "9787229030933",
+    "price": 38.00,
+    "publishedDate": "2008-01-01",
+    "stockQuantity": 200
+  },
+  {
+    "title": "三体Ⅱ:黑暗森林",
+    "author": "刘慈欣",
+    "isbn": "9787229042066",
+    "price": 42.00,
+    "publishedDate": "2008-05-01",
+    "stockQuantity": 180
+  },
+  {
+    "title": "三体Ⅲ:死神永生",
+    "author": "刘慈欣",
+    "isbn": "9787544251405",
+    "price": 48.00,
+    "publishedDate": "2010-11-01",
+    "stockQuantity": 160
+  },
+  {
+    "title": "活着",
+    "author": "余华",
+    "isbn": "9787506365437",
+    "price": 28.00,
+    "publishedDate": "2012-08-01",
+    "stockQuantity": 300
+  },
+  {
+    "title": "许三观卖血记",
+    "author": "余华",
+    "isbn": "9787506365413",
+    "price": 25.00,
+    "publishedDate": "2012-07-01",
+    "stockQuantity": 150
+  },
+  {
+    "title": "围城",
+    "author": "钱钟书",
+    "isbn": "9787020024759",
+    "price": 32.00,
+    "publishedDate": "2008-01-01",
+    "stockQuantity": 120
+  },
+  {
+    "title": "红楼梦",
+    "author": "曹雪芹",
+    "isbn": "9787020002207",
+    "price": 59.70,
+    "publishedDate": "1996-12-01",
+    "stockQuantity": 500
+  },
+  {
+    "title": "三国演义",
+    "author": "罗贯中",
+    "isbn": "9787020008728",
+    "price": 49.80,
+    "publishedDate": "1998-05-01",
+    "stockQuantity": 400
+  },
+  {
+    "title": "水浒传",
+    "author": "施耐庵",
+    "isbn": "9787020008735",
+    "price": 49.80,
+    "publishedDate": "1998-05-01",
+    "stockQuantity": 350
+  },
+  {
+    "title": "西游记",
+    "author": "吴承恩",
+    "isbn": "9787020008742",
+    "price": 49.80,
+    "publishedDate": "1980-05-01",
+    "stockQuantity": 450
+  },
+  {
+    "title": "百年孤独",
+    "author": "加西亚·马尔克斯",
+    "isbn": "9787544253994",
+    "price": 55.00,
+    "publishedDate": "2011-06-01",
+    "stockQuantity": 100
+  },
+  {
+    "title": "1984",
+    "author": "George Orwell",
+    "isbn": "9780451524935",
+    "price": 9.99,
+    "publishedDate": "1961-08-01",
+    "stockQuantity": 250
+  },
+  {
+    "title": "Animal Farm",
+    "author": "George Orwell",
+    "isbn": "9780451526342",
+    "price": 8.99,
+    "publishedDate": "1946-08-17",
+    "stockQuantity": 200
+  },
+  {
+    "title": "Brave New World",
+    "author": "Aldous Huxley",
+    "isbn": "9780060850524",
+    "price": 15.99,
+    "publishedDate": "1932-09-01",
+    "stockQuantity": 180
+  },
+  {
+    "title": "Fahrenheit 451",
+    "author": "Ray Bradbury",
+    "isbn": "9781451673319",
+    "price": 14.99,
+    "publishedDate": "1953-10-19",
+    "stockQuantity": 220
+  },
+  {
+    "title": "The Great Gatsby",
+    "author": "F. Scott Fitzgerald",
+    "isbn": "9780743273565",
+    "price": 12.99,
+    "publishedDate": "1925-04-10",
+    "stockQuantity": 300
+  },
+  {
+    "title": "To Kill a Mockingbird",
+    "author": "Harper Lee",
+    "isbn": "9780061120084",
+    "price": 14.99,
+    "publishedDate": "1960-07-11",
+    "stockQuantity": 280
+  },
+  {
+    "title": "Pride and Prejudice",
+    "author": "Jane Austen",
+    "isbn": "9780141439518",
+    "price": 9.99,
+    "publishedDate": "1813-01-28",
+    "stockQuantity": 350
+  },
+  {
+    "title": "The Catcher in the Rye",
+    "author": "J.D. Salinger",
+    "isbn": "9780316769174",
+    "price": 10.99,
+    "publishedDate": "1951-07-16",
+    "stockQuantity": 320
+  },
+  {
+    "title": "Lord of the Rings",
+    "author": "J.R.R. Tolkien",
+    "isbn": "9780544003415",
+    "price": 29.99,
+    "publishedDate": "1954-07-29",
+    "stockQuantity": 200
+  },
+  {
+    "title": "The Hobbit",
+    "author": "J.R.R. Tolkien",
+    "isbn": "9780547928227",
+    "price": 14.99,
+    "publishedDate": "1937-09-21",
+    "stockQuantity": 250
+  },
+  {
+    "title": "Harry Potter and the Sorcerer's Stone",
+    "author": "J.K. Rowling",
+    "isbn": "9780590353427",
+    "price": 10.99,
+    "publishedDate": "1997-06-26",
+    "stockQuantity": 500
+  },
+  {
+    "title": "A Brief History of Time",
+    "author": "Stephen Hawking",
+    "isbn": "9780553380163",
+    "price": 18.00,
+    "publishedDate": "1988-04-01",
+    "stockQuantity": 150
+  },
+  {
+    "title": "Sapiens",
+    "author": "Yuval Noah Harari",
+    "isbn": "9780062316097",
+    "price": 22.99,
+    "publishedDate": "2011-01-01",
+    "stockQuantity": 180
+  },
+  {
+    "title": "Thinking, Fast and Slow",
+    "author": "Daniel Kahneman",
+    "isbn": "9780374533557",
+    "price": 17.00,
+    "publishedDate": "2011-10-25",
+    "stockQuantity": 140
+  },
+  {
+    "title": "The Art of War",
+    "author": "Sun Tzu",
+    "isbn": "9781590302255",
+    "price": 12.95,
+    "publishedDate": "2003-09-01",
+    "stockQuantity": 200
+  },
+  {
+    "title": "The Little Prince",
+    "author": "Antoine de Saint-Exupéry",
+    "isbn": "9780156012195",
+    "price": 10.00,
+    "publishedDate": "1943-04-06",
+    "stockQuantity": 400
+  },
+  {
+    "title": "Norwegian Wood",
+    "author": "Haruki Murakami",
+    "isbn": "9780375704024",
+    "price": 15.95,
+    "publishedDate": "1987-09-01",
+    "stockQuantity": 100
+  },
+  {
+    "title": "Kafka on the Shore",
+    "author": "Haruki Murakami",
+    "isbn": "9781400079278",
+    "price": 16.00,
+    "publishedDate": "2002-09-12",
+    "stockQuantity": 90
+  },
+  {
+    "title": "1Q84",
+    "author": "Haruki Murakami",
+    "isbn": "9780307593313",
+    "price": 27.95,
+    "publishedDate": "2009-05-29",
+    "stockQuantity": 80
+  },
+  {
+    "title": "算法导论",
+    "author": "Thomas H. Cormen",
+    "isbn": "9787111407010",
+    "price": 88.00,
+    "publishedDate": "2012-12-01",
+    "stockQuantity": 100
+  },
+  {
+    "title": "深入理解计算机系统",
+    "author": "Randal E. Bryant",
+    "isbn": "9787111321330",
+    "price": 99.00,
+    "publishedDate": "2011-01-01",
+    "stockQuantity": 120
+  },
+  {
+    "title": "Java 编程思想",
+    "author": "Bruce Eckel",
+    "isbn": "9787111213826",
+    "price": 108.00,
+    "publishedDate": "2007-06-01",
+    "stockQuantity": 80
+  },
+  {
+    "title": "鸟哥的 Linux 私房菜",
+    "author": "鸟哥",
+    "isbn": "9787115427640",
+    "price": 98.00,
+    "publishedDate": "2015-12-01",
+    "stockQuantity": 60
+  },
+  {
+    "title": "代码大全",
+    "author": "Steve McConnell",
+    "isbn": "9787115142605",
+    "price": 98.00,
+    "publishedDate": "2006-03-01",
+    "stockQuantity": 50
+  },
+  {
+    "title": "人类简史",
+    "author": "Yuval Noah Harari",
+    "isbn": "9787508647357",
+    "price": 68.00,
+    "publishedDate": "2014-11-01",
+    "stockQuantity": 200
+  },
+  {
+    "title": "未来简史",
+    "author": "Yuval Noah Harari",
+    "isbn": "9787508672069",
+    "price": 68.00,
+    "publishedDate": "2016-06-01",
+    "stockQuantity": 150
+  },
+  {
+    "title": "刻意练习",
+    "author": "Anders Ericsson",
+    "isbn": "9787508672069",
+    "price": 45.00,
+    "publishedDate": "2016-11-01",
+    "stockQuantity": 130
+  },
+  {
+    "title": "思考,快与慢",
+    "author": "Daniel Kahneman",
+    "isbn": "9787508646787",
+    "price": 69.00,
+    "publishedDate": "2012-07-01",
+    "stockQuantity": 110
+  },
+  {
+    "title": "The Art of Java Programming Vol.11",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000050-5",
+    "price": 186.19,
+    "publishedDate": "2018-03-19",
+    "stockQuantity": 0
+  },
+  {
+    "title": "深度学习精要 第17版",
+    "author": "徐丽",
+    "isbn": "978-0-000000051-3",
+    "price": 37.00,
+    "publishedDate": "1993-03-10",
+    "stockQuantity": 47
+  },
+  {
+    "title": "Hands-On Web Development Vol.7",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000052-6",
+    "price": 85.85,
+    "publishedDate": "1982-12-13",
+    "stockQuantity": 28
+  },
+  {
+    "title": "Learning Algorithms Vol.4",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000053-5",
+    "price": 109.07,
+    "publishedDate": "2000-02-04",
+    "stockQuantity": 178
+  },
+  {
+    "title": "数据库性能优化 第1版",
+    "author": "徐丽",
+    "isbn": "978-0-000000054-3",
+    "price": 111.61,
+    "publishedDate": "1998-02-20",
+    "stockQuantity": 95
+  },
+  {
+    "title": "Web 安全攻防 第19版",
+    "author": "罗丹",
+    "isbn": "978-0-000000055-5",
+    "price": 34.90,
+    "publishedDate": "2021-02-22",
+    "stockQuantity": 55
+  },
+  {
+    "title": "Advanced Database Systems Vol.14",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000056-4",
+    "price": 40.42,
+    "publishedDate": "2017-10-10",
+    "stockQuantity": 189
+  },
+  {
+    "title": "微服务架构设计 第17版",
+    "author": "刘洋",
+    "isbn": "978-0-000000057-5",
+    "price": 101.23,
+    "publishedDate": "2019-01-09",
+    "stockQuantity": 145
+  },
+  {
+    "title": "深度学习精要 第10版",
+    "author": "刘洋",
+    "isbn": "978-0-000000058-1",
+    "price": 104.46,
+    "publishedDate": "2020-03-19",
+    "stockQuantity": 94
+  },
+  {
+    "title": "Introduction to Machine Learning Vol.7",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000059-6",
+    "price": 114.46,
+    "publishedDate": "2013-03-24",
+    "stockQuantity": 17
+  },
+  {
+    "title": "产品经理手册 第14版",
+    "author": "李娜",
+    "isbn": "978-0-000000060-2",
+    "price": 29.38,
+    "publishedDate": "2002-01-05",
+    "stockQuantity": 0
+  },
+  {
+    "title": "Mastering Database Systems Vol.8",
+    "author": "John Smith",
+    "isbn": "978-0-000000061-3",
+    "price": 185.03,
+    "publishedDate": "1998-06-04",
+    "stockQuantity": 53
+  },
+  {
+    "title": "代码精进之路 第16版",
+    "author": "王芳",
+    "isbn": "978-0-000000062-9",
+    "price": 34.51,
+    "publishedDate": "1982-10-09",
+    "stockQuantity": 9
+  },
+  {
+    "title": "Mastering Network Security Vol.11",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000063-9",
+    "price": 46.24,
+    "publishedDate": "2024-10-09",
+    "stockQuantity": 142
+  },
+  {
+    "title": "The Art of Cloud Computing Vol.3",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000064-9",
+    "price": 15.99,
+    "publishedDate": "1989-06-01",
+    "stockQuantity": 165
+  },
+  {
+    "title": "架构之美 第14版",
+    "author": "赵敏",
+    "isbn": "978-0-000000065-8",
+    "price": 90.79,
+    "publishedDate": "1994-12-18",
+    "stockQuantity": 21
+  },
+  {
+    "title": "架构之美 第9版",
+    "author": "吴昊",
+    "isbn": "978-0-000000066-7",
+    "price": 143.91,
+    "publishedDate": "1984-09-11",
+    "stockQuantity": 37
+  },
+  {
+    "title": "Hands-On Software Architecture Vol.20",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000067-3",
+    "price": 96.75,
+    "publishedDate": "2006-08-08",
+    "stockQuantity": 48
+  },
+  {
+    "title": "Python 编程之道 第15版",
+    "author": "黄磊",
+    "isbn": "978-0-000000068-5",
+    "price": 123.18,
+    "publishedDate": "2022-07-04",
+    "stockQuantity": 79
+  },
+  {
+    "title": "大数据处理实战 第7版",
+    "author": "赵敏",
+    "isbn": "978-0-000000069-1",
+    "price": 118.88,
+    "publishedDate": "2001-02-08",
+    "stockQuantity": 15
+  },
+  {
+    "title": "Java 高级编程 第2版",
+    "author": "杨杰",
+    "isbn": "978-0-000000070-3",
+    "price": 61.59,
+    "publishedDate": "2004-04-20",
+    "stockQuantity": 101
+  },
+  {
+    "title": "Advanced DevOps Vol.8",
+    "author": "William Thomas",
+    "isbn": "978-0-000000071-7",
+    "price": 88.06,
+    "publishedDate": "1994-01-05",
+    "stockQuantity": 85
+  },
+  {
+    "title": "Comprehensive Java Programming Vol.4",
+    "author": "William Thomas",
+    "isbn": "978-0-000000072-7",
+    "price": 83.52,
+    "publishedDate": "2007-11-07",
+    "stockQuantity": 193
+  },
+  {
+    "title": "大数据处理实战 第1版",
+    "author": "高远",
+    "isbn": "978-0-000000073-9",
+    "price": 158.07,
+    "publishedDate": "1997-04-20",
+    "stockQuantity": 32
+  },
+  {
+    "title": "Mastering Cloud Computing Vol.7",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000074-9",
+    "price": 137.33,
+    "publishedDate": "1981-09-10",
+    "stockQuantity": 71
+  },
+  {
+    "title": "产品经理手册 第15版",
+    "author": "郭鑫",
+    "isbn": "978-0-000000075-3",
+    "price": 34.00,
+    "publishedDate": "2022-02-07",
+    "stockQuantity": 181
+  },
+  {
+    "title": "云原生应用开发 第2版",
+    "author": "赵敏",
+    "isbn": "978-0-000000076-2",
+    "price": 159.93,
+    "publishedDate": "1991-02-25",
+    "stockQuantity": 23
+  },
+  {
+    "title": "Modern API Design Vol.10",
+    "author": "John Smith",
+    "isbn": "978-0-000000077-7",
+    "price": 118.11,
+    "publishedDate": "1988-11-26",
+    "stockQuantity": 168
+  },
+  {
+    "title": "高并发编程 第2版",
+    "author": "林峰",
+    "isbn": "978-0-000000078-0",
+    "price": 164.06,
+    "publishedDate": "1982-08-13",
+    "stockQuantity": 20
+  },
+  {
+    "title": "技术领导力 第17版",
+    "author": "陈静",
+    "isbn": "978-0-000000079-5",
+    "price": 71.96,
+    "publishedDate": "1985-04-26",
+    "stockQuantity": 196
+  },
+  {
+    "title": "Hands-On Algorithms Vol.15",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000080-8",
+    "price": 137.92,
+    "publishedDate": "2007-02-07",
+    "stockQuantity": 122
+  },
+  {
+    "title": "Learning API Design Vol.13",
+    "author": "John Smith",
+    "isbn": "978-0-000000081-8",
+    "price": 153.55,
+    "publishedDate": "1991-10-03",
+    "stockQuantity": 48
+  },
+  {
+    "title": "Mastering Web Development Vol.4",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000082-3",
+    "price": 140.41,
+    "publishedDate": "1980-11-13",
+    "stockQuantity": 93
+  },
+  {
+    "title": "Advanced Python Development Vol.9",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000083-3",
+    "price": 131.49,
+    "publishedDate": "1998-06-12",
+    "stockQuantity": 110
+  },
+  {
+    "title": "The Art of Java Programming Vol.14",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000084-9",
+    "price": 109.08,
+    "publishedDate": "1996-04-08",
+    "stockQuantity": 98
+  },
+  {
+    "title": "Comprehensive Java Programming Vol.12",
+    "author": "James White",
+    "isbn": "978-0-000000085-4",
+    "price": 179.52,
+    "publishedDate": "1981-10-11",
+    "stockQuantity": 72
+  },
+  {
+    "title": "Practical Guide to Machine Learning Vol.8",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000086-1",
+    "price": 78.25,
+    "publishedDate": "2016-04-20",
+    "stockQuantity": 159
+  },
+  {
+    "title": "产品经理手册 第15版",
+    "author": "罗丹",
+    "isbn": "978-0-000000087-6",
+    "price": 109.17,
+    "publishedDate": "1987-01-15",
+    "stockQuantity": 135
+  },
+  {
+    "title": "Deep Dive into DevOps Vol.18",
+    "author": "James White",
+    "isbn": "978-0-000000088-5",
+    "price": 14.30,
+    "publishedDate": "1992-03-27",
+    "stockQuantity": 150
+  },
+  {
+    "title": "Learning DevOps Vol.5",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000089-1",
+    "price": 171.24,
+    "publishedDate": "1981-04-06",
+    "stockQuantity": 4
+  },
+  {
+    "title": "大数据处理实战 第11版",
+    "author": "高远",
+    "isbn": "978-0-000000090-5",
+    "price": 20.74,
+    "publishedDate": "2009-02-19",
+    "stockQuantity": 79
+  },
+  {
+    "title": "Mastering API Design Vol.9",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000091-8",
+    "price": 44.25,
+    "publishedDate": "2016-04-07",
+    "stockQuantity": 182
+  },
+  {
+    "title": "Comprehensive Distributed Systems Vol.15",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000092-0",
+    "price": 29.65,
+    "publishedDate": "1980-04-26",
+    "stockQuantity": 0
+  },
+  {
+    "title": "Mastering Python Development Vol.11",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000093-4",
+    "price": 36.48,
+    "publishedDate": "1980-09-09",
+    "stockQuantity": 96
+  },
+  {
+    "title": "Effective Python Development Vol.8",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000094-7",
+    "price": 178.69,
+    "publishedDate": "2011-05-02",
+    "stockQuantity": 38
+  },
+  {
+    "title": "Deep Dive into Machine Learning Vol.5",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000095-5",
+    "price": 173.44,
+    "publishedDate": "1984-03-11",
+    "stockQuantity": 146
+  },
+  {
+    "title": "Practical Guide to Web Development Vol.12",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000096-4",
+    "price": 35.43,
+    "publishedDate": "2011-08-02",
+    "stockQuantity": 115
+  },
+  {
+    "title": "The Art of Distributed Systems Vol.3",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000097-2",
+    "price": 152.46,
+    "publishedDate": "1984-04-22",
+    "stockQuantity": 46
+  },
+  {
+    "title": "架构之美 第19版",
+    "author": "李娜",
+    "isbn": "978-0-000000098-6",
+    "price": 69.03,
+    "publishedDate": "2009-02-10",
+    "stockQuantity": 42
+  },
+  {
+    "title": "Learning DevOps Vol.9",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000099-2",
+    "price": 168.07,
+    "publishedDate": "1988-07-06",
+    "stockQuantity": 146
+  },
+  {
+    "title": "代码重构 第3版",
+    "author": "高远",
+    "isbn": "978-0-000000100-3",
+    "price": 193.91,
+    "publishedDate": "1994-01-03",
+    "stockQuantity": 23
+  },
+  {
+    "title": "Learning Cloud Computing Vol.14",
+    "author": "James White",
+    "isbn": "978-0-000000101-8",
+    "price": 95.72,
+    "publishedDate": "2010-03-21",
+    "stockQuantity": 14
+  },
+  {
+    "title": "云原生应用开发 第2版",
+    "author": "郭鑫",
+    "isbn": "978-0-000000102-9",
+    "price": 61.80,
+    "publishedDate": "2024-03-28",
+    "stockQuantity": 177
+  },
+  {
+    "title": "编程之美 第16版",
+    "author": "王芳",
+    "isbn": "978-0-000000103-0",
+    "price": 34.11,
+    "publishedDate": "2002-05-21",
+    "stockQuantity": 33
+  },
+  {
+    "title": "Mastering Software Engineering Vol.20",
+    "author": "William Thomas",
+    "isbn": "978-0-000000104-1",
+    "price": 48.40,
+    "publishedDate": "2011-02-01",
+    "stockQuantity": 150
+  },
+  {
+    "title": "Effective System Design Vol.17",
+    "author": "James White",
+    "isbn": "978-0-000000105-3",
+    "price": 94.95,
+    "publishedDate": "1997-05-16",
+    "stockQuantity": 196
+  },
+  {
+    "title": "编程之美 第17版",
+    "author": "林峰",
+    "isbn": "978-0-000000106-9",
+    "price": 123.49,
+    "publishedDate": "1980-04-13",
+    "stockQuantity": 108
+  },
+  {
+    "title": "代码精进之路 第16版",
+    "author": "郭鑫",
+    "isbn": "978-0-000000107-2",
+    "price": 116.45,
+    "publishedDate": "2013-01-01",
+    "stockQuantity": 95
+  },
+  {
+    "title": "Learning Network Security Vol.9",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000108-8",
+    "price": 171.13,
+    "publishedDate": "1988-09-14",
+    "stockQuantity": 13
+  },
+  {
+    "title": "Modern Cloud Computing Vol.9",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000109-8",
+    "price": 164.96,
+    "publishedDate": "2024-05-13",
+    "stockQuantity": 46
+  },
+  {
+    "title": "高并发编程 第20版",
+    "author": "何明",
+    "isbn": "978-0-000000110-4",
+    "price": 168.12,
+    "publishedDate": "1998-10-07",
+    "stockQuantity": 68
+  },
+  {
+    "title": "大数据处理实战 第5版",
+    "author": "王芳",
+    "isbn": "978-0-000000111-0",
+    "price": 49.67,
+    "publishedDate": "1987-10-13",
+    "stockQuantity": 133
+  },
+  {
+    "title": "Advanced Software Architecture Vol.7",
+    "author": "John Smith",
+    "isbn": "978-0-000000112-1",
+    "price": 179.99,
+    "publishedDate": "1985-06-03",
+    "stockQuantity": 180
+  },
+  {
+    "title": "Modern API Design Vol.8",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000113-0",
+    "price": 141.05,
+    "publishedDate": "1981-10-27",
+    "stockQuantity": 196
+  },
+  {
+    "title": "Effective Algorithms Vol.4",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000114-1",
+    "price": 41.14,
+    "publishedDate": "2016-04-07",
+    "stockQuantity": 87
+  },
+  {
+    "title": "Essential Distributed Systems Vol.2",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000115-5",
+    "price": 41.15,
+    "publishedDate": "2006-05-24",
+    "stockQuantity": 139
+  },
+  {
+    "title": "Mastering Microservices Vol.9",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000116-0",
+    "price": 95.11,
+    "publishedDate": "1995-05-16",
+    "stockQuantity": 95
+  },
+  {
+    "title": "Effective API Design Vol.5",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000117-8",
+    "price": 89.52,
+    "publishedDate": "2003-08-10",
+    "stockQuantity": 12
+  },
+  {
+    "title": "产品经理手册 第14版",
+    "author": "孙强",
+    "isbn": "978-0-000000118-6",
+    "price": 168.46,
+    "publishedDate": "1990-11-19",
+    "stockQuantity": 94
+  },
+  {
+    "title": "云原生应用开发 第10版",
+    "author": "赵敏",
+    "isbn": "978-0-000000119-4",
+    "price": 193.97,
+    "publishedDate": "2012-07-25",
+    "stockQuantity": 12
+  },
+  {
+    "title": "Comprehensive Cloud Computing Vol.4",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000120-5",
+    "price": 127.04,
+    "publishedDate": "1992-05-14",
+    "stockQuantity": 19
+  },
+  {
+    "title": "The Art of Java Programming Vol.19",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000121-7",
+    "price": 126.45,
+    "publishedDate": "2007-07-14",
+    "stockQuantity": 123
+  },
+  {
+    "title": "人工智能入门 第6版",
+    "author": "林峰",
+    "isbn": "978-0-000000122-7",
+    "price": 165.62,
+    "publishedDate": "2020-07-23",
+    "stockQuantity": 143
+  },
+  {
+    "title": "Modern Database Systems Vol.6",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000123-0",
+    "price": 90.26,
+    "publishedDate": "1998-11-13",
+    "stockQuantity": 106
+  },
+  {
+    "title": "Introduction to Cloud Computing Vol.2",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000124-6",
+    "price": 92.28,
+    "publishedDate": "2017-09-09",
+    "stockQuantity": 76
+  },
+  {
+    "title": "The Art of Cloud Computing Vol.10",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000125-9",
+    "price": 103.33,
+    "publishedDate": "2024-07-19",
+    "stockQuantity": 70
+  },
+  {
+    "title": "Learning Python Development Vol.3",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000126-4",
+    "price": 28.75,
+    "publishedDate": "1985-01-11",
+    "stockQuantity": 71
+  },
+  {
+    "title": "编程之美 第10版",
+    "author": "王芳",
+    "isbn": "978-0-000000127-9",
+    "price": 52.15,
+    "publishedDate": "1992-09-05",
+    "stockQuantity": 33
+  },
+  {
+    "title": "Comprehensive Distributed Systems Vol.10",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000128-8",
+    "price": 171.27,
+    "publishedDate": "1994-07-26",
+    "stockQuantity": 120
+  },
+  {
+    "title": "The Art of Database Systems Vol.17",
+    "author": "William Thomas",
+    "isbn": "978-0-000000129-2",
+    "price": 64.60,
+    "publishedDate": "2006-01-22",
+    "stockQuantity": 71
+  },
+  {
+    "title": "Essential System Design Vol.5",
+    "author": "John Smith",
+    "isbn": "978-0-000000130-2",
+    "price": 36.86,
+    "publishedDate": "2006-01-01",
+    "stockQuantity": 39
+  },
+  {
+    "title": "Hands-On Network Security Vol.18",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000131-7",
+    "price": 87.19,
+    "publishedDate": "2022-05-17",
+    "stockQuantity": 84
+  },
+  {
+    "title": "编程之美 第7版",
+    "author": "何明",
+    "isbn": "978-0-000000132-8",
+    "price": 194.48,
+    "publishedDate": "2011-09-02",
+    "stockQuantity": 179
+  },
+  {
+    "title": "技术领导力 第13版",
+    "author": "罗丹",
+    "isbn": "978-0-000000133-7",
+    "price": 34.05,
+    "publishedDate": "1980-03-12",
+    "stockQuantity": 0
+  },
+  {
+    "title": "Python 编程之道 第5版",
+    "author": "刘洋",
+    "isbn": "978-0-000000134-2",
+    "price": 131.45,
+    "publishedDate": "2015-06-08",
+    "stockQuantity": 94
+  },
+  {
+    "title": "Effective Distributed Systems Vol.20",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000135-7",
+    "price": 134.11,
+    "publishedDate": "2019-02-12",
+    "stockQuantity": 84
+  },
+  {
+    "title": "The Art of DevOps Vol.12",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000136-7",
+    "price": 149.24,
+    "publishedDate": "2000-07-14",
+    "stockQuantity": 137
+  },
+  {
+    "title": "高并发编程 第15版",
+    "author": "孙强",
+    "isbn": "978-0-000000137-9",
+    "price": 125.26,
+    "publishedDate": "1982-11-11",
+    "stockQuantity": 115
+  },
+  {
+    "title": "架构之美 第3版",
+    "author": "刘洋",
+    "isbn": "978-0-000000138-9",
+    "price": 162.87,
+    "publishedDate": "2010-01-05",
+    "stockQuantity": 164
+  },
+  {
+    "title": "深入理解 JVM 第9版",
+    "author": "高远",
+    "isbn": "978-0-000000139-5",
+    "price": 30.63,
+    "publishedDate": "2004-06-01",
+    "stockQuantity": 4
+  },
+  {
+    "title": "The Art of Network Security Vol.7",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000140-1",
+    "price": 79.76,
+    "publishedDate": "2016-03-20",
+    "stockQuantity": 190
+  },
+  {
+    "title": "Deep Dive into Distributed Systems Vol.17",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000141-4",
+    "price": 165.97,
+    "publishedDate": "1999-02-12",
+    "stockQuantity": 92
+  },
+  {
+    "title": "Essential Database Systems Vol.5",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000142-0",
+    "price": 152.43,
+    "publishedDate": "2019-08-17",
+    "stockQuantity": 140
+  },
+  {
+    "title": "Mastering Software Engineering Vol.12",
+    "author": "John Smith",
+    "isbn": "978-0-000000143-3",
+    "price": 111.78,
+    "publishedDate": "2005-10-25",
+    "stockQuantity": 168
+  },
+  {
+    "title": "Hands-On Network Security Vol.11",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000144-4",
+    "price": 85.46,
+    "publishedDate": "2015-02-16",
+    "stockQuantity": 144
+  },
+  {
+    "title": "高并发编程 第2版",
+    "author": "郭鑫",
+    "isbn": "978-0-000000145-2",
+    "price": 29.03,
+    "publishedDate": "2016-01-02",
+    "stockQuantity": 124
+  },
+  {
+    "title": "Introduction to Algorithms Vol.15",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000146-9",
+    "price": 23.24,
+    "publishedDate": "1982-08-01",
+    "stockQuantity": 78
+  },
+  {
+    "title": "Java 高级编程 第14版",
+    "author": "马丽",
+    "isbn": "978-0-000000147-5",
+    "price": 160.79,
+    "publishedDate": "2004-09-07",
+    "stockQuantity": 41
+  },
+  {
+    "title": "编程之美 第19版",
+    "author": "刘洋",
+    "isbn": "978-0-000000148-8",
+    "price": 112.82,
+    "publishedDate": "2017-12-27",
+    "stockQuantity": 133
+  },
+  {
+    "title": "代码精进之路 第5版",
+    "author": "罗丹",
+    "isbn": "978-0-000000149-8",
+    "price": 45.59,
+    "publishedDate": "1993-08-02",
+    "stockQuantity": 122
+  },
+  {
+    "title": "Essential Algorithms Vol.7",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000150-7",
+    "price": 45.51,
+    "publishedDate": "2003-06-27",
+    "stockQuantity": 145
+  },
+  {
+    "title": "Comprehensive Java Programming Vol.11",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000151-8",
+    "price": 70.18,
+    "publishedDate": "2002-09-12",
+    "stockQuantity": 81
+  },
+  {
+    "title": "Deep Dive into Software Architecture Vol.18",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000152-0",
+    "price": 150.46,
+    "publishedDate": "1991-10-17",
+    "stockQuantity": 126
+  },
+  {
+    "title": "Web 安全攻防 第4版",
+    "author": "胡晓",
+    "isbn": "978-0-000000153-0",
+    "price": 144.40,
+    "publishedDate": "2014-11-09",
+    "stockQuantity": 42
+  },
+  {
+    "title": "云原生应用开发 第6版",
+    "author": "胡晓",
+    "isbn": "978-0-000000154-0",
+    "price": 90.10,
+    "publishedDate": "1980-05-18",
+    "stockQuantity": 44
+  },
+  {
+    "title": "架构之美 第12版",
+    "author": "吴昊",
+    "isbn": "978-0-000000155-8",
+    "price": 189.94,
+    "publishedDate": "1993-09-04",
+    "stockQuantity": 141
+  },
+  {
+    "title": "产品经理手册 第1版",
+    "author": "胡晓",
+    "isbn": "978-0-000000156-5",
+    "price": 69.65,
+    "publishedDate": "2002-01-01",
+    "stockQuantity": 161
+  },
+  {
+    "title": "Web 安全攻防 第16版",
+    "author": "杨杰",
+    "isbn": "978-0-000000157-5",
+    "price": 46.18,
+    "publishedDate": "2010-02-14",
+    "stockQuantity": 89
+  },
+  {
+    "title": "深入理解 JVM 第4版",
+    "author": "徐丽",
+    "isbn": "978-0-000000158-0",
+    "price": 196.62,
+    "publishedDate": "2011-03-28",
+    "stockQuantity": 33
+  },
+  {
+    "title": "Introduction to Software Engineering Vol.2",
+    "author": "David Wilson",
+    "isbn": "978-0-000000159-9",
+    "price": 82.16,
+    "publishedDate": "2007-05-27",
+    "stockQuantity": 115
+  },
+  {
+    "title": "Introduction to DevOps Vol.20",
+    "author": "David Wilson",
+    "isbn": "978-0-000000160-3",
+    "price": 137.38,
+    "publishedDate": "2012-08-25",
+    "stockQuantity": 199
+  },
+  {
+    "title": "云原生应用开发 第6版",
+    "author": "徐丽",
+    "isbn": "978-0-000000161-2",
+    "price": 154.20,
+    "publishedDate": "2006-03-06",
+    "stockQuantity": 200
+  },
+  {
+    "title": "云原生应用开发 第5版",
+    "author": "孙强",
+    "isbn": "978-0-000000162-0",
+    "price": 129.84,
+    "publishedDate": "1986-01-21",
+    "stockQuantity": 71
+  },
+  {
+    "title": "Modern Distributed Systems Vol.1",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000163-8",
+    "price": 54.45,
+    "publishedDate": "2001-08-02",
+    "stockQuantity": 5
+  },
+  {
+    "title": "深度学习精要 第20版",
+    "author": "黄磊",
+    "isbn": "978-0-000000164-0",
+    "price": 100.92,
+    "publishedDate": "2017-03-03",
+    "stockQuantity": 136
+  },
+  {
+    "title": "Hands-On Algorithms Vol.11",
+    "author": "James White",
+    "isbn": "978-0-000000165-3",
+    "price": 125.30,
+    "publishedDate": "1997-08-21",
+    "stockQuantity": 193
+  },
+  {
+    "title": "编程之美 第5版",
+    "author": "周婷",
+    "isbn": "978-0-000000166-8",
+    "price": 34.48,
+    "publishedDate": "1990-07-22",
+    "stockQuantity": 171
+  },
+  {
+    "title": "Hands-On Algorithms Vol.10",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000167-9",
+    "price": 153.97,
+    "publishedDate": "2022-09-19",
+    "stockQuantity": 63
+  },
+  {
+    "title": "高并发编程 第20版",
+    "author": "徐丽",
+    "isbn": "978-0-000000168-7",
+    "price": 112.47,
+    "publishedDate": "1981-06-27",
+    "stockQuantity": 170
+  },
+  {
+    "title": "Effective Data Structures Vol.18",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000169-2",
+    "price": 45.32,
+    "publishedDate": "2012-03-14",
+    "stockQuantity": 15
+  },
+  {
+    "title": "代码重构 第19版",
+    "author": "张伟",
+    "isbn": "978-0-000000170-7",
+    "price": 164.04,
+    "publishedDate": "2012-05-20",
+    "stockQuantity": 126
+  },
+  {
+    "title": "Advanced Microservices Vol.1",
+    "author": "James White",
+    "isbn": "978-0-000000171-3",
+    "price": 149.87,
+    "publishedDate": "1998-03-07",
+    "stockQuantity": 13
+  },
+  {
+    "title": "Effective Microservices Vol.4",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000172-0",
+    "price": 184.74,
+    "publishedDate": "2008-10-22",
+    "stockQuantity": 104
+  },
+  {
+    "title": "Essential System Design Vol.6",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000173-0",
+    "price": 124.73,
+    "publishedDate": "2014-11-01",
+    "stockQuantity": 76
+  },
+  {
+    "title": "Deep Dive into DevOps Vol.16",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000174-8",
+    "price": 177.05,
+    "publishedDate": "2001-01-16",
+    "stockQuantity": 17
+  },
+  {
+    "title": "产品经理手册 第19版",
+    "author": "刘洋",
+    "isbn": "978-0-000000175-8",
+    "price": 116.51,
+    "publishedDate": "2014-05-19",
+    "stockQuantity": 169
+  },
+  {
+    "title": "Essential Data Structures Vol.6",
+    "author": "David Wilson",
+    "isbn": "978-0-000000176-9",
+    "price": 66.44,
+    "publishedDate": "2004-04-13",
+    "stockQuantity": 117
+  },
+  {
+    "title": "Mastering Machine Learning Vol.10",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000177-5",
+    "price": 181.27,
+    "publishedDate": "2008-08-19",
+    "stockQuantity": 125
+  },
+  {
+    "title": "Practical Guide to Machine Learning Vol.3",
+    "author": "David Wilson",
+    "isbn": "978-0-000000178-1",
+    "price": 134.40,
+    "publishedDate": "1990-04-22",
+    "stockQuantity": 3
+  },
+  {
+    "title": "技术领导力 第8版",
+    "author": "马丽",
+    "isbn": "978-0-000000179-1",
+    "price": 61.88,
+    "publishedDate": "1981-06-16",
+    "stockQuantity": 108
+  },
+  {
+    "title": "Introduction to Algorithms Vol.3",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000180-0",
+    "price": 127.52,
+    "publishedDate": "2016-12-17",
+    "stockQuantity": 71
+  },
+  {
+    "title": "技术领导力 第20版",
+    "author": "陈静",
+    "isbn": "978-0-000000181-6",
+    "price": 58.94,
+    "publishedDate": "1992-03-24",
+    "stockQuantity": 124
+  },
+  {
+    "title": "Deep Dive into DevOps Vol.2",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000182-3",
+    "price": 188.27,
+    "publishedDate": "2002-12-09",
+    "stockQuantity": 144
+  },
+  {
+    "title": "Linux 系统管理 第1版",
+    "author": "马丽",
+    "isbn": "978-0-000000183-6",
+    "price": 174.51,
+    "publishedDate": "2009-04-22",
+    "stockQuantity": 130
+  },
+  {
+    "title": "代码精进之路 第5版",
+    "author": "何明",
+    "isbn": "978-0-000000184-3",
+    "price": 160.13,
+    "publishedDate": "2009-11-17",
+    "stockQuantity": 7
+  },
+  {
+    "title": "数据结构与算法 第1版",
+    "author": "张伟",
+    "isbn": "978-0-000000185-6",
+    "price": 144.03,
+    "publishedDate": "2003-12-12",
+    "stockQuantity": 185
+  },
+  {
+    "title": "架构之美 第18版",
+    "author": "徐丽",
+    "isbn": "978-0-000000186-5",
+    "price": 68.51,
+    "publishedDate": "2013-05-18",
+    "stockQuantity": 52
+  },
+  {
+    "title": "Advanced Machine Learning Vol.8",
+    "author": "David Wilson",
+    "isbn": "978-0-000000187-2",
+    "price": 98.16,
+    "publishedDate": "2002-06-02",
+    "stockQuantity": 131
+  },
+  {
+    "title": "Advanced Database Systems Vol.12",
+    "author": "James White",
+    "isbn": "978-0-000000188-5",
+    "price": 60.05,
+    "publishedDate": "2015-10-02",
+    "stockQuantity": 50
+  },
+  {
+    "title": "技术领导力 第14版",
+    "author": "胡晓",
+    "isbn": "978-0-000000189-8",
+    "price": 103.24,
+    "publishedDate": "1989-12-14",
+    "stockQuantity": 116
+  },
+  {
+    "title": "大数据处理实战 第9版",
+    "author": "赵敏",
+    "isbn": "978-0-000000190-7",
+    "price": 52.85,
+    "publishedDate": "1987-12-08",
+    "stockQuantity": 158
+  },
+  {
+    "title": "云原生应用开发 第14版",
+    "author": "赵敏",
+    "isbn": "978-0-000000191-6",
+    "price": 74.12,
+    "publishedDate": "2017-09-07",
+    "stockQuantity": 152
+  },
+  {
+    "title": "Advanced Algorithms Vol.15",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000192-8",
+    "price": 111.20,
+    "publishedDate": "2012-05-22",
+    "stockQuantity": 49
+  },
+  {
+    "title": "Mastering System Design Vol.19",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000193-0",
+    "price": 59.03,
+    "publishedDate": "1998-09-24",
+    "stockQuantity": 173
+  },
+  {
+    "title": "高并发编程 第9版",
+    "author": "李娜",
+    "isbn": "978-0-000000194-5",
+    "price": 98.40,
+    "publishedDate": "2016-02-08",
+    "stockQuantity": 68
+  },
+  {
+    "title": "云原生应用开发 第19版",
+    "author": "徐丽",
+    "isbn": "978-0-000000195-1",
+    "price": 181.76,
+    "publishedDate": "1985-07-16",
+    "stockQuantity": 144
+  },
+  {
+    "title": "数据结构与算法 第18版",
+    "author": "黄磊",
+    "isbn": "978-0-000000196-9",
+    "price": 140.38,
+    "publishedDate": "2022-02-20",
+    "stockQuantity": 139
+  },
+  {
+    "title": "深入理解 JVM 第11版",
+    "author": "朱勇",
+    "isbn": "978-0-000000197-5",
+    "price": 124.35,
+    "publishedDate": "2019-10-05",
+    "stockQuantity": 0
+  },
+  {
+    "title": "Mastering System Design Vol.10",
+    "author": "William Thomas",
+    "isbn": "978-0-000000198-5",
+    "price": 39.89,
+    "publishedDate": "1990-04-01",
+    "stockQuantity": 55
+  },
+  {
+    "title": "云原生应用开发 第13版",
+    "author": "周婷",
+    "isbn": "978-0-000000199-9",
+    "price": 130.13,
+    "publishedDate": "2010-12-08",
+    "stockQuantity": 70
+  },
+  {
+    "title": "Deep Dive into Machine Learning Vol.14",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000200-4",
+    "price": 182.58,
+    "publishedDate": "2020-06-04",
+    "stockQuantity": 118
+  },
+  {
+    "title": "人工智能入门 第5版",
+    "author": "周婷",
+    "isbn": "978-0-000000201-9",
+    "price": 85.43,
+    "publishedDate": "2021-11-27",
+    "stockQuantity": 184
+  },
+  {
+    "title": "Advanced Algorithms Vol.13",
+    "author": "William Thomas",
+    "isbn": "978-0-000000202-0",
+    "price": 175.60,
+    "publishedDate": "2014-10-03",
+    "stockQuantity": 33
+  },
+  {
+    "title": "Modern Software Architecture Vol.13",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000203-3",
+    "price": 38.28,
+    "publishedDate": "2024-05-18",
+    "stockQuantity": 97
+  },
+  {
+    "title": "高并发编程 第13版",
+    "author": "黄磊",
+    "isbn": "978-0-000000204-7",
+    "price": 32.93,
+    "publishedDate": "1991-01-12",
+    "stockQuantity": 102
+  },
+  {
+    "title": "Web 安全攻防 第19版",
+    "author": "朱勇",
+    "isbn": "978-0-000000205-2",
+    "price": 75.82,
+    "publishedDate": "2014-10-01",
+    "stockQuantity": 196
+  },
+  {
+    "title": "Linux 系统管理 第20版",
+    "author": "周婷",
+    "isbn": "978-0-000000206-0",
+    "price": 64.62,
+    "publishedDate": "1982-04-19",
+    "stockQuantity": 96
+  },
+  {
+    "title": "Learning Web Development Vol.8",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000207-6",
+    "price": 173.47,
+    "publishedDate": "1980-08-10",
+    "stockQuantity": 136
+  },
+  {
+    "title": "Advanced Software Engineering Vol.14",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000208-2",
+    "price": 192.15,
+    "publishedDate": "2006-04-23",
+    "stockQuantity": 25
+  },
+  {
+    "title": "技术领导力 第18版",
+    "author": "刘洋",
+    "isbn": "978-0-000000209-0",
+    "price": 178.66,
+    "publishedDate": "1982-03-13",
+    "stockQuantity": 194
+  },
+  {
+    "title": "代码精进之路 第9版",
+    "author": "张伟",
+    "isbn": "978-0-000000210-4",
+    "price": 24.57,
+    "publishedDate": "2009-04-20",
+    "stockQuantity": 194
+  },
+  {
+    "title": "数据结构与算法 第14版",
+    "author": "吴昊",
+    "isbn": "978-0-000000211-0",
+    "price": 136.09,
+    "publishedDate": "1993-05-05",
+    "stockQuantity": 13
+  },
+  {
+    "title": "高并发编程 第10版",
+    "author": "吴昊",
+    "isbn": "978-0-000000212-4",
+    "price": 171.27,
+    "publishedDate": "2010-06-24",
+    "stockQuantity": 52
+  },
+  {
+    "title": "代码精进之路 第9版",
+    "author": "黄磊",
+    "isbn": "978-0-000000213-7",
+    "price": 67.58,
+    "publishedDate": "1980-01-12",
+    "stockQuantity": 33
+  },
+  {
+    "title": "Comprehensive Machine Learning Vol.19",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000214-6",
+    "price": 21.97,
+    "publishedDate": "2004-10-23",
+    "stockQuantity": 44
+  },
+  {
+    "title": "分布式系统实践 第7版",
+    "author": "郭鑫",
+    "isbn": "978-0-000000215-5",
+    "price": 162.96,
+    "publishedDate": "2004-12-08",
+    "stockQuantity": 106
+  },
+  {
+    "title": "Advanced Network Security Vol.18",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000216-9",
+    "price": 99.12,
+    "publishedDate": "2013-08-12",
+    "stockQuantity": 119
+  },
+  {
+    "title": "架构之美 第12版",
+    "author": "王芳",
+    "isbn": "978-0-000000217-6",
+    "price": 49.80,
+    "publishedDate": "1988-04-02",
+    "stockQuantity": 41
+  },
+  {
+    "title": "Learning Network Security Vol.12",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000218-1",
+    "price": 154.57,
+    "publishedDate": "1996-10-15",
+    "stockQuantity": 186
+  },
+  {
+    "title": "产品经理手册 第4版",
+    "author": "黄磊",
+    "isbn": "978-0-000000219-3",
+    "price": 19.09,
+    "publishedDate": "1997-12-21",
+    "stockQuantity": 25
+  },
+  {
+    "title": "技术领导力 第13版",
+    "author": "刘洋",
+    "isbn": "978-0-000000220-0",
+    "price": 141.14,
+    "publishedDate": "1989-10-16",
+    "stockQuantity": 186
+  },
+  {
+    "title": "Comprehensive Software Architecture Vol.1",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000221-5",
+    "price": 129.38,
+    "publishedDate": "2016-04-28",
+    "stockQuantity": 87
+  },
+  {
+    "title": "Python 编程之道 第9版",
+    "author": "周婷",
+    "isbn": "978-0-000000222-8",
+    "price": 103.56,
+    "publishedDate": "2019-12-05",
+    "stockQuantity": 187
+  },
+  {
+    "title": "Effective Python Development Vol.20",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000223-4",
+    "price": 149.08,
+    "publishedDate": "1991-06-07",
+    "stockQuantity": 5
+  },
+  {
+    "title": "数据库性能优化 第4版",
+    "author": "马丽",
+    "isbn": "978-0-000000224-0",
+    "price": 26.38,
+    "publishedDate": "1996-09-10",
+    "stockQuantity": 177
+  },
+  {
+    "title": "Java 高级编程 第17版",
+    "author": "李娜",
+    "isbn": "978-0-000000225-9",
+    "price": 198.51,
+    "publishedDate": "1995-02-05",
+    "stockQuantity": 63
+  },
+  {
+    "title": "数据结构与算法 第1版",
+    "author": "周婷",
+    "isbn": "978-0-000000226-1",
+    "price": 13.74,
+    "publishedDate": "2014-03-17",
+    "stockQuantity": 96
+  },
+  {
+    "title": "Effective Microservices Vol.3",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000227-3",
+    "price": 86.01,
+    "publishedDate": "2011-11-12",
+    "stockQuantity": 169
+  },
+  {
+    "title": "高并发编程 第9版",
+    "author": "胡晓",
+    "isbn": "978-0-000000228-3",
+    "price": 100.82,
+    "publishedDate": "2010-07-03",
+    "stockQuantity": 99
+  },
+  {
+    "title": "Deep Dive into Software Architecture Vol.14",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000229-7",
+    "price": 19.22,
+    "publishedDate": "2000-09-09",
+    "stockQuantity": 144
+  },
+  {
+    "title": "Comprehensive System Design Vol.14",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000230-1",
+    "price": 68.35,
+    "publishedDate": "2023-03-10",
+    "stockQuantity": 157
+  },
+  {
+    "title": "人工智能入门 第2版",
+    "author": "李娜",
+    "isbn": "978-0-000000231-9",
+    "price": 165.12,
+    "publishedDate": "2014-03-16",
+    "stockQuantity": 140
+  },
+  {
+    "title": "Hands-On DevOps Vol.6",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000232-6",
+    "price": 102.34,
+    "publishedDate": "1992-01-13",
+    "stockQuantity": 12
+  },
+  {
+    "title": "数据库性能优化 第6版",
+    "author": "罗丹",
+    "isbn": "978-0-000000233-0",
+    "price": 158.80,
+    "publishedDate": "2013-06-25",
+    "stockQuantity": 148
+  },
+  {
+    "title": "Deep Dive into Algorithms Vol.10",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000234-4",
+    "price": 171.87,
+    "publishedDate": "2010-12-09",
+    "stockQuantity": 10
+  },
+  {
+    "title": "Hands-On Data Structures Vol.15",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000235-0",
+    "price": 73.05,
+    "publishedDate": "2002-04-24",
+    "stockQuantity": 182
+  },
+  {
+    "title": "架构之美 第13版",
+    "author": "周婷",
+    "isbn": "978-0-000000236-1",
+    "price": 69.51,
+    "publishedDate": "2007-07-01",
+    "stockQuantity": 79
+  },
+  {
+    "title": "深度学习精要 第4版",
+    "author": "何明",
+    "isbn": "978-0-000000237-2",
+    "price": 163.68,
+    "publishedDate": "1982-03-18",
+    "stockQuantity": 184
+  },
+  {
+    "title": "数据结构与算法 第18版",
+    "author": "周婷",
+    "isbn": "978-0-000000238-3",
+    "price": 18.79,
+    "publishedDate": "1986-10-14",
+    "stockQuantity": 4
+  },
+  {
+    "title": "Deep Dive into Distributed Systems Vol.1",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000239-9",
+    "price": 173.89,
+    "publishedDate": "2016-02-20",
+    "stockQuantity": 39
+  },
+  {
+    "title": "Java 高级编程 第6版",
+    "author": "李娜",
+    "isbn": "978-0-000000240-2",
+    "price": 22.45,
+    "publishedDate": "2012-06-10",
+    "stockQuantity": 124
+  },
+  {
+    "title": "Learning Software Architecture Vol.16",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000241-4",
+    "price": 129.88,
+    "publishedDate": "2022-02-13",
+    "stockQuantity": 154
+  },
+  {
+    "title": "Java 高级编程 第19版",
+    "author": "林峰",
+    "isbn": "978-0-000000242-8",
+    "price": 124.60,
+    "publishedDate": "1983-04-25",
+    "stockQuantity": 122
+  },
+  {
+    "title": "深度学习精要 第11版",
+    "author": "马丽",
+    "isbn": "978-0-000000243-2",
+    "price": 26.28,
+    "publishedDate": "2006-03-12",
+    "stockQuantity": 144
+  },
+  {
+    "title": "人工智能入门 第18版",
+    "author": "何明",
+    "isbn": "978-0-000000244-8",
+    "price": 81.63,
+    "publishedDate": "2020-08-05",
+    "stockQuantity": 127
+  },
+  {
+    "title": "高并发编程 第13版",
+    "author": "张伟",
+    "isbn": "978-0-000000245-3",
+    "price": 26.46,
+    "publishedDate": "1997-06-03",
+    "stockQuantity": 194
+  },
+  {
+    "title": "Mastering Cloud Computing Vol.11",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000246-6",
+    "price": 89.09,
+    "publishedDate": "1993-02-18",
+    "stockQuantity": 19
+  },
+  {
+    "title": "Practical Guide to Java Programming Vol.9",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000247-2",
+    "price": 43.74,
+    "publishedDate": "1993-07-24",
+    "stockQuantity": 118
+  },
+  {
+    "title": "Deep Dive into Network Security Vol.3",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000248-7",
+    "price": 153.95,
+    "publishedDate": "2006-05-15",
+    "stockQuantity": 77
+  },
+  {
+    "title": "深入理解 JVM 第17版",
+    "author": "胡晓",
+    "isbn": "978-0-000000249-1",
+    "price": 180.84,
+    "publishedDate": "2009-07-14",
+    "stockQuantity": 130
+  },
+  {
+    "title": "Linux 系统管理 第5版",
+    "author": "杨杰",
+    "isbn": "978-0-000000250-6",
+    "price": 163.15,
+    "publishedDate": "1982-12-06",
+    "stockQuantity": 2
+  },
+  {
+    "title": "Python 编程之道 第6版",
+    "author": "吴昊",
+    "isbn": "978-0-000000251-4",
+    "price": 177.82,
+    "publishedDate": "2015-01-04",
+    "stockQuantity": 106
+  },
+  {
+    "title": "Linux 系统管理 第18版",
+    "author": "陈静",
+    "isbn": "978-0-000000252-9",
+    "price": 85.20,
+    "publishedDate": "1983-05-02",
+    "stockQuantity": 95
+  },
+  {
+    "title": "Learning Data Structures Vol.13",
+    "author": "David Wilson",
+    "isbn": "978-0-000000253-4",
+    "price": 147.88,
+    "publishedDate": "2008-10-03",
+    "stockQuantity": 21
+  },
+  {
+    "title": "微服务架构设计 第11版",
+    "author": "李娜",
+    "isbn": "978-0-000000254-2",
+    "price": 105.54,
+    "publishedDate": "1994-10-24",
+    "stockQuantity": 154
+  },
+  {
+    "title": "Advanced Software Architecture Vol.15",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000255-7",
+    "price": 179.70,
+    "publishedDate": "2007-08-17",
+    "stockQuantity": 113
+  },
+  {
+    "title": "Java 高级编程 第6版",
+    "author": "杨杰",
+    "isbn": "978-0-000000256-3",
+    "price": 198.54,
+    "publishedDate": "2011-01-09",
+    "stockQuantity": 45
+  },
+  {
+    "title": "云原生应用开发 第8版",
+    "author": "郭鑫",
+    "isbn": "978-0-000000257-3",
+    "price": 39.49,
+    "publishedDate": "1982-11-18",
+    "stockQuantity": 31
+  },
+  {
+    "title": "代码重构 第16版",
+    "author": "朱勇",
+    "isbn": "978-0-000000258-9",
+    "price": 135.85,
+    "publishedDate": "2000-08-26",
+    "stockQuantity": 106
+  },
+  {
+    "title": "代码重构 第7版",
+    "author": "马丽",
+    "isbn": "978-0-000000259-5",
+    "price": 167.05,
+    "publishedDate": "2000-01-11",
+    "stockQuantity": 93
+  },
+  {
+    "title": "Advanced DevOps Vol.9",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000260-6",
+    "price": 139.33,
+    "publishedDate": "2001-08-10",
+    "stockQuantity": 14
+  },
+  {
+    "title": "Web 安全攻防 第4版",
+    "author": "刘洋",
+    "isbn": "978-0-000000261-9",
+    "price": 50.28,
+    "publishedDate": "2019-10-23",
+    "stockQuantity": 34
+  },
+  {
+    "title": "代码精进之路 第10版",
+    "author": "吴昊",
+    "isbn": "978-0-000000262-8",
+    "price": 24.99,
+    "publishedDate": "2010-02-17",
+    "stockQuantity": 91
+  },
+  {
+    "title": "深入理解 JVM 第13版",
+    "author": "何明",
+    "isbn": "978-0-000000263-2",
+    "price": 12.18,
+    "publishedDate": "1991-03-07",
+    "stockQuantity": 75
+  },
+  {
+    "title": "微服务架构设计 第3版",
+    "author": "徐丽",
+    "isbn": "978-0-000000264-1",
+    "price": 120.30,
+    "publishedDate": "1985-08-25",
+    "stockQuantity": 82
+  },
+  {
+    "title": "Advanced Web Development Vol.9",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000265-2",
+    "price": 77.57,
+    "publishedDate": "1995-08-24",
+    "stockQuantity": 101
+  },
+  {
+    "title": "Effective Web Development Vol.18",
+    "author": "John Smith",
+    "isbn": "978-0-000000266-1",
+    "price": 12.90,
+    "publishedDate": "2012-06-26",
+    "stockQuantity": 82
+  },
+  {
+    "title": "Deep Dive into Database Systems Vol.4",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000267-7",
+    "price": 81.90,
+    "publishedDate": "2012-08-05",
+    "stockQuantity": 186
+  },
+  {
+    "title": "深度学习精要 第14版",
+    "author": "张伟",
+    "isbn": "978-0-000000268-7",
+    "price": 163.31,
+    "publishedDate": "1989-12-05",
+    "stockQuantity": 20
+  },
+  {
+    "title": "深度学习精要 第17版",
+    "author": "朱勇",
+    "isbn": "978-0-000000269-7",
+    "price": 183.10,
+    "publishedDate": "2008-03-03",
+    "stockQuantity": 179
+  },
+  {
+    "title": "The Art of System Design Vol.4",
+    "author": "James White",
+    "isbn": "978-0-000000270-4",
+    "price": 159.66,
+    "publishedDate": "2021-06-17",
+    "stockQuantity": 115
+  },
+  {
+    "title": "架构之美 第20版",
+    "author": "杨杰",
+    "isbn": "978-0-000000271-3",
+    "price": 171.47,
+    "publishedDate": "2012-09-21",
+    "stockQuantity": 143
+  },
+  {
+    "title": "数据结构与算法 第4版",
+    "author": "林峰",
+    "isbn": "978-0-000000272-8",
+    "price": 127.53,
+    "publishedDate": "2022-07-05",
+    "stockQuantity": 99
+  },
+  {
+    "title": "Deep Dive into Algorithms Vol.3",
+    "author": "William Thomas",
+    "isbn": "978-0-000000273-3",
+    "price": 117.01,
+    "publishedDate": "1983-12-21",
+    "stockQuantity": 162
+  },
+  {
+    "title": "深入理解 JVM 第13版",
+    "author": "赵敏",
+    "isbn": "978-0-000000274-3",
+    "price": 35.43,
+    "publishedDate": "1984-07-17",
+    "stockQuantity": 200
+  },
+  {
+    "title": "Hands-On Distributed Systems Vol.12",
+    "author": "James White",
+    "isbn": "978-0-000000275-5",
+    "price": 70.11,
+    "publishedDate": "2022-02-24",
+    "stockQuantity": 152
+  },
+  {
+    "title": "架构之美 第18版",
+    "author": "陈静",
+    "isbn": "978-0-000000276-9",
+    "price": 39.92,
+    "publishedDate": "2018-07-07",
+    "stockQuantity": 184
+  },
+  {
+    "title": "Learning Network Security Vol.7",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000277-3",
+    "price": 168.91,
+    "publishedDate": "2021-01-02",
+    "stockQuantity": 147
+  },
+  {
+    "title": "Comprehensive Data Structures Vol.15",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000278-8",
+    "price": 111.99,
+    "publishedDate": "2016-09-05",
+    "stockQuantity": 186
+  },
+  {
+    "title": "Linux 系统管理 第14版",
+    "author": "黄磊",
+    "isbn": "978-0-000000279-7",
+    "price": 35.50,
+    "publishedDate": "1985-08-10",
+    "stockQuantity": 173
+  },
+  {
+    "title": "Practical Guide to System Design Vol.6",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000280-4",
+    "price": 57.89,
+    "publishedDate": "2015-08-15",
+    "stockQuantity": 124
+  },
+  {
+    "title": "代码精进之路 第7版",
+    "author": "林峰",
+    "isbn": "978-0-000000281-8",
+    "price": 142.97,
+    "publishedDate": "2013-08-07",
+    "stockQuantity": 161
+  },
+  {
+    "title": "Python 编程之道 第1版",
+    "author": "杨杰",
+    "isbn": "978-0-000000282-9",
+    "price": 184.05,
+    "publishedDate": "2014-06-25",
+    "stockQuantity": 85
+  },
+  {
+    "title": "Learning Cloud Computing Vol.15",
+    "author": "William Thomas",
+    "isbn": "978-0-000000283-9",
+    "price": 89.30,
+    "publishedDate": "1999-02-25",
+    "stockQuantity": 156
+  },
+  {
+    "title": "Effective DevOps Vol.17",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000284-2",
+    "price": 166.07,
+    "publishedDate": "2018-08-17",
+    "stockQuantity": 55
+  },
+  {
+    "title": "Effective DevOps Vol.12",
+    "author": "John Smith",
+    "isbn": "978-0-000000285-7",
+    "price": 171.91,
+    "publishedDate": "2011-08-13",
+    "stockQuantity": 74
+  },
+  {
+    "title": "Mastering Network Security Vol.15",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000286-0",
+    "price": 105.34,
+    "publishedDate": "1989-01-08",
+    "stockQuantity": 60
+  },
+  {
+    "title": "代码精进之路 第20版",
+    "author": "孙强",
+    "isbn": "978-0-000000287-1",
+    "price": 145.65,
+    "publishedDate": "2011-09-13",
+    "stockQuantity": 96
+  },
+  {
+    "title": "产品经理手册 第12版",
+    "author": "陈静",
+    "isbn": "978-0-000000288-6",
+    "price": 91.89,
+    "publishedDate": "1980-07-17",
+    "stockQuantity": 183
+  },
+  {
+    "title": "Hands-On Java Programming Vol.9",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000289-6",
+    "price": 139.29,
+    "publishedDate": "1980-11-02",
+    "stockQuantity": 19
+  },
+  {
+    "title": "深入理解 JVM 第6版",
+    "author": "张伟",
+    "isbn": "978-0-000000290-6",
+    "price": 191.44,
+    "publishedDate": "2006-12-01",
+    "stockQuantity": 151
+  },
+  {
+    "title": "人工智能入门 第19版",
+    "author": "刘洋",
+    "isbn": "978-0-000000291-7",
+    "price": 93.17,
+    "publishedDate": "2022-10-06",
+    "stockQuantity": 185
+  },
+  {
+    "title": "Web 安全攻防 第18版",
+    "author": "张伟",
+    "isbn": "978-0-000000292-5",
+    "price": 51.33,
+    "publishedDate": "2018-05-17",
+    "stockQuantity": 109
+  },
+  {
+    "title": "Essential System Design Vol.2",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000293-9",
+    "price": 27.14,
+    "publishedDate": "1985-11-06",
+    "stockQuantity": 188
+  },
+  {
+    "title": "数据结构与算法 第6版",
+    "author": "黄磊",
+    "isbn": "978-0-000000294-3",
+    "price": 104.85,
+    "publishedDate": "1985-02-11",
+    "stockQuantity": 96
+  },
+  {
+    "title": "代码重构 第15版",
+    "author": "刘洋",
+    "isbn": "978-0-000000295-1",
+    "price": 163.10,
+    "publishedDate": "2005-11-14",
+    "stockQuantity": 27
+  },
+  {
+    "title": "Essential Data Structures Vol.16",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000296-7",
+    "price": 139.61,
+    "publishedDate": "1982-06-26",
+    "stockQuantity": 139
+  },
+  {
+    "title": "Introduction to Database Systems Vol.4",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000297-7",
+    "price": 162.02,
+    "publishedDate": "2004-10-22",
+    "stockQuantity": 124
+  },
+  {
+    "title": "Comprehensive Software Engineering Vol.16",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000298-6",
+    "price": 177.71,
+    "publishedDate": "1982-02-11",
+    "stockQuantity": 184
+  },
+  {
+    "title": "Python 编程之道 第19版",
+    "author": "李娜",
+    "isbn": "978-0-000000299-4",
+    "price": 151.52,
+    "publishedDate": "1987-07-26",
+    "stockQuantity": 151
+  },
+  {
+    "title": "Linux 系统管理 第19版",
+    "author": "赵敏",
+    "isbn": "978-0-000000300-7",
+    "price": 117.09,
+    "publishedDate": "2003-04-21",
+    "stockQuantity": 150
+  },
+  {
+    "title": "Introduction to Data Structures Vol.12",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000301-8",
+    "price": 37.23,
+    "publishedDate": "2019-07-27",
+    "stockQuantity": 121
+  },
+  {
+    "title": "Practical Guide to Cloud Computing Vol.13",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000302-9",
+    "price": 145.64,
+    "publishedDate": "2022-12-15",
+    "stockQuantity": 57
+  },
+  {
+    "title": "Modern Database Systems Vol.6",
+    "author": "William Thomas",
+    "isbn": "978-0-000000303-8",
+    "price": 134.92,
+    "publishedDate": "1983-06-24",
+    "stockQuantity": 146
+  },
+  {
+    "title": "Deep Dive into Database Systems Vol.15",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000304-0",
+    "price": 52.56,
+    "publishedDate": "1995-09-21",
+    "stockQuantity": 59
+  },
+  {
+    "title": "Introduction to Python Development Vol.14",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000305-4",
+    "price": 142.63,
+    "publishedDate": "2008-01-11",
+    "stockQuantity": 186
+  },
+  {
+    "title": "Deep Dive into Distributed Systems Vol.14",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000306-5",
+    "price": 102.11,
+    "publishedDate": "1981-05-03",
+    "stockQuantity": 49
+  },
+  {
+    "title": "Introduction to Data Structures Vol.16",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000307-2",
+    "price": 16.70,
+    "publishedDate": "1980-08-03",
+    "stockQuantity": 158
+  },
+  {
+    "title": "人工智能入门 第11版",
+    "author": "孙强",
+    "isbn": "978-0-000000308-0",
+    "price": 28.50,
+    "publishedDate": "2021-11-19",
+    "stockQuantity": 197
+  },
+  {
+    "title": "深入理解 JVM 第19版",
+    "author": "张伟",
+    "isbn": "978-0-000000309-8",
+    "price": 144.76,
+    "publishedDate": "1990-03-08",
+    "stockQuantity": 80
+  },
+  {
+    "title": "数据结构与算法 第18版",
+    "author": "刘洋",
+    "isbn": "978-0-000000310-9",
+    "price": 189.28,
+    "publishedDate": "2007-06-20",
+    "stockQuantity": 131
+  },
+  {
+    "title": "Mastering Machine Learning Vol.3",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000311-6",
+    "price": 41.33,
+    "publishedDate": "2006-11-04",
+    "stockQuantity": 111
+  },
+  {
+    "title": "微服务架构设计 第17版",
+    "author": "孙强",
+    "isbn": "978-0-000000312-8",
+    "price": 42.87,
+    "publishedDate": "2002-12-16",
+    "stockQuantity": 47
+  },
+  {
+    "title": "技术领导力 第1版",
+    "author": "孙强",
+    "isbn": "978-0-000000313-6",
+    "price": 58.99,
+    "publishedDate": "1990-07-17",
+    "stockQuantity": 0
+  },
+  {
+    "title": "云原生应用开发 第12版",
+    "author": "陈静",
+    "isbn": "978-0-000000314-6",
+    "price": 155.83,
+    "publishedDate": "1992-01-10",
+    "stockQuantity": 63
+  },
+  {
+    "title": "Advanced Web Development Vol.5",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000315-5",
+    "price": 55.08,
+    "publishedDate": "1982-01-21",
+    "stockQuantity": 17
+  },
+  {
+    "title": "Web 安全攻防 第10版",
+    "author": "周婷",
+    "isbn": "978-0-000000316-0",
+    "price": 158.96,
+    "publishedDate": "2001-03-06",
+    "stockQuantity": 143
+  },
+  {
+    "title": "Hands-On Software Architecture Vol.4",
+    "author": "David Wilson",
+    "isbn": "978-0-000000317-1",
+    "price": 169.86,
+    "publishedDate": "1983-04-22",
+    "stockQuantity": 51
+  },
+  {
+    "title": "高并发编程 第4版",
+    "author": "吴昊",
+    "isbn": "978-0-000000318-4",
+    "price": 68.47,
+    "publishedDate": "1992-11-15",
+    "stockQuantity": 154
+  },
+  {
+    "title": "Advanced Algorithms Vol.10",
+    "author": "John Smith",
+    "isbn": "978-0-000000319-4",
+    "price": 46.76,
+    "publishedDate": "2014-08-06",
+    "stockQuantity": 69
+  },
+  {
+    "title": "数据库性能优化 第17版",
+    "author": "朱勇",
+    "isbn": "978-0-000000320-5",
+    "price": 87.16,
+    "publishedDate": "2017-02-22",
+    "stockQuantity": 13
+  },
+  {
+    "title": "Essential DevOps Vol.6",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000321-6",
+    "price": 48.17,
+    "publishedDate": "1999-06-14",
+    "stockQuantity": 49
+  },
+  {
+    "title": "云原生应用开发 第3版",
+    "author": "周婷",
+    "isbn": "978-0-000000322-8",
+    "price": 29.69,
+    "publishedDate": "1997-08-22",
+    "stockQuantity": 54
+  },
+  {
+    "title": "数据库性能优化 第15版",
+    "author": "罗丹",
+    "isbn": "978-0-000000323-2",
+    "price": 72.10,
+    "publishedDate": "2023-10-11",
+    "stockQuantity": 4
+  },
+  {
+    "title": "Effective Network Security Vol.18",
+    "author": "David Wilson",
+    "isbn": "978-0-000000324-7",
+    "price": 145.48,
+    "publishedDate": "2000-06-15",
+    "stockQuantity": 24
+  },
+  {
+    "title": "Practical Guide to Software Engineering Vol.10",
+    "author": "James White",
+    "isbn": "978-0-000000325-1",
+    "price": 25.59,
+    "publishedDate": "2022-08-17",
+    "stockQuantity": 76
+  },
+  {
+    "title": "云原生应用开发 第3版",
+    "author": "杨杰",
+    "isbn": "978-0-000000326-8",
+    "price": 44.12,
+    "publishedDate": "2006-07-06",
+    "stockQuantity": 20
+  },
+  {
+    "title": "Advanced Java Programming Vol.19",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000327-3",
+    "price": 119.95,
+    "publishedDate": "2021-05-26",
+    "stockQuantity": 176
+  },
+  {
+    "title": "Hands-On System Design Vol.18",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000328-2",
+    "price": 82.61,
+    "publishedDate": "1988-06-01",
+    "stockQuantity": 83
+  },
+  {
+    "title": "Practical Guide to Cloud Computing Vol.11",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000329-7",
+    "price": 193.73,
+    "publishedDate": "2017-11-06",
+    "stockQuantity": 116
+  },
+  {
+    "title": "产品经理手册 第10版",
+    "author": "黄磊",
+    "isbn": "978-0-000000330-5",
+    "price": 181.90,
+    "publishedDate": "2010-08-17",
+    "stockQuantity": 31
+  },
+  {
+    "title": "Practical Guide to API Design Vol.19",
+    "author": "David Wilson",
+    "isbn": "978-0-000000331-0",
+    "price": 159.09,
+    "publishedDate": "1998-02-17",
+    "stockQuantity": 46
+  },
+  {
+    "title": "深入理解 JVM 第13版",
+    "author": "黄磊",
+    "isbn": "978-0-000000332-9",
+    "price": 102.62,
+    "publishedDate": "2020-09-14",
+    "stockQuantity": 18
+  },
+  {
+    "title": "Java 高级编程 第2版",
+    "author": "李娜",
+    "isbn": "978-0-000000333-8",
+    "price": 176.58,
+    "publishedDate": "1997-11-25",
+    "stockQuantity": 107
+  },
+  {
+    "title": "数据库性能优化 第12版",
+    "author": "朱勇",
+    "isbn": "978-0-000000334-4",
+    "price": 79.06,
+    "publishedDate": "2012-09-22",
+    "stockQuantity": 81
+  },
+  {
+    "title": "Introduction to Web Development Vol.14",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000335-8",
+    "price": 87.01,
+    "publishedDate": "2009-11-07",
+    "stockQuantity": 76
+  },
+  {
+    "title": "产品经理手册 第9版",
+    "author": "高远",
+    "isbn": "978-0-000000336-9",
+    "price": 157.53,
+    "publishedDate": "1994-12-07",
+    "stockQuantity": 136
+  },
+  {
+    "title": "分布式系统实践 第19版",
+    "author": "马丽",
+    "isbn": "978-0-000000337-8",
+    "price": 56.49,
+    "publishedDate": "2019-01-12",
+    "stockQuantity": 57
+  },
+  {
+    "title": "Deep Dive into Cloud Computing Vol.8",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000338-1",
+    "price": 147.62,
+    "publishedDate": "1980-08-27",
+    "stockQuantity": 106
+  },
+  {
+    "title": "Hands-On Network Security Vol.20",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000339-7",
+    "price": 115.09,
+    "publishedDate": "2001-06-21",
+    "stockQuantity": 36
+  },
+  {
+    "title": "Web 安全攻防 第2版",
+    "author": "刘洋",
+    "isbn": "978-0-000000340-1",
+    "price": 154.22,
+    "publishedDate": "2005-07-24",
+    "stockQuantity": 40
+  },
+  {
+    "title": "深度学习精要 第2版",
+    "author": "李娜",
+    "isbn": "978-0-000000341-2",
+    "price": 29.08,
+    "publishedDate": "1995-08-11",
+    "stockQuantity": 130
+  },
+  {
+    "title": "Essential Python Development Vol.2",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000342-8",
+    "price": 123.02,
+    "publishedDate": "1992-05-14",
+    "stockQuantity": 192
+  },
+  {
+    "title": "编程之美 第2版",
+    "author": "郭鑫",
+    "isbn": "978-0-000000343-0",
+    "price": 165.60,
+    "publishedDate": "2013-09-11",
+    "stockQuantity": 193
+  },
+  {
+    "title": "Mastering Web Development Vol.15",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000344-9",
+    "price": 171.58,
+    "publishedDate": "2010-03-05",
+    "stockQuantity": 56
+  },
+  {
+    "title": "Mastering Algorithms Vol.16",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000345-4",
+    "price": 153.74,
+    "publishedDate": "2008-09-24",
+    "stockQuantity": 134
+  },
+  {
+    "title": "Advanced Python Development Vol.6",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000346-3",
+    "price": 141.85,
+    "publishedDate": "2014-05-20",
+    "stockQuantity": 153
+  },
+  {
+    "title": "Mastering Database Systems Vol.14",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000347-6",
+    "price": 145.78,
+    "publishedDate": "1986-12-24",
+    "stockQuantity": 164
+  },
+  {
+    "title": "Learning Data Structures Vol.7",
+    "author": "James White",
+    "isbn": "978-0-000000348-2",
+    "price": 176.07,
+    "publishedDate": "1992-08-28",
+    "stockQuantity": 68
+  },
+  {
+    "title": "Essential Database Systems Vol.8",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000349-7",
+    "price": 22.52,
+    "publishedDate": "1992-10-13",
+    "stockQuantity": 167
+  },
+  {
+    "title": "Modern Algorithms Vol.3",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000350-6",
+    "price": 81.22,
+    "publishedDate": "2007-12-03",
+    "stockQuantity": 125
+  },
+  {
+    "title": "Introduction to Network Security Vol.8",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000351-3",
+    "price": 141.07,
+    "publishedDate": "1990-05-17",
+    "stockQuantity": 144
+  },
+  {
+    "title": "Effective Machine Learning Vol.4",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000352-9",
+    "price": 126.65,
+    "publishedDate": "2017-07-26",
+    "stockQuantity": 137
+  },
+  {
+    "title": "代码精进之路 第5版",
+    "author": "刘洋",
+    "isbn": "978-0-000000353-6",
+    "price": 39.98,
+    "publishedDate": "2024-01-07",
+    "stockQuantity": 86
+  },
+  {
+    "title": "Practical Guide to Java Programming Vol.1",
+    "author": "David Wilson",
+    "isbn": "978-0-000000354-9",
+    "price": 140.62,
+    "publishedDate": "1995-01-20",
+    "stockQuantity": 135
+  },
+  {
+    "title": "Deep Dive into Microservices Vol.8",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000355-2",
+    "price": 77.04,
+    "publishedDate": "2003-05-11",
+    "stockQuantity": 186
+  },
+  {
+    "title": "架构之美 第8版",
+    "author": "张伟",
+    "isbn": "978-0-000000356-8",
+    "price": 36.24,
+    "publishedDate": "2023-06-26",
+    "stockQuantity": 56
+  },
+  {
+    "title": "技术领导力 第17版",
+    "author": "张伟",
+    "isbn": "978-0-000000357-7",
+    "price": 141.09,
+    "publishedDate": "2002-04-24",
+    "stockQuantity": 54
+  },
+  {
+    "title": "Deep Dive into Machine Learning Vol.11",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000358-0",
+    "price": 186.69,
+    "publishedDate": "1996-04-09",
+    "stockQuantity": 188
+  },
+  {
+    "title": "高并发编程 第7版",
+    "author": "李娜",
+    "isbn": "978-0-000000359-8",
+    "price": 59.31,
+    "publishedDate": "2016-07-21",
+    "stockQuantity": 138
+  },
+  {
+    "title": "Modern Software Engineering Vol.4",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000360-6",
+    "price": 181.56,
+    "publishedDate": "1981-09-07",
+    "stockQuantity": 195
+  },
+  {
+    "title": "Java 高级编程 第9版",
+    "author": "杨杰",
+    "isbn": "978-0-000000361-0",
+    "price": 146.35,
+    "publishedDate": "2013-10-28",
+    "stockQuantity": 33
+  },
+  {
+    "title": "Modern Data Structures Vol.4",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000362-5",
+    "price": 161.62,
+    "publishedDate": "1995-03-06",
+    "stockQuantity": 54
+  },
+  {
+    "title": "Mastering Web Development Vol.14",
+    "author": "James White",
+    "isbn": "978-0-000000363-3",
+    "price": 28.21,
+    "publishedDate": "1988-02-28",
+    "stockQuantity": 55
+  },
+  {
+    "title": "代码重构 第10版",
+    "author": "杨杰",
+    "isbn": "978-0-000000364-7",
+    "price": 26.92,
+    "publishedDate": "2015-11-21",
+    "stockQuantity": 131
+  },
+  {
+    "title": "Modern Database Systems Vol.20",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000365-8",
+    "price": 43.28,
+    "publishedDate": "1991-09-12",
+    "stockQuantity": 15
+  },
+  {
+    "title": "深入理解 JVM 第18版",
+    "author": "王芳",
+    "isbn": "978-0-000000366-7",
+    "price": 168.16,
+    "publishedDate": "1987-09-17",
+    "stockQuantity": 65
+  },
+  {
+    "title": "高并发编程 第18版",
+    "author": "王芳",
+    "isbn": "978-0-000000367-6",
+    "price": 45.53,
+    "publishedDate": "2008-11-24",
+    "stockQuantity": 120
+  },
+  {
+    "title": "Comprehensive Distributed Systems Vol.17",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000368-7",
+    "price": 190.54,
+    "publishedDate": "1994-06-15",
+    "stockQuantity": 184
+  },
+  {
+    "title": "Practical Guide to Distributed Systems Vol.17",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000369-2",
+    "price": 110.24,
+    "publishedDate": "2015-06-26",
+    "stockQuantity": 196
+  },
+  {
+    "title": "深度学习精要 第17版",
+    "author": "马丽",
+    "isbn": "978-0-000000370-0",
+    "price": 27.39,
+    "publishedDate": "1991-01-03",
+    "stockQuantity": 185
+  },
+  {
+    "title": "Effective Network Security Vol.19",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000371-1",
+    "price": 13.96,
+    "publishedDate": "2006-02-08",
+    "stockQuantity": 4
+  },
+  {
+    "title": "Mastering Algorithms Vol.11",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000372-8",
+    "price": 166.42,
+    "publishedDate": "1982-07-15",
+    "stockQuantity": 28
+  },
+  {
+    "title": "技术领导力 第20版",
+    "author": "徐丽",
+    "isbn": "978-0-000000373-7",
+    "price": 93.62,
+    "publishedDate": "1998-01-10",
+    "stockQuantity": 11
+  },
+  {
+    "title": "架构之美 第17版",
+    "author": "黄磊",
+    "isbn": "978-0-000000374-6",
+    "price": 70.02,
+    "publishedDate": "1983-08-28",
+    "stockQuantity": 199
+  },
+  {
+    "title": "编程之美 第14版",
+    "author": "刘洋",
+    "isbn": "978-0-000000375-6",
+    "price": 71.69,
+    "publishedDate": "1995-07-22",
+    "stockQuantity": 172
+  },
+  {
+    "title": "Learning Network Security Vol.3",
+    "author": "John Smith",
+    "isbn": "978-0-000000376-9",
+    "price": 91.86,
+    "publishedDate": "2010-12-20",
+    "stockQuantity": 95
+  },
+  {
+    "title": "Essential Algorithms Vol.17",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000377-3",
+    "price": 157.48,
+    "publishedDate": "2004-11-14",
+    "stockQuantity": 38
+  },
+  {
+    "title": "Modern Machine Learning Vol.3",
+    "author": "David Wilson",
+    "isbn": "978-0-000000378-7",
+    "price": 162.91,
+    "publishedDate": "2008-10-16",
+    "stockQuantity": 32
+  },
+  {
+    "title": "Hands-On Machine Learning Vol.19",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000379-3",
+    "price": 31.61,
+    "publishedDate": "1998-03-04",
+    "stockQuantity": 11
+  },
+  {
+    "title": "高并发编程 第10版",
+    "author": "杨杰",
+    "isbn": "978-0-000000380-3",
+    "price": 105.23,
+    "publishedDate": "2008-03-18",
+    "stockQuantity": 22
+  },
+  {
+    "title": "数据库性能优化 第4版",
+    "author": "刘洋",
+    "isbn": "978-0-000000381-7",
+    "price": 87.02,
+    "publishedDate": "2005-08-10",
+    "stockQuantity": 97
+  },
+  {
+    "title": "高并发编程 第8版",
+    "author": "罗丹",
+    "isbn": "978-0-000000382-8",
+    "price": 177.04,
+    "publishedDate": "1980-04-05",
+    "stockQuantity": 82
+  },
+  {
+    "title": "Comprehensive Distributed Systems Vol.6",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000383-6",
+    "price": 105.70,
+    "publishedDate": "2021-08-15",
+    "stockQuantity": 191
+  },
+  {
+    "title": "Effective Network Security Vol.2",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000384-6",
+    "price": 103.99,
+    "publishedDate": "2008-11-15",
+    "stockQuantity": 52
+  },
+  {
+    "title": "Effective Microservices Vol.12",
+    "author": "William Thomas",
+    "isbn": "978-0-000000385-2",
+    "price": 27.68,
+    "publishedDate": "2019-11-16",
+    "stockQuantity": 185
+  },
+  {
+    "title": "编程之美 第17版",
+    "author": "孙强",
+    "isbn": "978-0-000000386-9",
+    "price": 62.33,
+    "publishedDate": "1991-01-24",
+    "stockQuantity": 145
+  },
+  {
+    "title": "微服务架构设计 第17版",
+    "author": "刘洋",
+    "isbn": "978-0-000000387-3",
+    "price": 121.77,
+    "publishedDate": "1989-08-26",
+    "stockQuantity": 12
+  },
+  {
+    "title": "Comprehensive API Design Vol.2",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000388-2",
+    "price": 198.93,
+    "publishedDate": "1996-11-23",
+    "stockQuantity": 38
+  },
+  {
+    "title": "大数据处理实战 第13版",
+    "author": "杨杰",
+    "isbn": "978-0-000000389-9",
+    "price": 106.32,
+    "publishedDate": "2003-11-17",
+    "stockQuantity": 115
+  },
+  {
+    "title": "Effective Data Structures Vol.9",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000390-6",
+    "price": 59.10,
+    "publishedDate": "1983-12-27",
+    "stockQuantity": 134
+  },
+  {
+    "title": "技术领导力 第5版",
+    "author": "吴昊",
+    "isbn": "978-0-000000391-7",
+    "price": 63.15,
+    "publishedDate": "2022-06-04",
+    "stockQuantity": 110
+  },
+  {
+    "title": "架构之美 第19版",
+    "author": "林峰",
+    "isbn": "978-0-000000392-2",
+    "price": 98.66,
+    "publishedDate": "2015-12-21",
+    "stockQuantity": 158
+  },
+  {
+    "title": "Effective Algorithms Vol.18",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000393-9",
+    "price": 78.61,
+    "publishedDate": "2010-04-21",
+    "stockQuantity": 117
+  },
+  {
+    "title": "数据结构与算法 第4版",
+    "author": "罗丹",
+    "isbn": "978-0-000000394-9",
+    "price": 101.37,
+    "publishedDate": "1985-01-10",
+    "stockQuantity": 165
+  },
+  {
+    "title": "Hands-On API Design Vol.6",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000395-0",
+    "price": 62.23,
+    "publishedDate": "2005-07-21",
+    "stockQuantity": 127
+  },
+  {
+    "title": "The Art of Distributed Systems Vol.4",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000396-7",
+    "price": 82.50,
+    "publishedDate": "2018-02-20",
+    "stockQuantity": 111
+  },
+  {
+    "title": "Deep Dive into Machine Learning Vol.9",
+    "author": "James White",
+    "isbn": "978-0-000000397-1",
+    "price": 142.20,
+    "publishedDate": "2018-01-02",
+    "stockQuantity": 96
+  },
+  {
+    "title": "Deep Dive into Web Development Vol.7",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000398-5",
+    "price": 86.89,
+    "publishedDate": "2020-08-05",
+    "stockQuantity": 61
+  },
+  {
+    "title": "深度学习精要 第2版",
+    "author": "朱勇",
+    "isbn": "978-0-000000399-8",
+    "price": 166.51,
+    "publishedDate": "2022-09-20",
+    "stockQuantity": 154
+  },
+  {
+    "title": "Hands-On Software Engineering Vol.3",
+    "author": "James White",
+    "isbn": "978-0-000000400-6",
+    "price": 103.84,
+    "publishedDate": "2005-09-09",
+    "stockQuantity": 184
+  },
+  {
+    "title": "Introduction to System Design Vol.8",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000401-6",
+    "price": 197.69,
+    "publishedDate": "1997-08-27",
+    "stockQuantity": 82
+  },
+  {
+    "title": "Modern Microservices Vol.15",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000402-7",
+    "price": 19.76,
+    "publishedDate": "1990-09-04",
+    "stockQuantity": 125
+  },
+  {
+    "title": "Hands-On Algorithms Vol.5",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000403-0",
+    "price": 84.86,
+    "publishedDate": "2019-03-26",
+    "stockQuantity": 25
+  },
+  {
+    "title": "Effective Microservices Vol.9",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000404-5",
+    "price": 40.87,
+    "publishedDate": "2019-06-21",
+    "stockQuantity": 132
+  },
+  {
+    "title": "产品经理手册 第14版",
+    "author": "徐丽",
+    "isbn": "978-0-000000405-0",
+    "price": 131.63,
+    "publishedDate": "1985-01-24",
+    "stockQuantity": 59
+  },
+  {
+    "title": "Learning Java Programming Vol.2",
+    "author": "David Wilson",
+    "isbn": "978-0-000000406-8",
+    "price": 28.44,
+    "publishedDate": "2012-08-02",
+    "stockQuantity": 134
+  },
+  {
+    "title": "Python 编程之道 第11版",
+    "author": "陈静",
+    "isbn": "978-0-000000407-2",
+    "price": 51.36,
+    "publishedDate": "1985-03-24",
+    "stockQuantity": 66
+  },
+  {
+    "title": "Java 高级编程 第10版",
+    "author": "张伟",
+    "isbn": "978-0-000000408-7",
+    "price": 14.72,
+    "publishedDate": "1988-02-20",
+    "stockQuantity": 144
+  },
+  {
+    "title": "代码重构 第6版",
+    "author": "杨杰",
+    "isbn": "978-0-000000409-1",
+    "price": 177.27,
+    "publishedDate": "2003-10-23",
+    "stockQuantity": 187
+  },
+  {
+    "title": "Essential Distributed Systems Vol.12",
+    "author": "David Wilson",
+    "isbn": "978-0-000000410-6",
+    "price": 142.76,
+    "publishedDate": "2008-07-26",
+    "stockQuantity": 89
+  },
+  {
+    "title": "Comprehensive Software Engineering Vol.6",
+    "author": "David Wilson",
+    "isbn": "978-0-000000411-4",
+    "price": 133.05,
+    "publishedDate": "2016-09-20",
+    "stockQuantity": 139
+  },
+  {
+    "title": "Comprehensive Web Development Vol.11",
+    "author": "David Wilson",
+    "isbn": "978-0-000000412-4",
+    "price": 107.90,
+    "publishedDate": "1981-01-24",
+    "stockQuantity": 58
+  },
+  {
+    "title": "产品经理手册 第2版",
+    "author": "黄磊",
+    "isbn": "978-0-000000413-1",
+    "price": 160.18,
+    "publishedDate": "2001-03-27",
+    "stockQuantity": 185
+  },
+  {
+    "title": "人工智能入门 第15版",
+    "author": "何明",
+    "isbn": "978-0-000000414-3",
+    "price": 14.98,
+    "publishedDate": "2021-11-27",
+    "stockQuantity": 128
+  },
+  {
+    "title": "Deep Dive into System Design Vol.6",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000415-8",
+    "price": 67.68,
+    "publishedDate": "2020-05-20",
+    "stockQuantity": 187
+  },
+  {
+    "title": "Essential Microservices Vol.4",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000416-0",
+    "price": 114.51,
+    "publishedDate": "2021-06-17",
+    "stockQuantity": 106
+  },
+  {
+    "title": "架构之美 第18版",
+    "author": "黄磊",
+    "isbn": "978-0-000000417-3",
+    "price": 128.28,
+    "publishedDate": "2006-05-27",
+    "stockQuantity": 102
+  },
+  {
+    "title": "The Art of Web Development Vol.14",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000418-5",
+    "price": 80.82,
+    "publishedDate": "1989-02-15",
+    "stockQuantity": 55
+  },
+  {
+    "title": "数据结构与算法 第11版",
+    "author": "林峰",
+    "isbn": "978-0-000000419-5",
+    "price": 107.16,
+    "publishedDate": "2016-10-17",
+    "stockQuantity": 88
+  },
+  {
+    "title": "Advanced Python Development Vol.1",
+    "author": "William Thomas",
+    "isbn": "978-0-000000420-1",
+    "price": 190.75,
+    "publishedDate": "1985-06-28",
+    "stockQuantity": 199
+  },
+  {
+    "title": "Web 安全攻防 第3版",
+    "author": "刘洋",
+    "isbn": "978-0-000000421-0",
+    "price": 106.92,
+    "publishedDate": "2004-05-20",
+    "stockQuantity": 113
+  },
+  {
+    "title": "技术领导力 第1版",
+    "author": "张伟",
+    "isbn": "978-0-000000422-4",
+    "price": 70.68,
+    "publishedDate": "2018-04-26",
+    "stockQuantity": 105
+  },
+  {
+    "title": "人工智能入门 第4版",
+    "author": "马丽",
+    "isbn": "978-0-000000423-5",
+    "price": 161.45,
+    "publishedDate": "2021-07-11",
+    "stockQuantity": 132
+  },
+  {
+    "title": "深度学习精要 第1版",
+    "author": "吴昊",
+    "isbn": "978-0-000000424-7",
+    "price": 59.98,
+    "publishedDate": "1987-07-07",
+    "stockQuantity": 134
+  },
+  {
+    "title": "大数据处理实战 第11版",
+    "author": "陈静",
+    "isbn": "978-0-000000425-2",
+    "price": 26.33,
+    "publishedDate": "2015-08-08",
+    "stockQuantity": 10
+  },
+  {
+    "title": "Essential Distributed Systems Vol.7",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000426-4",
+    "price": 79.39,
+    "publishedDate": "1982-01-18",
+    "stockQuantity": 177
+  },
+  {
+    "title": "Introduction to Microservices Vol.16",
+    "author": "James White",
+    "isbn": "978-0-000000427-6",
+    "price": 118.85,
+    "publishedDate": "2013-07-04",
+    "stockQuantity": 7
+  },
+  {
+    "title": "Web 安全攻防 第7版",
+    "author": "赵敏",
+    "isbn": "978-0-000000428-5",
+    "price": 22.26,
+    "publishedDate": "2024-05-21",
+    "stockQuantity": 53
+  },
+  {
+    "title": "Java 高级编程 第14版",
+    "author": "高远",
+    "isbn": "978-0-000000429-0",
+    "price": 171.27,
+    "publishedDate": "1992-11-18",
+    "stockQuantity": 38
+  },
+  {
+    "title": "Deep Dive into Python Development Vol.2",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000430-0",
+    "price": 102.56,
+    "publishedDate": "1994-05-12",
+    "stockQuantity": 74
+  },
+  {
+    "title": "产品经理手册 第5版",
+    "author": "杨杰",
+    "isbn": "978-0-000000431-9",
+    "price": 63.33,
+    "publishedDate": "1982-01-02",
+    "stockQuantity": 191
+  },
+  {
+    "title": "Essential Machine Learning Vol.20",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000432-0",
+    "price": 81.38,
+    "publishedDate": "2010-03-05",
+    "stockQuantity": 48
+  },
+  {
+    "title": "Deep Dive into API Design Vol.19",
+    "author": "David Wilson",
+    "isbn": "978-0-000000433-7",
+    "price": 157.02,
+    "publishedDate": "1985-09-18",
+    "stockQuantity": 132
+  },
+  {
+    "title": "Learning Cloud Computing Vol.9",
+    "author": "John Smith",
+    "isbn": "978-0-000000434-9",
+    "price": 160.34,
+    "publishedDate": "1987-11-12",
+    "stockQuantity": 60
+  },
+  {
+    "title": "Deep Dive into DevOps Vol.5",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000435-1",
+    "price": 111.62,
+    "publishedDate": "2000-08-14",
+    "stockQuantity": 161
+  },
+  {
+    "title": "数据库性能优化 第17版",
+    "author": "高远",
+    "isbn": "978-0-000000436-6",
+    "price": 78.38,
+    "publishedDate": "2013-10-06",
+    "stockQuantity": 107
+  },
+  {
+    "title": "Python 编程之道 第18版",
+    "author": "赵敏",
+    "isbn": "978-0-000000437-2",
+    "price": 36.51,
+    "publishedDate": "2002-08-23",
+    "stockQuantity": 4
+  },
+  {
+    "title": "人工智能入门 第19版",
+    "author": "吴昊",
+    "isbn": "978-0-000000438-9",
+    "price": 164.95,
+    "publishedDate": "2020-09-25",
+    "stockQuantity": 163
+  },
+  {
+    "title": "Linux 系统管理 第12版",
+    "author": "孙强",
+    "isbn": "978-0-000000439-1",
+    "price": 79.78,
+    "publishedDate": "1992-10-16",
+    "stockQuantity": 134
+  },
+  {
+    "title": "Python 编程之道 第19版",
+    "author": "刘洋",
+    "isbn": "978-0-000000440-3",
+    "price": 72.07,
+    "publishedDate": "1994-12-27",
+    "stockQuantity": 10
+  },
+  {
+    "title": "Deep Dive into Software Architecture Vol.3",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000441-9",
+    "price": 187.84,
+    "publishedDate": "1997-08-16",
+    "stockQuantity": 43
+  },
+  {
+    "title": "技术领导力 第14版",
+    "author": "孙强",
+    "isbn": "978-0-000000442-3",
+    "price": 161.16,
+    "publishedDate": "1980-09-28",
+    "stockQuantity": 157
+  },
+  {
+    "title": "Comprehensive System Design Vol.1",
+    "author": "John Smith",
+    "isbn": "978-0-000000443-6",
+    "price": 159.43,
+    "publishedDate": "2001-03-13",
+    "stockQuantity": 175
+  },
+  {
+    "title": "Web 安全攻防 第1版",
+    "author": "杨杰",
+    "isbn": "978-0-000000444-2",
+    "price": 52.31,
+    "publishedDate": "1985-01-16",
+    "stockQuantity": 74
+  },
+  {
+    "title": "技术领导力 第3版",
+    "author": "徐丽",
+    "isbn": "978-0-000000445-2",
+    "price": 137.20,
+    "publishedDate": "2023-02-28",
+    "stockQuantity": 25
+  },
+  {
+    "title": "Java 高级编程 第7版",
+    "author": "张伟",
+    "isbn": "978-0-000000446-2",
+    "price": 32.60,
+    "publishedDate": "1991-07-17",
+    "stockQuantity": 191
+  },
+  {
+    "title": "Practical Guide to System Design Vol.6",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000447-9",
+    "price": 155.59,
+    "publishedDate": "2004-07-04",
+    "stockQuantity": 34
+  },
+  {
+    "title": "技术领导力 第8版",
+    "author": "徐丽",
+    "isbn": "978-0-000000448-7",
+    "price": 131.44,
+    "publishedDate": "2017-06-04",
+    "stockQuantity": 132
+  },
+  {
+    "title": "Hands-On Web Development Vol.10",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000449-3",
+    "price": 91.76,
+    "publishedDate": "1998-12-09",
+    "stockQuantity": 81
+  },
+  {
+    "title": "Introduction to DevOps Vol.16",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000450-3",
+    "price": 69.25,
+    "publishedDate": "2008-05-12",
+    "stockQuantity": 175
+  },
+  {
+    "title": "The Art of Software Architecture Vol.10",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000451-9",
+    "price": 147.68,
+    "publishedDate": "2009-05-18",
+    "stockQuantity": 165
+  },
+  {
+    "title": "Hands-On Microservices Vol.2",
+    "author": "James White",
+    "isbn": "978-0-000000452-2",
+    "price": 110.33,
+    "publishedDate": "2024-03-01",
+    "stockQuantity": 125
+  },
+  {
+    "title": "人工智能入门 第17版",
+    "author": "赵敏",
+    "isbn": "978-0-000000453-5",
+    "price": 72.19,
+    "publishedDate": "2001-07-02",
+    "stockQuantity": 191
+  },
+  {
+    "title": "大数据处理实战 第6版",
+    "author": "黄磊",
+    "isbn": "978-0-000000454-3",
+    "price": 142.75,
+    "publishedDate": "2022-06-10",
+    "stockQuantity": 136
+  },
+  {
+    "title": "云原生应用开发 第11版",
+    "author": "张伟",
+    "isbn": "978-0-000000455-5",
+    "price": 34.77,
+    "publishedDate": "2001-04-11",
+    "stockQuantity": 7
+  },
+  {
+    "title": "Learning Distributed Systems Vol.9",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000456-9",
+    "price": 33.73,
+    "publishedDate": "2005-09-18",
+    "stockQuantity": 17
+  },
+  {
+    "title": "Essential Data Structures Vol.10",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000457-3",
+    "price": 194.42,
+    "publishedDate": "1982-02-09",
+    "stockQuantity": 6
+  },
+  {
+    "title": "Introduction to Web Development Vol.12",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000458-1",
+    "price": 126.19,
+    "publishedDate": "2016-01-21",
+    "stockQuantity": 48
+  },
+  {
+    "title": "Practical Guide to Data Structures Vol.6",
+    "author": "David Wilson",
+    "isbn": "978-0-000000459-8",
+    "price": 114.99,
+    "publishedDate": "1998-07-08",
+    "stockQuantity": 173
+  },
+  {
+    "title": "Mastering API Design Vol.1",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000460-9",
+    "price": 97.57,
+    "publishedDate": "2018-04-04",
+    "stockQuantity": 154
+  },
+  {
+    "title": "Hands-On Data Structures Vol.14",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000461-2",
+    "price": 185.75,
+    "publishedDate": "2017-07-24",
+    "stockQuantity": 65
+  },
+  {
+    "title": "Practical Guide to Software Engineering Vol.12",
+    "author": "John Smith",
+    "isbn": "978-0-000000462-1",
+    "price": 38.57,
+    "publishedDate": "2009-01-26",
+    "stockQuantity": 173
+  },
+  {
+    "title": "Hands-On Database Systems Vol.7",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000463-4",
+    "price": 193.94,
+    "publishedDate": "2008-09-24",
+    "stockQuantity": 37
+  },
+  {
+    "title": "数据库性能优化 第2版",
+    "author": "林峰",
+    "isbn": "978-0-000000464-3",
+    "price": 155.10,
+    "publishedDate": "2014-03-14",
+    "stockQuantity": 149
+  },
+  {
+    "title": "The Art of System Design Vol.5",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000465-8",
+    "price": 87.92,
+    "publishedDate": "1994-08-05",
+    "stockQuantity": 40
+  },
+  {
+    "title": "深入理解 JVM 第15版",
+    "author": "刘洋",
+    "isbn": "978-0-000000466-9",
+    "price": 139.82,
+    "publishedDate": "2005-11-17",
+    "stockQuantity": 39
+  },
+  {
+    "title": "Essential Java Programming Vol.18",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000467-0",
+    "price": 191.58,
+    "publishedDate": "2021-09-13",
+    "stockQuantity": 107
+  },
+  {
+    "title": "Essential Software Engineering Vol.3",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000468-1",
+    "price": 180.25,
+    "publishedDate": "1982-03-18",
+    "stockQuantity": 122
+  },
+  {
+    "title": "Advanced Microservices Vol.13",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000469-0",
+    "price": 62.78,
+    "publishedDate": "2015-09-13",
+    "stockQuantity": 105
+  },
+  {
+    "title": "Deep Dive into Web Development Vol.12",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000470-1",
+    "price": 121.08,
+    "publishedDate": "1983-02-16",
+    "stockQuantity": 34
+  },
+  {
+    "title": "云原生应用开发 第20版",
+    "author": "李娜",
+    "isbn": "978-0-000000471-9",
+    "price": 39.06,
+    "publishedDate": "2020-06-23",
+    "stockQuantity": 16
+  },
+  {
+    "title": "Deep Dive into Cloud Computing Vol.6",
+    "author": "David Wilson",
+    "isbn": "978-0-000000472-9",
+    "price": 29.77,
+    "publishedDate": "1983-04-12",
+    "stockQuantity": 182
+  },
+  {
+    "title": "大数据处理实战 第7版",
+    "author": "徐丽",
+    "isbn": "978-0-000000473-2",
+    "price": 56.37,
+    "publishedDate": "1989-02-27",
+    "stockQuantity": 123
+  },
+  {
+    "title": "产品经理手册 第17版",
+    "author": "林峰",
+    "isbn": "978-0-000000474-8",
+    "price": 55.20,
+    "publishedDate": "1982-02-25",
+    "stockQuantity": 183
+  },
+  {
+    "title": "云原生应用开发 第4版",
+    "author": "杨杰",
+    "isbn": "978-0-000000475-0",
+    "price": 27.99,
+    "publishedDate": "2006-05-11",
+    "stockQuantity": 48
+  },
+  {
+    "title": "代码重构 第11版",
+    "author": "郭鑫",
+    "isbn": "978-0-000000476-9",
+    "price": 65.11,
+    "publishedDate": "2005-08-15",
+    "stockQuantity": 181
+  },
+  {
+    "title": "Learning Cloud Computing Vol.2",
+    "author": "John Smith",
+    "isbn": "978-0-000000477-5",
+    "price": 57.95,
+    "publishedDate": "2015-02-19",
+    "stockQuantity": 104
+  },
+  {
+    "title": "代码重构 第10版",
+    "author": "朱勇",
+    "isbn": "978-0-000000478-5",
+    "price": 195.60,
+    "publishedDate": "2013-12-11",
+    "stockQuantity": 75
+  },
+  {
+    "title": "Practical Guide to Network Security Vol.3",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000479-5",
+    "price": 159.92,
+    "publishedDate": "1999-08-18",
+    "stockQuantity": 49
+  },
+  {
+    "title": "Advanced DevOps Vol.8",
+    "author": "James White",
+    "isbn": "978-0-000000480-9",
+    "price": 66.72,
+    "publishedDate": "2006-07-23",
+    "stockQuantity": 146
+  },
+  {
+    "title": "分布式系统实践 第8版",
+    "author": "吴昊",
+    "isbn": "978-0-000000481-3",
+    "price": 71.21,
+    "publishedDate": "2017-06-14",
+    "stockQuantity": 31
+  },
+  {
+    "title": "Practical Guide to Java Programming Vol.9",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000482-3",
+    "price": 145.39,
+    "publishedDate": "2012-05-27",
+    "stockQuantity": 106
+  },
+  {
+    "title": "The Art of Software Engineering Vol.11",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000483-4",
+    "price": 131.37,
+    "publishedDate": "2009-09-23",
+    "stockQuantity": 113
+  },
+  {
+    "title": "Practical Guide to Network Security Vol.1",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000484-1",
+    "price": 141.76,
+    "publishedDate": "2004-08-04",
+    "stockQuantity": 26
+  },
+  {
+    "title": "代码精进之路 第8版",
+    "author": "赵敏",
+    "isbn": "978-0-000000485-9",
+    "price": 42.78,
+    "publishedDate": "2021-02-24",
+    "stockQuantity": 64
+  },
+  {
+    "title": "The Art of Network Security Vol.19",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000486-2",
+    "price": 58.67,
+    "publishedDate": "1994-11-09",
+    "stockQuantity": 60
+  },
+  {
+    "title": "The Art of Software Engineering Vol.2",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000487-5",
+    "price": 28.65,
+    "publishedDate": "2016-06-13",
+    "stockQuantity": 48
+  },
+  {
+    "title": "深入理解 JVM 第18版",
+    "author": "郭鑫",
+    "isbn": "978-0-000000488-7",
+    "price": 160.36,
+    "publishedDate": "2001-12-02",
+    "stockQuantity": 95
+  },
+  {
+    "title": "Learning Java Programming Vol.7",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000489-7",
+    "price": 141.99,
+    "publishedDate": "2013-01-09",
+    "stockQuantity": 126
+  },
+  {
+    "title": "Modern Python Development Vol.2",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000490-4",
+    "price": 145.20,
+    "publishedDate": "1980-04-26",
+    "stockQuantity": 140
+  },
+  {
+    "title": "Java 高级编程 第2版",
+    "author": "杨杰",
+    "isbn": "978-0-000000491-6",
+    "price": 102.33,
+    "publishedDate": "2001-12-28",
+    "stockQuantity": 60
+  },
+  {
+    "title": "Introduction to Machine Learning Vol.15",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000492-7",
+    "price": 164.04,
+    "publishedDate": "1981-10-15",
+    "stockQuantity": 68
+  },
+  {
+    "title": "微服务架构设计 第20版",
+    "author": "刘洋",
+    "isbn": "978-0-000000493-5",
+    "price": 124.40,
+    "publishedDate": "2018-07-07",
+    "stockQuantity": 173
+  },
+  {
+    "title": "Java 高级编程 第11版",
+    "author": "王芳",
+    "isbn": "978-0-000000494-3",
+    "price": 85.75,
+    "publishedDate": "2011-01-14",
+    "stockQuantity": 15
+  },
+  {
+    "title": "Deep Dive into Algorithms Vol.6",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000495-4",
+    "price": 169.15,
+    "publishedDate": "2022-01-07",
+    "stockQuantity": 139
+  },
+  {
+    "title": "人工智能入门 第17版",
+    "author": "林峰",
+    "isbn": "978-0-000000496-1",
+    "price": 93.08,
+    "publishedDate": "2004-10-17",
+    "stockQuantity": 33
+  },
+  {
+    "title": "Essential Distributed Systems Vol.17",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000497-4",
+    "price": 11.22,
+    "publishedDate": "1988-02-26",
+    "stockQuantity": 16
+  },
+  {
+    "title": "分布式系统实践 第10版",
+    "author": "周婷",
+    "isbn": "978-0-000000498-6",
+    "price": 184.35,
+    "publishedDate": "2024-10-08",
+    "stockQuantity": 60
+  },
+  {
+    "title": "Comprehensive DevOps Vol.10",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000499-9",
+    "price": 25.68,
+    "publishedDate": "1983-11-22",
+    "stockQuantity": 36
+  },
+  {
+    "title": "深入理解 JVM 第11版",
+    "author": "黄磊",
+    "isbn": "978-0-000000500-7",
+    "price": 44.35,
+    "publishedDate": "1982-04-21",
+    "stockQuantity": 199
+  },
+  {
+    "title": "Essential Distributed Systems Vol.3",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000501-2",
+    "price": 27.54,
+    "publishedDate": "2019-11-26",
+    "stockQuantity": 123
+  },
+  {
+    "title": "产品经理手册 第8版",
+    "author": "黄磊",
+    "isbn": "978-0-000000502-8",
+    "price": 18.43,
+    "publishedDate": "1999-06-24",
+    "stockQuantity": 126
+  },
+  {
+    "title": "Essential Algorithms Vol.7",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000503-7",
+    "price": 96.35,
+    "publishedDate": "1985-08-01",
+    "stockQuantity": 79
+  },
+  {
+    "title": "微服务架构设计 第12版",
+    "author": "郭鑫",
+    "isbn": "978-0-000000504-7",
+    "price": 166.42,
+    "publishedDate": "2000-08-28",
+    "stockQuantity": 75
+  },
+  {
+    "title": "产品经理手册 第15版",
+    "author": "刘洋",
+    "isbn": "978-0-000000505-0",
+    "price": 169.19,
+    "publishedDate": "2023-01-09",
+    "stockQuantity": 95
+  },
+  {
+    "title": "Linux 系统管理 第16版",
+    "author": "王芳",
+    "isbn": "978-0-000000506-4",
+    "price": 45.50,
+    "publishedDate": "2002-02-09",
+    "stockQuantity": 107
+  },
+  {
+    "title": "Modern Algorithms Vol.17",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000507-3",
+    "price": 97.01,
+    "publishedDate": "2006-08-20",
+    "stockQuantity": 197
+  },
+  {
+    "title": "Introduction to Software Engineering Vol.3",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000508-6",
+    "price": 110.73,
+    "publishedDate": "2006-11-07",
+    "stockQuantity": 99
+  },
+  {
+    "title": "Advanced Java Programming Vol.7",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000509-5",
+    "price": 157.02,
+    "publishedDate": "1991-05-01",
+    "stockQuantity": 86
+  },
+  {
+    "title": "代码重构 第8版",
+    "author": "张伟",
+    "isbn": "978-0-000000510-1",
+    "price": 132.67,
+    "publishedDate": "2021-12-11",
+    "stockQuantity": 139
+  },
+  {
+    "title": "云原生应用开发 第5版",
+    "author": "李娜",
+    "isbn": "978-0-000000511-1",
+    "price": 16.03,
+    "publishedDate": "2019-07-18",
+    "stockQuantity": 35
+  },
+  {
+    "title": "Hands-On System Design Vol.10",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000512-7",
+    "price": 25.66,
+    "publishedDate": "2012-02-17",
+    "stockQuantity": 145
+  },
+  {
+    "title": "The Art of Network Security Vol.16",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000513-6",
+    "price": 130.94,
+    "publishedDate": "2019-07-13",
+    "stockQuantity": 125
+  },
+  {
+    "title": "架构之美 第6版",
+    "author": "李娜",
+    "isbn": "978-0-000000514-7",
+    "price": 16.87,
+    "publishedDate": "2012-12-27",
+    "stockQuantity": 24
+  },
+  {
+    "title": "微服务架构设计 第11版",
+    "author": "林峰",
+    "isbn": "978-0-000000515-7",
+    "price": 22.41,
+    "publishedDate": "2011-09-15",
+    "stockQuantity": 199
+  },
+  {
+    "title": "Deep Dive into Cloud Computing Vol.11",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000516-3",
+    "price": 31.67,
+    "publishedDate": "2000-02-25",
+    "stockQuantity": 76
+  },
+  {
+    "title": "Effective Machine Learning Vol.2",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000517-8",
+    "price": 113.07,
+    "publishedDate": "1988-04-17",
+    "stockQuantity": 58
+  },
+  {
+    "title": "高并发编程 第4版",
+    "author": "朱勇",
+    "isbn": "978-0-000000518-2",
+    "price": 75.92,
+    "publishedDate": "1994-03-03",
+    "stockQuantity": 172
+  },
+  {
+    "title": "云原生应用开发 第8版",
+    "author": "罗丹",
+    "isbn": "978-0-000000519-4",
+    "price": 113.12,
+    "publishedDate": "1998-06-20",
+    "stockQuantity": 81
+  },
+  {
+    "title": "Java 高级编程 第11版",
+    "author": "胡晓",
+    "isbn": "978-0-000000520-4",
+    "price": 103.12,
+    "publishedDate": "1987-03-22",
+    "stockQuantity": 43
+  },
+  {
+    "title": "云原生应用开发 第5版",
+    "author": "何明",
+    "isbn": "978-0-000000521-8",
+    "price": 60.03,
+    "publishedDate": "2018-11-23",
+    "stockQuantity": 61
+  },
+  {
+    "title": "代码重构 第12版",
+    "author": "张伟",
+    "isbn": "978-0-000000522-8",
+    "price": 160.54,
+    "publishedDate": "1991-09-25",
+    "stockQuantity": 156
+  },
+  {
+    "title": "微服务架构设计 第19版",
+    "author": "王芳",
+    "isbn": "978-0-000000523-2",
+    "price": 111.42,
+    "publishedDate": "2024-07-12",
+    "stockQuantity": 76
+  },
+  {
+    "title": "Hands-On Machine Learning Vol.10",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000524-6",
+    "price": 115.53,
+    "publishedDate": "2014-12-28",
+    "stockQuantity": 146
+  },
+  {
+    "title": "Hands-On Web Development Vol.12",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000525-8",
+    "price": 22.26,
+    "publishedDate": "2013-06-24",
+    "stockQuantity": 63
+  },
+  {
+    "title": "Python 编程之道 第1版",
+    "author": "孙强",
+    "isbn": "978-0-000000526-4",
+    "price": 98.40,
+    "publishedDate": "1993-11-25",
+    "stockQuantity": 81
+  },
+  {
+    "title": "Essential Software Architecture Vol.15",
+    "author": "David Wilson",
+    "isbn": "978-0-000000527-9",
+    "price": 67.61,
+    "publishedDate": "1982-06-28",
+    "stockQuantity": 134
+  },
+  {
+    "title": "Mastering Cloud Computing Vol.9",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000528-1",
+    "price": 185.12,
+    "publishedDate": "1999-11-22",
+    "stockQuantity": 60
+  },
+  {
+    "title": "数据库性能优化 第4版",
+    "author": "马丽",
+    "isbn": "978-0-000000529-0",
+    "price": 145.68,
+    "publishedDate": "1987-03-01",
+    "stockQuantity": 131
+  },
+  {
+    "title": "Deep Dive into Machine Learning Vol.19",
+    "author": "William Thomas",
+    "isbn": "978-0-000000530-8",
+    "price": 196.96,
+    "publishedDate": "1991-04-21",
+    "stockQuantity": 196
+  },
+  {
+    "title": "Java 高级编程 第18版",
+    "author": "赵敏",
+    "isbn": "978-0-000000531-9",
+    "price": 41.53,
+    "publishedDate": "2020-02-10",
+    "stockQuantity": 118
+  },
+  {
+    "title": "Deep Dive into Python Development Vol.19",
+    "author": "David Wilson",
+    "isbn": "978-0-000000532-1",
+    "price": 9.05,
+    "publishedDate": "2003-06-19",
+    "stockQuantity": 170
+  },
+  {
+    "title": "技术领导力 第19版",
+    "author": "杨杰",
+    "isbn": "978-0-000000533-6",
+    "price": 64.71,
+    "publishedDate": "2018-03-22",
+    "stockQuantity": 124
+  },
+  {
+    "title": "Advanced API Design Vol.13",
+    "author": "John Smith",
+    "isbn": "978-0-000000534-1",
+    "price": 18.49,
+    "publishedDate": "1995-12-23",
+    "stockQuantity": 167
+  },
+  {
+    "title": "数据结构与算法 第19版",
+    "author": "徐丽",
+    "isbn": "978-0-000000535-1",
+    "price": 79.93,
+    "publishedDate": "2000-02-26",
+    "stockQuantity": 56
+  },
+  {
+    "title": "深度学习精要 第20版",
+    "author": "何明",
+    "isbn": "978-0-000000536-1",
+    "price": 90.83,
+    "publishedDate": "1987-06-25",
+    "stockQuantity": 5
+  },
+  {
+    "title": "Web 安全攻防 第13版",
+    "author": "孙强",
+    "isbn": "978-0-000000537-7",
+    "price": 11.69,
+    "publishedDate": "1993-07-15",
+    "stockQuantity": 45
+  },
+  {
+    "title": "数据库性能优化 第9版",
+    "author": "高远",
+    "isbn": "978-0-000000538-1",
+    "price": 125.65,
+    "publishedDate": "1985-10-02",
+    "stockQuantity": 143
+  },
+  {
+    "title": "云原生应用开发 第10版",
+    "author": "周婷",
+    "isbn": "978-0-000000539-0",
+    "price": 19.11,
+    "publishedDate": "1982-01-17",
+    "stockQuantity": 76
+  },
+  {
+    "title": "微服务架构设计 第11版",
+    "author": "林峰",
+    "isbn": "978-0-000000540-9",
+    "price": 133.83,
+    "publishedDate": "1996-10-26",
+    "stockQuantity": 166
+  },
+  {
+    "title": "The Art of Distributed Systems Vol.15",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000541-4",
+    "price": 198.64,
+    "publishedDate": "1998-10-07",
+    "stockQuantity": 158
+  },
+  {
+    "title": "Practical Guide to DevOps Vol.19",
+    "author": "James White",
+    "isbn": "978-0-000000542-8",
+    "price": 161.07,
+    "publishedDate": "1987-07-23",
+    "stockQuantity": 70
+  },
+  {
+    "title": "产品经理手册 第20版",
+    "author": "罗丹",
+    "isbn": "978-0-000000543-7",
+    "price": 127.11,
+    "publishedDate": "1990-05-21",
+    "stockQuantity": 102
+  },
+  {
+    "title": "数据库性能优化 第15版",
+    "author": "刘洋",
+    "isbn": "978-0-000000544-2",
+    "price": 181.54,
+    "publishedDate": "2018-12-27",
+    "stockQuantity": 137
+  },
+  {
+    "title": "编程之美 第4版",
+    "author": "陈静",
+    "isbn": "978-0-000000545-8",
+    "price": 58.66,
+    "publishedDate": "2010-06-07",
+    "stockQuantity": 51
+  },
+  {
+    "title": "人工智能入门 第18版",
+    "author": "刘洋",
+    "isbn": "978-0-000000546-0",
+    "price": 194.83,
+    "publishedDate": "1989-07-24",
+    "stockQuantity": 123
+  },
+  {
+    "title": "Practical Guide to API Design Vol.15",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000547-9",
+    "price": 167.58,
+    "publishedDate": "2003-12-02",
+    "stockQuantity": 77
+  },
+  {
+    "title": "深入理解 JVM 第4版",
+    "author": "高远",
+    "isbn": "978-0-000000548-0",
+    "price": 125.52,
+    "publishedDate": "2007-08-11",
+    "stockQuantity": 181
+  },
+  {
+    "title": "数据结构与算法 第2版",
+    "author": "徐丽",
+    "isbn": "978-0-000000549-1",
+    "price": 130.38,
+    "publishedDate": "1989-03-27",
+    "stockQuantity": 135
+  },
+  {
+    "title": "云原生应用开发 第14版",
+    "author": "徐丽",
+    "isbn": "978-0-000000550-7",
+    "price": 140.27,
+    "publishedDate": "1994-11-20",
+    "stockQuantity": 114
+  },
+  {
+    "title": "Hands-On Distributed Systems Vol.18",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000551-5",
+    "price": 123.13,
+    "publishedDate": "2008-02-11",
+    "stockQuantity": 153
+  },
+  {
+    "title": "产品经理手册 第11版",
+    "author": "郭鑫",
+    "isbn": "978-0-000000552-0",
+    "price": 28.31,
+    "publishedDate": "2024-07-12",
+    "stockQuantity": 143
+  },
+  {
+    "title": "Linux 系统管理 第3版",
+    "author": "刘洋",
+    "isbn": "978-0-000000553-2",
+    "price": 95.71,
+    "publishedDate": "1990-01-01",
+    "stockQuantity": 65
+  },
+  {
+    "title": "Modern API Design Vol.15",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000554-1",
+    "price": 50.17,
+    "publishedDate": "2023-02-02",
+    "stockQuantity": 164
+  },
+  {
+    "title": "Comprehensive Machine Learning Vol.17",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000555-6",
+    "price": 83.03,
+    "publishedDate": "1982-09-19",
+    "stockQuantity": 173
+  },
+  {
+    "title": "The Art of Web Development Vol.15",
+    "author": "David Wilson",
+    "isbn": "978-0-000000556-1",
+    "price": 117.47,
+    "publishedDate": "2022-06-26",
+    "stockQuantity": 17
+  },
+  {
+    "title": "Hands-On Java Programming Vol.14",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000557-0",
+    "price": 150.36,
+    "publishedDate": "2006-09-25",
+    "stockQuantity": 77
+  },
+  {
+    "title": "Web 安全攻防 第6版",
+    "author": "徐丽",
+    "isbn": "978-0-000000558-6",
+    "price": 157.49,
+    "publishedDate": "1987-04-11",
+    "stockQuantity": 152
+  },
+  {
+    "title": "Advanced System Design Vol.14",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000559-7",
+    "price": 127.97,
+    "publishedDate": "1989-10-12",
+    "stockQuantity": 190
+  },
+  {
+    "title": "代码精进之路 第6版",
+    "author": "胡晓",
+    "isbn": "978-0-000000560-2",
+    "price": 199.82,
+    "publishedDate": "1990-01-27",
+    "stockQuantity": 99
+  },
+  {
+    "title": "Practical Guide to Data Structures Vol.12",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000561-2",
+    "price": 142.50,
+    "publishedDate": "1998-10-23",
+    "stockQuantity": 178
+  },
+  {
+    "title": "Practical Guide to Algorithms Vol.12",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000562-5",
+    "price": 176.60,
+    "publishedDate": "2008-10-11",
+    "stockQuantity": 103
+  },
+  {
+    "title": "Essential Cloud Computing Vol.7",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000563-5",
+    "price": 33.87,
+    "publishedDate": "2014-03-16",
+    "stockQuantity": 147
+  },
+  {
+    "title": "Mastering Python Development Vol.4",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000564-7",
+    "price": 163.33,
+    "publishedDate": "2015-03-23",
+    "stockQuantity": 153
+  },
+  {
+    "title": "Practical Guide to Database Systems Vol.20",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000565-2",
+    "price": 111.23,
+    "publishedDate": "2003-07-10",
+    "stockQuantity": 166
+  },
+  {
+    "title": "分布式系统实践 第10版",
+    "author": "林峰",
+    "isbn": "978-0-000000566-4",
+    "price": 16.74,
+    "publishedDate": "1995-12-01",
+    "stockQuantity": 55
+  },
+  {
+    "title": "Learning Microservices Vol.15",
+    "author": "James White",
+    "isbn": "978-0-000000567-5",
+    "price": 13.15,
+    "publishedDate": "2005-10-28",
+    "stockQuantity": 160
+  },
+  {
+    "title": "编程之美 第13版",
+    "author": "胡晓",
+    "isbn": "978-0-000000568-3",
+    "price": 71.64,
+    "publishedDate": "2008-03-16",
+    "stockQuantity": 13
+  },
+  {
+    "title": "架构之美 第8版",
+    "author": "林峰",
+    "isbn": "978-0-000000569-9",
+    "price": 23.84,
+    "publishedDate": "2008-05-22",
+    "stockQuantity": 153
+  },
+  {
+    "title": "代码重构 第13版",
+    "author": "王芳",
+    "isbn": "978-0-000000570-1",
+    "price": 146.66,
+    "publishedDate": "2011-02-08",
+    "stockQuantity": 109
+  },
+  {
+    "title": "Modern Cloud Computing Vol.14",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000571-2",
+    "price": 103.38,
+    "publishedDate": "2002-10-25",
+    "stockQuantity": 147
+  },
+  {
+    "title": "Linux 系统管理 第17版",
+    "author": "周婷",
+    "isbn": "978-0-000000572-2",
+    "price": 183.74,
+    "publishedDate": "1985-03-22",
+    "stockQuantity": 178
+  },
+  {
+    "title": "Mastering Machine Learning Vol.5",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000573-6",
+    "price": 153.98,
+    "publishedDate": "2012-06-19",
+    "stockQuantity": 127
+  },
+  {
+    "title": "Mastering Software Architecture Vol.13",
+    "author": "James White",
+    "isbn": "978-0-000000574-4",
+    "price": 17.39,
+    "publishedDate": "1987-01-08",
+    "stockQuantity": 135
+  },
+  {
+    "title": "Learning Java Programming Vol.18",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000575-9",
+    "price": 156.30,
+    "publishedDate": "2002-07-05",
+    "stockQuantity": 191
+  },
+  {
+    "title": "Learning Database Systems Vol.9",
+    "author": "James White",
+    "isbn": "978-0-000000576-6",
+    "price": 172.03,
+    "publishedDate": "2009-08-04",
+    "stockQuantity": 183
+  },
+  {
+    "title": "Deep Dive into Machine Learning Vol.2",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000577-2",
+    "price": 115.06,
+    "publishedDate": "1988-10-25",
+    "stockQuantity": 161
+  },
+  {
+    "title": "数据库性能优化 第8版",
+    "author": "胡晓",
+    "isbn": "978-0-000000578-4",
+    "price": 88.74,
+    "publishedDate": "2020-05-10",
+    "stockQuantity": 34
+  },
+  {
+    "title": "Comprehensive Data Structures Vol.7",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000579-1",
+    "price": 141.44,
+    "publishedDate": "1991-09-11",
+    "stockQuantity": 33
+  },
+  {
+    "title": "Introduction to Web Development Vol.6",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000580-6",
+    "price": 91.46,
+    "publishedDate": "2001-03-27",
+    "stockQuantity": 77
+  },
+  {
+    "title": "微服务架构设计 第1版",
+    "author": "高远",
+    "isbn": "978-0-000000581-3",
+    "price": 72.14,
+    "publishedDate": "2024-05-18",
+    "stockQuantity": 72
+  },
+  {
+    "title": "Essential DevOps Vol.2",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000582-8",
+    "price": 153.24,
+    "publishedDate": "1994-01-13",
+    "stockQuantity": 196
+  },
+  {
+    "title": "Mastering API Design Vol.20",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000583-6",
+    "price": 56.74,
+    "publishedDate": "1982-12-24",
+    "stockQuantity": 110
+  },
+  {
+    "title": "Comprehensive Algorithms Vol.4",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000584-7",
+    "price": 26.70,
+    "publishedDate": "2002-04-25",
+    "stockQuantity": 85
+  },
+  {
+    "title": "The Art of Cloud Computing Vol.8",
+    "author": "James White",
+    "isbn": "978-0-000000585-7",
+    "price": 191.47,
+    "publishedDate": "1985-12-18",
+    "stockQuantity": 71
+  },
+  {
+    "title": "Practical Guide to System Design Vol.5",
+    "author": "James White",
+    "isbn": "978-0-000000586-3",
+    "price": 97.67,
+    "publishedDate": "1997-10-16",
+    "stockQuantity": 136
+  },
+  {
+    "title": "The Art of Distributed Systems Vol.2",
+    "author": "William Thomas",
+    "isbn": "978-0-000000587-4",
+    "price": 90.93,
+    "publishedDate": "2002-02-12",
+    "stockQuantity": 165
+  },
+  {
+    "title": "Python 编程之道 第14版",
+    "author": "陈静",
+    "isbn": "978-0-000000588-5",
+    "price": 38.22,
+    "publishedDate": "2011-03-02",
+    "stockQuantity": 126
+  },
+  {
+    "title": "数据库性能优化 第15版",
+    "author": "孙强",
+    "isbn": "978-0-000000589-9",
+    "price": 72.65,
+    "publishedDate": "1988-03-24",
+    "stockQuantity": 81
+  },
+  {
+    "title": "Practical Guide to Web Development Vol.7",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000590-0",
+    "price": 79.48,
+    "publishedDate": "2015-05-03",
+    "stockQuantity": 3
+  },
+  {
+    "title": "Deep Dive into DevOps Vol.8",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000591-0",
+    "price": 180.50,
+    "publishedDate": "2007-08-14",
+    "stockQuantity": 38
+  },
+  {
+    "title": "Linux 系统管理 第7版",
+    "author": "李娜",
+    "isbn": "978-0-000000592-3",
+    "price": 121.94,
+    "publishedDate": "1983-07-12",
+    "stockQuantity": 40
+  },
+  {
+    "title": "Mastering API Design Vol.3",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000593-5",
+    "price": 176.19,
+    "publishedDate": "1982-06-08",
+    "stockQuantity": 14
+  },
+  {
+    "title": "Python 编程之道 第17版",
+    "author": "王芳",
+    "isbn": "978-0-000000594-8",
+    "price": 147.15,
+    "publishedDate": "2009-02-14",
+    "stockQuantity": 147
+  },
+  {
+    "title": "Modern Algorithms Vol.8",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000595-7",
+    "price": 186.67,
+    "publishedDate": "2006-12-20",
+    "stockQuantity": 142
+  },
+  {
+    "title": "深入理解 JVM 第4版",
+    "author": "何明",
+    "isbn": "978-0-000000596-8",
+    "price": 133.61,
+    "publishedDate": "1997-03-04",
+    "stockQuantity": 94
+  },
+  {
+    "title": "Introduction to DevOps Vol.9",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000597-3",
+    "price": 130.81,
+    "publishedDate": "1999-08-14",
+    "stockQuantity": 2
+  },
+  {
+    "title": "深入理解 JVM 第10版",
+    "author": "郭鑫",
+    "isbn": "978-0-000000598-1",
+    "price": 121.67,
+    "publishedDate": "2006-04-26",
+    "stockQuantity": 167
+  },
+  {
+    "title": "Linux 系统管理 第8版",
+    "author": "王芳",
+    "isbn": "978-0-000000599-9",
+    "price": 16.29,
+    "publishedDate": "2023-05-09",
+    "stockQuantity": 76
+  },
+  {
+    "title": "Advanced Database Systems Vol.1",
+    "author": "David Wilson",
+    "isbn": "978-0-000000600-9",
+    "price": 46.97,
+    "publishedDate": "2007-06-24",
+    "stockQuantity": 25
+  },
+  {
+    "title": "Practical Guide to Microservices Vol.2",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000601-7",
+    "price": 179.40,
+    "publishedDate": "1998-04-02",
+    "stockQuantity": 156
+  },
+  {
+    "title": "Introduction to Java Programming Vol.20",
+    "author": "James White",
+    "isbn": "978-0-000000602-9",
+    "price": 92.67,
+    "publishedDate": "2011-05-27",
+    "stockQuantity": 113
+  },
+  {
+    "title": "代码重构 第5版",
+    "author": "林峰",
+    "isbn": "978-0-000000603-6",
+    "price": 168.53,
+    "publishedDate": "1983-03-07",
+    "stockQuantity": 84
+  },
+  {
+    "title": "Deep Dive into System Design Vol.4",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000604-5",
+    "price": 37.02,
+    "publishedDate": "1988-06-08",
+    "stockQuantity": 126
+  },
+  {
+    "title": "The Art of Software Architecture Vol.3",
+    "author": "John Smith",
+    "isbn": "978-0-000000605-9",
+    "price": 49.38,
+    "publishedDate": "1986-07-19",
+    "stockQuantity": 98
+  },
+  {
+    "title": "Deep Dive into System Design Vol.11",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000606-9",
+    "price": 184.07,
+    "publishedDate": "1988-11-15",
+    "stockQuantity": 162
+  },
+  {
+    "title": "Comprehensive System Design Vol.3",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000607-5",
+    "price": 34.49,
+    "publishedDate": "1984-01-11",
+    "stockQuantity": 198
+  },
+  {
+    "title": "架构之美 第6版",
+    "author": "杨杰",
+    "isbn": "978-0-000000608-6",
+    "price": 114.65,
+    "publishedDate": "2017-12-03",
+    "stockQuantity": 100
+  },
+  {
+    "title": "数据库性能优化 第8版",
+    "author": "何明",
+    "isbn": "978-0-000000609-0",
+    "price": 119.52,
+    "publishedDate": "2000-02-07",
+    "stockQuantity": 78
+  },
+  {
+    "title": "架构之美 第14版",
+    "author": "孙强",
+    "isbn": "978-0-000000610-8",
+    "price": 48.42,
+    "publishedDate": "1999-07-11",
+    "stockQuantity": 193
+  },
+  {
+    "title": "深度学习精要 第18版",
+    "author": "徐丽",
+    "isbn": "978-0-000000611-9",
+    "price": 144.00,
+    "publishedDate": "2020-06-07",
+    "stockQuantity": 3
+  },
+  {
+    "title": "Learning Software Engineering Vol.20",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000612-4",
+    "price": 177.77,
+    "publishedDate": "1983-10-04",
+    "stockQuantity": 95
+  },
+  {
+    "title": "Mastering Software Engineering Vol.6",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000613-6",
+    "price": 9.55,
+    "publishedDate": "2009-04-09",
+    "stockQuantity": 189
+  },
+  {
+    "title": "微服务架构设计 第3版",
+    "author": "罗丹",
+    "isbn": "978-0-000000614-8",
+    "price": 139.07,
+    "publishedDate": "2014-11-11",
+    "stockQuantity": 178
+  },
+  {
+    "title": "Deep Dive into Data Structures Vol.6",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000615-5",
+    "price": 54.57,
+    "publishedDate": "2013-12-13",
+    "stockQuantity": 197
+  },
+  {
+    "title": "Comprehensive Java Programming Vol.17",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000616-6",
+    "price": 66.20,
+    "publishedDate": "1999-03-10",
+    "stockQuantity": 136
+  },
+  {
+    "title": "Mastering Cloud Computing Vol.19",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000617-1",
+    "price": 87.82,
+    "publishedDate": "1986-04-02",
+    "stockQuantity": 146
+  },
+  {
+    "title": "Comprehensive Software Architecture Vol.19",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000618-0",
+    "price": 34.28,
+    "publishedDate": "2012-08-28",
+    "stockQuantity": 14
+  },
+  {
+    "title": "架构之美 第2版",
+    "author": "徐丽",
+    "isbn": "978-0-000000619-6",
+    "price": 18.45,
+    "publishedDate": "1994-08-22",
+    "stockQuantity": 119
+  },
+  {
+    "title": "代码重构 第20版",
+    "author": "黄磊",
+    "isbn": "978-0-000000620-6",
+    "price": 21.06,
+    "publishedDate": "1983-06-08",
+    "stockQuantity": 80
+  },
+  {
+    "title": "人工智能入门 第12版",
+    "author": "刘洋",
+    "isbn": "978-0-000000621-8",
+    "price": 15.36,
+    "publishedDate": "1999-12-23",
+    "stockQuantity": 55
+  },
+  {
+    "title": "大数据处理实战 第19版",
+    "author": "朱勇",
+    "isbn": "978-0-000000622-3",
+    "price": 88.53,
+    "publishedDate": "2018-02-25",
+    "stockQuantity": 63
+  },
+  {
+    "title": "Mastering Software Engineering Vol.4",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000623-1",
+    "price": 110.68,
+    "publishedDate": "1987-03-14",
+    "stockQuantity": 54
+  },
+  {
+    "title": "微服务架构设计 第5版",
+    "author": "徐丽",
+    "isbn": "978-0-000000624-4",
+    "price": 114.82,
+    "publishedDate": "1988-02-23",
+    "stockQuantity": 103
+  },
+  {
+    "title": "技术领导力 第19版",
+    "author": "周婷",
+    "isbn": "978-0-000000625-6",
+    "price": 83.90,
+    "publishedDate": "1998-01-08",
+    "stockQuantity": 143
+  },
+  {
+    "title": "Advanced Software Architecture Vol.13",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000626-7",
+    "price": 174.38,
+    "publishedDate": "2005-11-26",
+    "stockQuantity": 56
+  },
+  {
+    "title": "Linux 系统管理 第1版",
+    "author": "李娜",
+    "isbn": "978-0-000000627-6",
+    "price": 94.84,
+    "publishedDate": "1985-08-03",
+    "stockQuantity": 76
+  },
+  {
+    "title": "技术领导力 第8版",
+    "author": "陈静",
+    "isbn": "978-0-000000628-8",
+    "price": 173.79,
+    "publishedDate": "1986-02-24",
+    "stockQuantity": 19
+  },
+  {
+    "title": "人工智能入门 第8版",
+    "author": "孙强",
+    "isbn": "978-0-000000629-6",
+    "price": 14.27,
+    "publishedDate": "1993-11-06",
+    "stockQuantity": 60
+  },
+  {
+    "title": "Java 高级编程 第18版",
+    "author": "马丽",
+    "isbn": "978-0-000000630-7",
+    "price": 176.14,
+    "publishedDate": "1984-12-05",
+    "stockQuantity": 98
+  },
+  {
+    "title": "深入理解 JVM 第16版",
+    "author": "罗丹",
+    "isbn": "978-0-000000631-1",
+    "price": 145.71,
+    "publishedDate": "1993-09-19",
+    "stockQuantity": 56
+  },
+  {
+    "title": "Mastering Python Development Vol.1",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000632-3",
+    "price": 127.71,
+    "publishedDate": "1993-12-17",
+    "stockQuantity": 10
+  },
+  {
+    "title": "Hands-On Machine Learning Vol.19",
+    "author": "James White",
+    "isbn": "978-0-000000633-7",
+    "price": 109.54,
+    "publishedDate": "1991-06-21",
+    "stockQuantity": 43
+  },
+  {
+    "title": "Java 高级编程 第8版",
+    "author": "杨杰",
+    "isbn": "978-0-000000634-9",
+    "price": 19.73,
+    "publishedDate": "2013-05-11",
+    "stockQuantity": 40
+  },
+  {
+    "title": "Web 安全攻防 第8版",
+    "author": "徐丽",
+    "isbn": "978-0-000000635-9",
+    "price": 77.53,
+    "publishedDate": "1982-11-20",
+    "stockQuantity": 86
+  },
+  {
+    "title": "Practical Guide to System Design Vol.20",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000636-0",
+    "price": 97.58,
+    "publishedDate": "2001-02-16",
+    "stockQuantity": 115
+  },
+  {
+    "title": "微服务架构设计 第20版",
+    "author": "孙强",
+    "isbn": "978-0-000000637-8",
+    "price": 189.07,
+    "publishedDate": "2005-02-15",
+    "stockQuantity": 124
+  },
+  {
+    "title": "Learning Web Development Vol.19",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000638-7",
+    "price": 164.92,
+    "publishedDate": "2005-02-05",
+    "stockQuantity": 75
+  },
+  {
+    "title": "Java 高级编程 第17版",
+    "author": "徐丽",
+    "isbn": "978-0-000000639-2",
+    "price": 18.50,
+    "publishedDate": "2002-03-23",
+    "stockQuantity": 171
+  },
+  {
+    "title": "The Art of Microservices Vol.12",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000640-7",
+    "price": 53.20,
+    "publishedDate": "2002-09-04",
+    "stockQuantity": 143
+  },
+  {
+    "title": "Web 安全攻防 第14版",
+    "author": "罗丹",
+    "isbn": "978-0-000000641-4",
+    "price": 190.63,
+    "publishedDate": "2014-03-22",
+    "stockQuantity": 145
+  },
+  {
+    "title": "大数据处理实战 第20版",
+    "author": "杨杰",
+    "isbn": "978-0-000000642-6",
+    "price": 22.20,
+    "publishedDate": "1982-11-16",
+    "stockQuantity": 17
+  },
+  {
+    "title": "Learning Algorithms Vol.19",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000643-7",
+    "price": 163.63,
+    "publishedDate": "1989-04-15",
+    "stockQuantity": 33
+  },
+  {
+    "title": "Mastering Distributed Systems Vol.7",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000644-5",
+    "price": 31.93,
+    "publishedDate": "2019-05-18",
+    "stockQuantity": 89
+  },
+  {
+    "title": "编程之美 第13版",
+    "author": "孙强",
+    "isbn": "978-0-000000645-2",
+    "price": 195.62,
+    "publishedDate": "1984-03-25",
+    "stockQuantity": 180
+  },
+  {
+    "title": "Learning API Design Vol.13",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000646-8",
+    "price": 130.44,
+    "publishedDate": "2019-08-14",
+    "stockQuantity": 81
+  },
+  {
+    "title": "大数据处理实战 第8版",
+    "author": "林峰",
+    "isbn": "978-0-000000647-8",
+    "price": 172.99,
+    "publishedDate": "2003-07-19",
+    "stockQuantity": 67
+  },
+  {
+    "title": "The Art of Cloud Computing Vol.20",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000648-0",
+    "price": 112.69,
+    "publishedDate": "2009-10-08",
+    "stockQuantity": 189
+  },
+  {
+    "title": "Modern Software Engineering Vol.6",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000649-6",
+    "price": 28.31,
+    "publishedDate": "1981-08-07",
+    "stockQuantity": 173
+  },
+  {
+    "title": "Hands-On Python Development Vol.5",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000650-1",
+    "price": 54.10,
+    "publishedDate": "2008-05-16",
+    "stockQuantity": 65
+  },
+  {
+    "title": "Web 安全攻防 第20版",
+    "author": "朱勇",
+    "isbn": "978-0-000000651-7",
+    "price": 173.73,
+    "publishedDate": "1984-01-12",
+    "stockQuantity": 196
+  },
+  {
+    "title": "Python 编程之道 第11版",
+    "author": "吴昊",
+    "isbn": "978-0-000000652-0",
+    "price": 90.91,
+    "publishedDate": "2010-01-24",
+    "stockQuantity": 150
+  },
+  {
+    "title": "Deep Dive into System Design Vol.15",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000653-2",
+    "price": 70.42,
+    "publishedDate": "2018-07-23",
+    "stockQuantity": 138
+  },
+  {
+    "title": "Introduction to Network Security Vol.20",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000654-5",
+    "price": 150.14,
+    "publishedDate": "2000-06-03",
+    "stockQuantity": 105
+  },
+  {
+    "title": "Web 安全攻防 第17版",
+    "author": "黄磊",
+    "isbn": "978-0-000000655-2",
+    "price": 148.03,
+    "publishedDate": "2021-04-23",
+    "stockQuantity": 84
+  },
+  {
+    "title": "Hands-On Software Architecture Vol.2",
+    "author": "David Wilson",
+    "isbn": "978-0-000000656-2",
+    "price": 139.97,
+    "publishedDate": "1987-04-25",
+    "stockQuantity": 114
+  },
+  {
+    "title": "数据库性能优化 第20版",
+    "author": "孙强",
+    "isbn": "978-0-000000657-3",
+    "price": 21.19,
+    "publishedDate": "2002-02-23",
+    "stockQuantity": 165
+  },
+  {
+    "title": "Learning API Design Vol.4",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000658-3",
+    "price": 157.03,
+    "publishedDate": "1990-06-19",
+    "stockQuantity": 49
+  },
+  {
+    "title": "技术领导力 第17版",
+    "author": "罗丹",
+    "isbn": "978-0-000000659-0",
+    "price": 91.89,
+    "publishedDate": "2007-08-16",
+    "stockQuantity": 34
+  },
+  {
+    "title": "Introduction to Data Structures Vol.13",
+    "author": "William Thomas",
+    "isbn": "978-0-000000660-5",
+    "price": 80.57,
+    "publishedDate": "1992-12-12",
+    "stockQuantity": 63
+  },
+  {
+    "title": "高并发编程 第19版",
+    "author": "李娜",
+    "isbn": "978-0-000000661-4",
+    "price": 113.18,
+    "publishedDate": "1997-02-09",
+    "stockQuantity": 52
+  },
+  {
+    "title": "Modern Network Security Vol.1",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000662-3",
+    "price": 37.21,
+    "publishedDate": "2012-07-02",
+    "stockQuantity": 136
+  },
+  {
+    "title": "Essential Software Architecture Vol.16",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000663-0",
+    "price": 139.72,
+    "publishedDate": "2005-08-13",
+    "stockQuantity": 180
+  },
+  {
+    "title": "Essential DevOps Vol.18",
+    "author": "David Wilson",
+    "isbn": "978-0-000000664-6",
+    "price": 159.19,
+    "publishedDate": "1990-04-10",
+    "stockQuantity": 25
+  },
+  {
+    "title": "Deep Dive into Machine Learning Vol.19",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000665-8",
+    "price": 12.44,
+    "publishedDate": "2016-06-06",
+    "stockQuantity": 19
+  },
+  {
+    "title": "Modern Microservices Vol.7",
+    "author": "William Thomas",
+    "isbn": "978-0-000000666-4",
+    "price": 18.17,
+    "publishedDate": "1987-06-24",
+    "stockQuantity": 58
+  },
+  {
+    "title": "Java 高级编程 第1版",
+    "author": "张伟",
+    "isbn": "978-0-000000667-4",
+    "price": 149.54,
+    "publishedDate": "2003-06-18",
+    "stockQuantity": 50
+  },
+  {
+    "title": "Linux 系统管理 第13版",
+    "author": "林峰",
+    "isbn": "978-0-000000668-9",
+    "price": 193.94,
+    "publishedDate": "2018-09-14",
+    "stockQuantity": 170
+  },
+  {
+    "title": "云原生应用开发 第19版",
+    "author": "吴昊",
+    "isbn": "978-0-000000669-7",
+    "price": 78.79,
+    "publishedDate": "2010-05-02",
+    "stockQuantity": 173
+  },
+  {
+    "title": "代码精进之路 第15版",
+    "author": "赵敏",
+    "isbn": "978-0-000000670-4",
+    "price": 146.41,
+    "publishedDate": "2001-10-22",
+    "stockQuantity": 16
+  },
+  {
+    "title": "Learning Data Structures Vol.15",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000671-7",
+    "price": 110.16,
+    "publishedDate": "2019-07-01",
+    "stockQuantity": 100
+  },
+  {
+    "title": "Modern Java Programming Vol.17",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000672-5",
+    "price": 131.04,
+    "publishedDate": "1981-01-02",
+    "stockQuantity": 146
+  },
+  {
+    "title": "Modern Network Security Vol.15",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000673-2",
+    "price": 125.17,
+    "publishedDate": "2001-02-14",
+    "stockQuantity": 4
+  },
+  {
+    "title": "The Art of Distributed Systems Vol.15",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000674-8",
+    "price": 126.13,
+    "publishedDate": "2011-07-06",
+    "stockQuantity": 119
+  },
+  {
+    "title": "Comprehensive System Design Vol.10",
+    "author": "David Wilson",
+    "isbn": "978-0-000000675-4",
+    "price": 34.32,
+    "publishedDate": "1998-08-18",
+    "stockQuantity": 196
+  },
+  {
+    "title": "微服务架构设计 第2版",
+    "author": "王芳",
+    "isbn": "978-0-000000676-4",
+    "price": 172.53,
+    "publishedDate": "2014-10-14",
+    "stockQuantity": 129
+  },
+  {
+    "title": "Effective Microservices Vol.20",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000677-7",
+    "price": 34.09,
+    "publishedDate": "1985-05-15",
+    "stockQuantity": 121
+  },
+  {
+    "title": "深度学习精要 第1版",
+    "author": "孙强",
+    "isbn": "978-0-000000678-6",
+    "price": 16.51,
+    "publishedDate": "2002-02-01",
+    "stockQuantity": 27
+  },
+  {
+    "title": "Introduction to Software Architecture Vol.12",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000679-2",
+    "price": 47.18,
+    "publishedDate": "1996-04-04",
+    "stockQuantity": 145
+  },
+  {
+    "title": "Hands-On Database Systems Vol.10",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000680-6",
+    "price": 103.44,
+    "publishedDate": "2015-03-23",
+    "stockQuantity": 25
+  },
+  {
+    "title": "Python 编程之道 第4版",
+    "author": "周婷",
+    "isbn": "978-0-000000681-0",
+    "price": 155.57,
+    "publishedDate": "1991-08-13",
+    "stockQuantity": 193
+  },
+  {
+    "title": "Hands-On System Design Vol.18",
+    "author": "James White",
+    "isbn": "978-0-000000682-7",
+    "price": 35.17,
+    "publishedDate": "2019-10-01",
+    "stockQuantity": 177
+  },
+  {
+    "title": "Comprehensive Algorithms Vol.6",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000683-0",
+    "price": 107.88,
+    "publishedDate": "2019-10-22",
+    "stockQuantity": 182
+  },
+  {
+    "title": "The Art of Software Engineering Vol.13",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000684-3",
+    "price": 147.85,
+    "publishedDate": "1980-07-07",
+    "stockQuantity": 92
+  },
+  {
+    "title": "Essential Python Development Vol.19",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000685-8",
+    "price": 92.35,
+    "publishedDate": "2010-12-16",
+    "stockQuantity": 148
+  },
+  {
+    "title": "Hands-On Software Architecture Vol.6",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000686-7",
+    "price": 59.91,
+    "publishedDate": "1982-12-10",
+    "stockQuantity": 11
+  },
+  {
+    "title": "数据结构与算法 第13版",
+    "author": "吴昊",
+    "isbn": "978-0-000000687-0",
+    "price": 79.62,
+    "publishedDate": "2016-11-19",
+    "stockQuantity": 181
+  },
+  {
+    "title": "分布式系统实践 第20版",
+    "author": "吴昊",
+    "isbn": "978-0-000000688-7",
+    "price": 42.94,
+    "publishedDate": "2000-12-17",
+    "stockQuantity": 64
+  },
+  {
+    "title": "Comprehensive Java Programming Vol.2",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000689-8",
+    "price": 43.33,
+    "publishedDate": "2003-06-05",
+    "stockQuantity": 1
+  },
+  {
+    "title": "深度学习精要 第1版",
+    "author": "何明",
+    "isbn": "978-0-000000690-2",
+    "price": 75.51,
+    "publishedDate": "1990-07-23",
+    "stockQuantity": 16
+  },
+  {
+    "title": "Advanced Cloud Computing Vol.3",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000691-8",
+    "price": 199.32,
+    "publishedDate": "1992-01-08",
+    "stockQuantity": 115
+  },
+  {
+    "title": "Mastering Data Structures Vol.13",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000692-1",
+    "price": 115.98,
+    "publishedDate": "1989-02-22",
+    "stockQuantity": 190
+  },
+  {
+    "title": "Introduction to Microservices Vol.2",
+    "author": "John Smith",
+    "isbn": "978-0-000000693-9",
+    "price": 153.56,
+    "publishedDate": "2016-08-27",
+    "stockQuantity": 182
+  },
+  {
+    "title": "深度学习精要 第7版",
+    "author": "黄磊",
+    "isbn": "978-0-000000694-9",
+    "price": 199.20,
+    "publishedDate": "2013-08-21",
+    "stockQuantity": 91
+  },
+  {
+    "title": "大数据处理实战 第20版",
+    "author": "张伟",
+    "isbn": "978-0-000000695-1",
+    "price": 75.57,
+    "publishedDate": "1992-05-25",
+    "stockQuantity": 115
+  },
+  {
+    "title": "深入理解 JVM 第7版",
+    "author": "王芳",
+    "isbn": "978-0-000000696-1",
+    "price": 96.47,
+    "publishedDate": "2016-09-18",
+    "stockQuantity": 102
+  },
+  {
+    "title": "Essential Distributed Systems Vol.9",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000697-5",
+    "price": 148.55,
+    "publishedDate": "1996-01-24",
+    "stockQuantity": 197
+  },
+  {
+    "title": "Learning Microservices Vol.6",
+    "author": "James White",
+    "isbn": "978-0-000000698-2",
+    "price": 40.90,
+    "publishedDate": "1996-06-22",
+    "stockQuantity": 74
+  },
+  {
+    "title": "Comprehensive Web Development Vol.16",
+    "author": "David Wilson",
+    "isbn": "978-0-000000699-9",
+    "price": 82.08,
+    "publishedDate": "2015-07-08",
+    "stockQuantity": 35
+  },
+  {
+    "title": "Mastering System Design Vol.19",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000700-8",
+    "price": 28.85,
+    "publishedDate": "1986-08-07",
+    "stockQuantity": 173
+  },
+  {
+    "title": "分布式系统实践 第11版",
+    "author": "徐丽",
+    "isbn": "978-0-000000701-1",
+    "price": 177.78,
+    "publishedDate": "1991-06-10",
+    "stockQuantity": 50
+  },
+  {
+    "title": "深入理解 JVM 第13版",
+    "author": "高远",
+    "isbn": "978-0-000000702-5",
+    "price": 43.96,
+    "publishedDate": "1995-09-19",
+    "stockQuantity": 23
+  },
+  {
+    "title": "技术领导力 第9版",
+    "author": "吴昊",
+    "isbn": "978-0-000000703-2",
+    "price": 21.56,
+    "publishedDate": "1980-08-24",
+    "stockQuantity": 159
+  },
+  {
+    "title": "Learning Microservices Vol.1",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000704-8",
+    "price": 193.18,
+    "publishedDate": "1992-11-16",
+    "stockQuantity": 74
+  },
+  {
+    "title": "Web 安全攻防 第3版",
+    "author": "郭鑫",
+    "isbn": "978-0-000000705-3",
+    "price": 139.91,
+    "publishedDate": "2000-11-05",
+    "stockQuantity": 89
+  },
+  {
+    "title": "产品经理手册 第8版",
+    "author": "朱勇",
+    "isbn": "978-0-000000706-1",
+    "price": 165.40,
+    "publishedDate": "1990-12-17",
+    "stockQuantity": 40
+  },
+  {
+    "title": "Practical Guide to Database Systems Vol.7",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000707-0",
+    "price": 154.71,
+    "publishedDate": "1985-06-03",
+    "stockQuantity": 115
+  },
+  {
+    "title": "Deep Dive into API Design Vol.17",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000708-3",
+    "price": 134.88,
+    "publishedDate": "2012-11-11",
+    "stockQuantity": 49
+  },
+  {
+    "title": "分布式系统实践 第16版",
+    "author": "高远",
+    "isbn": "978-0-000000709-1",
+    "price": 73.73,
+    "publishedDate": "2011-11-04",
+    "stockQuantity": 42
+  },
+  {
+    "title": "Learning Python Development Vol.8",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000710-9",
+    "price": 119.26,
+    "publishedDate": "1988-07-22",
+    "stockQuantity": 29
+  },
+  {
+    "title": "Essential Java Programming Vol.2",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000711-3",
+    "price": 137.69,
+    "publishedDate": "1999-03-09",
+    "stockQuantity": 112
+  },
+  {
+    "title": "代码精进之路 第6版",
+    "author": "胡晓",
+    "isbn": "978-0-000000712-0",
+    "price": 190.19,
+    "publishedDate": "2023-12-06",
+    "stockQuantity": 15
+  },
+  {
+    "title": "Introduction to Algorithms Vol.19",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000713-2",
+    "price": 112.12,
+    "publishedDate": "2009-10-17",
+    "stockQuantity": 140
+  },
+  {
+    "title": "Mastering Microservices Vol.3",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000714-9",
+    "price": 113.48,
+    "publishedDate": "1980-02-22",
+    "stockQuantity": 68
+  },
+  {
+    "title": "The Art of Java Programming Vol.19",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000715-8",
+    "price": 191.91,
+    "publishedDate": "2017-06-18",
+    "stockQuantity": 98
+  },
+  {
+    "title": "The Art of Software Engineering Vol.19",
+    "author": "William Thomas",
+    "isbn": "978-0-000000716-6",
+    "price": 173.01,
+    "publishedDate": "2016-10-13",
+    "stockQuantity": 71
+  },
+  {
+    "title": "Learning Software Architecture Vol.20",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000717-7",
+    "price": 170.60,
+    "publishedDate": "1992-08-18",
+    "stockQuantity": 76
+  },
+  {
+    "title": "深度学习精要 第7版",
+    "author": "马丽",
+    "isbn": "978-0-000000718-1",
+    "price": 74.72,
+    "publishedDate": "2021-12-02",
+    "stockQuantity": 152
+  },
+  {
+    "title": "高并发编程 第1版",
+    "author": "郭鑫",
+    "isbn": "978-0-000000719-2",
+    "price": 155.23,
+    "publishedDate": "1992-09-10",
+    "stockQuantity": 66
+  },
+  {
+    "title": "Introduction to Java Programming Vol.11",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000720-7",
+    "price": 155.11,
+    "publishedDate": "2011-07-02",
+    "stockQuantity": 167
+  },
+  {
+    "title": "Comprehensive Database Systems Vol.17",
+    "author": "James White",
+    "isbn": "978-0-000000721-0",
+    "price": 65.12,
+    "publishedDate": "1995-07-11",
+    "stockQuantity": 119
+  },
+  {
+    "title": "The Art of Software Architecture Vol.19",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000722-6",
+    "price": 102.88,
+    "publishedDate": "2005-09-05",
+    "stockQuantity": 120
+  },
+  {
+    "title": "Hands-On Web Development Vol.16",
+    "author": "David Wilson",
+    "isbn": "978-0-000000723-6",
+    "price": 197.68,
+    "publishedDate": "2010-06-04",
+    "stockQuantity": 157
+  },
+  {
+    "title": "产品经理手册 第3版",
+    "author": "林峰",
+    "isbn": "978-0-000000724-5",
+    "price": 187.16,
+    "publishedDate": "1986-03-05",
+    "stockQuantity": 198
+  },
+  {
+    "title": "深入理解 JVM 第11版",
+    "author": "郭鑫",
+    "isbn": "978-0-000000725-1",
+    "price": 129.75,
+    "publishedDate": "2023-11-23",
+    "stockQuantity": 50
+  },
+  {
+    "title": "Advanced Machine Learning Vol.3",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000726-8",
+    "price": 177.86,
+    "publishedDate": "1993-06-21",
+    "stockQuantity": 116
+  },
+  {
+    "title": "人工智能入门 第10版",
+    "author": "刘洋",
+    "isbn": "978-0-000000727-0",
+    "price": 101.02,
+    "publishedDate": "1995-04-17",
+    "stockQuantity": 1
+  },
+  {
+    "title": "Mastering Algorithms Vol.6",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000728-9",
+    "price": 76.44,
+    "publishedDate": "2024-09-24",
+    "stockQuantity": 172
+  },
+  {
+    "title": "Modern Distributed Systems Vol.17",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000729-6",
+    "price": 181.73,
+    "publishedDate": "2018-07-03",
+    "stockQuantity": 104
+  },
+  {
+    "title": "Learning Distributed Systems Vol.16",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000730-8",
+    "price": 96.67,
+    "publishedDate": "2022-10-27",
+    "stockQuantity": 199
+  },
+  {
+    "title": "人工智能入门 第14版",
+    "author": "高远",
+    "isbn": "978-0-000000731-2",
+    "price": 116.80,
+    "publishedDate": "1988-06-08",
+    "stockQuantity": 154
+  },
+  {
+    "title": "深度学习精要 第14版",
+    "author": "周婷",
+    "isbn": "978-0-000000732-9",
+    "price": 96.62,
+    "publishedDate": "2013-12-11",
+    "stockQuantity": 4
+  },
+  {
+    "title": "数据库性能优化 第6版",
+    "author": "吴昊",
+    "isbn": "978-0-000000733-6",
+    "price": 55.70,
+    "publishedDate": "1998-07-13",
+    "stockQuantity": 71
+  },
+  {
+    "title": "Learning Python Development Vol.3",
+    "author": "John Smith",
+    "isbn": "978-0-000000734-2",
+    "price": 16.27,
+    "publishedDate": "1987-08-18",
+    "stockQuantity": 57
+  },
+  {
+    "title": "编程之美 第16版",
+    "author": "罗丹",
+    "isbn": "978-0-000000735-2",
+    "price": 73.17,
+    "publishedDate": "2003-12-08",
+    "stockQuantity": 197
+  },
+  {
+    "title": "Learning Microservices Vol.19",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000736-2",
+    "price": 161.44,
+    "publishedDate": "2007-02-18",
+    "stockQuantity": 32
+  },
+  {
+    "title": "高并发编程 第20版",
+    "author": "林峰",
+    "isbn": "978-0-000000737-2",
+    "price": 44.05,
+    "publishedDate": "2009-05-02",
+    "stockQuantity": 85
+  },
+  {
+    "title": "架构之美 第17版",
+    "author": "何明",
+    "isbn": "978-0-000000738-5",
+    "price": 164.84,
+    "publishedDate": "1999-04-18",
+    "stockQuantity": 21
+  },
+  {
+    "title": "Mastering Data Structures Vol.2",
+    "author": "David Wilson",
+    "isbn": "978-0-000000739-6",
+    "price": 192.91,
+    "publishedDate": "2015-03-19",
+    "stockQuantity": 74
+  },
+  {
+    "title": "Learning DevOps Vol.17",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000740-1",
+    "price": 198.39,
+    "publishedDate": "1994-07-18",
+    "stockQuantity": 67
+  },
+  {
+    "title": "Modern Machine Learning Vol.2",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000741-4",
+    "price": 95.08,
+    "publishedDate": "1983-09-05",
+    "stockQuantity": 104
+  },
+  {
+    "title": "Deep Dive into Software Architecture Vol.19",
+    "author": "David Wilson",
+    "isbn": "978-0-000000742-0",
+    "price": 65.92,
+    "publishedDate": "2021-12-24",
+    "stockQuantity": 109
+  },
+  {
+    "title": "大数据处理实战 第20版",
+    "author": "周婷",
+    "isbn": "978-0-000000743-8",
+    "price": 119.48,
+    "publishedDate": "1983-08-28",
+    "stockQuantity": 146
+  },
+  {
+    "title": "Python 编程之道 第1版",
+    "author": "罗丹",
+    "isbn": "978-0-000000744-3",
+    "price": 191.77,
+    "publishedDate": "2007-01-24",
+    "stockQuantity": 63
+  },
+  {
+    "title": "Linux 系统管理 第13版",
+    "author": "王芳",
+    "isbn": "978-0-000000745-4",
+    "price": 114.56,
+    "publishedDate": "1989-02-24",
+    "stockQuantity": 153
+  },
+  {
+    "title": "微服务架构设计 第6版",
+    "author": "刘洋",
+    "isbn": "978-0-000000746-8",
+    "price": 46.99,
+    "publishedDate": "1986-08-26",
+    "stockQuantity": 141
+  },
+  {
+    "title": "The Art of Python Development Vol.17",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000747-5",
+    "price": 96.49,
+    "publishedDate": "1981-11-15",
+    "stockQuantity": 141
+  },
+  {
+    "title": "架构之美 第20版",
+    "author": "郭鑫",
+    "isbn": "978-0-000000748-6",
+    "price": 31.69,
+    "publishedDate": "2020-02-14",
+    "stockQuantity": 28
+  },
+  {
+    "title": "大数据处理实战 第13版",
+    "author": "李娜",
+    "isbn": "978-0-000000749-6",
+    "price": 102.46,
+    "publishedDate": "2005-12-09",
+    "stockQuantity": 72
+  },
+  {
+    "title": "Hands-On Algorithms Vol.15",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000750-3",
+    "price": 132.88,
+    "publishedDate": "2014-03-07",
+    "stockQuantity": 80
+  },
+  {
+    "title": "数据库性能优化 第5版",
+    "author": "陈静",
+    "isbn": "978-0-000000751-1",
+    "price": 121.96,
+    "publishedDate": "2019-03-03",
+    "stockQuantity": 126
+  },
+  {
+    "title": "Deep Dive into System Design Vol.6",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000752-0",
+    "price": 140.07,
+    "publishedDate": "1998-03-18",
+    "stockQuantity": 163
+  },
+  {
+    "title": "Modern Java Programming Vol.11",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000753-9",
+    "price": 157.10,
+    "publishedDate": "2012-06-27",
+    "stockQuantity": 176
+  },
+  {
+    "title": "Introduction to Java Programming Vol.17",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000754-0",
+    "price": 177.40,
+    "publishedDate": "1990-11-11",
+    "stockQuantity": 83
+  },
+  {
+    "title": "Linux 系统管理 第3版",
+    "author": "马丽",
+    "isbn": "978-0-000000755-1",
+    "price": 83.14,
+    "publishedDate": "1999-04-09",
+    "stockQuantity": 163
+  },
+  {
+    "title": "Hands-On Algorithms Vol.19",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000756-9",
+    "price": 42.40,
+    "publishedDate": "2020-12-21",
+    "stockQuantity": 140
+  },
+  {
+    "title": "Modern Python Development Vol.8",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000757-2",
+    "price": 16.99,
+    "publishedDate": "1999-08-21",
+    "stockQuantity": 57
+  },
+  {
+    "title": "The Art of Distributed Systems Vol.7",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000758-4",
+    "price": 31.06,
+    "publishedDate": "1991-04-27",
+    "stockQuantity": 167
+  },
+  {
+    "title": "Java 高级编程 第18版",
+    "author": "朱勇",
+    "isbn": "978-0-000000759-5",
+    "price": 39.70,
+    "publishedDate": "1982-01-28",
+    "stockQuantity": 24
+  },
+  {
+    "title": "Practical Guide to API Design Vol.14",
+    "author": "William Thomas",
+    "isbn": "978-0-000000760-8",
+    "price": 38.71,
+    "publishedDate": "2018-01-03",
+    "stockQuantity": 108
+  },
+  {
+    "title": "Deep Dive into Machine Learning Vol.9",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000761-3",
+    "price": 172.37,
+    "publishedDate": "2006-08-02",
+    "stockQuantity": 157
+  },
+  {
+    "title": "Hands-On Data Structures Vol.12",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000762-4",
+    "price": 158.61,
+    "publishedDate": "2010-01-01",
+    "stockQuantity": 147
+  },
+  {
+    "title": "Deep Dive into Data Structures Vol.16",
+    "author": "James White",
+    "isbn": "978-0-000000763-8",
+    "price": 76.80,
+    "publishedDate": "2000-02-18",
+    "stockQuantity": 48
+  },
+  {
+    "title": "人工智能入门 第19版",
+    "author": "林峰",
+    "isbn": "978-0-000000764-6",
+    "price": 180.69,
+    "publishedDate": "2016-02-02",
+    "stockQuantity": 84
+  },
+  {
+    "title": "Effective Java Programming Vol.5",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000765-2",
+    "price": 100.11,
+    "publishedDate": "2017-05-19",
+    "stockQuantity": 173
+  },
+  {
+    "title": "Linux 系统管理 第5版",
+    "author": "李娜",
+    "isbn": "978-0-000000766-5",
+    "price": 146.39,
+    "publishedDate": "2003-03-02",
+    "stockQuantity": 150
+  },
+  {
+    "title": "深度学习精要 第18版",
+    "author": "张伟",
+    "isbn": "978-0-000000767-1",
+    "price": 14.33,
+    "publishedDate": "2004-11-28",
+    "stockQuantity": 106
+  },
+  {
+    "title": "Introduction to Distributed Systems Vol.7",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000768-3",
+    "price": 175.71,
+    "publishedDate": "1988-02-21",
+    "stockQuantity": 124
+  },
+  {
+    "title": "深入理解 JVM 第14版",
+    "author": "刘洋",
+    "isbn": "978-0-000000769-0",
+    "price": 168.98,
+    "publishedDate": "2018-10-09",
+    "stockQuantity": 166
+  },
+  {
+    "title": "Learning Software Architecture Vol.18",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000770-7",
+    "price": 181.59,
+    "publishedDate": "2017-06-21",
+    "stockQuantity": 122
+  },
+  {
+    "title": "代码精进之路 第6版",
+    "author": "孙强",
+    "isbn": "978-0-000000771-3",
+    "price": 38.49,
+    "publishedDate": "1980-09-05",
+    "stockQuantity": 11
+  },
+  {
+    "title": "Comprehensive Software Architecture Vol.11",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000772-3",
+    "price": 18.45,
+    "publishedDate": "1983-04-08",
+    "stockQuantity": 68
+  },
+  {
+    "title": "Essential Machine Learning Vol.17",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000773-0",
+    "price": 108.70,
+    "publishedDate": "1999-06-17",
+    "stockQuantity": 26
+  },
+  {
+    "title": "Learning Data Structures Vol.7",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000774-6",
+    "price": 123.11,
+    "publishedDate": "2019-03-16",
+    "stockQuantity": 185
+  },
+  {
+    "title": "Introduction to Python Development Vol.2",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000775-4",
+    "price": 94.87,
+    "publishedDate": "2008-10-07",
+    "stockQuantity": 177
+  },
+  {
+    "title": "Mastering Distributed Systems Vol.6",
+    "author": "David Wilson",
+    "isbn": "978-0-000000776-6",
+    "price": 157.79,
+    "publishedDate": "1992-03-21",
+    "stockQuantity": 126
+  },
+  {
+    "title": "Hands-On Cloud Computing Vol.4",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000777-0",
+    "price": 86.92,
+    "publishedDate": "2015-04-11",
+    "stockQuantity": 132
+  },
+  {
+    "title": "代码重构 第1版",
+    "author": "高远",
+    "isbn": "978-0-000000778-4",
+    "price": 111.10,
+    "publishedDate": "1981-05-23",
+    "stockQuantity": 161
+  },
+  {
+    "title": "数据结构与算法 第5版",
+    "author": "杨杰",
+    "isbn": "978-0-000000779-8",
+    "price": 52.51,
+    "publishedDate": "1991-08-28",
+    "stockQuantity": 99
+  },
+  {
+    "title": "Essential Database Systems Vol.16",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000780-6",
+    "price": 36.71,
+    "publishedDate": "1997-01-24",
+    "stockQuantity": 146
+  },
+  {
+    "title": "Mastering Web Development Vol.20",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000781-3",
+    "price": 99.62,
+    "publishedDate": "1980-12-07",
+    "stockQuantity": 120
+  },
+  {
+    "title": "深入理解 JVM 第15版",
+    "author": "陈静",
+    "isbn": "978-0-000000782-2",
+    "price": 135.72,
+    "publishedDate": "2014-03-11",
+    "stockQuantity": 145
+  },
+  {
+    "title": "产品经理手册 第20版",
+    "author": "罗丹",
+    "isbn": "978-0-000000783-3",
+    "price": 153.43,
+    "publishedDate": "2021-03-01",
+    "stockQuantity": 125
+  },
+  {
+    "title": "分布式系统实践 第5版",
+    "author": "何明",
+    "isbn": "978-0-000000784-6",
+    "price": 106.89,
+    "publishedDate": "2008-03-07",
+    "stockQuantity": 96
+  },
+  {
+    "title": "Modern Microservices Vol.7",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000785-0",
+    "price": 155.28,
+    "publishedDate": "2014-12-04",
+    "stockQuantity": 23
+  },
+  {
+    "title": "人工智能入门 第18版",
+    "author": "王芳",
+    "isbn": "978-0-000000786-8",
+    "price": 17.03,
+    "publishedDate": "2015-09-22",
+    "stockQuantity": 105
+  },
+  {
+    "title": "深入理解 JVM 第7版",
+    "author": "胡晓",
+    "isbn": "978-0-000000787-7",
+    "price": 109.52,
+    "publishedDate": "1990-02-02",
+    "stockQuantity": 43
+  },
+  {
+    "title": "Learning Distributed Systems Vol.19",
+    "author": "John Smith",
+    "isbn": "978-0-000000788-2",
+    "price": 72.16,
+    "publishedDate": "1992-02-07",
+    "stockQuantity": 43
+  },
+  {
+    "title": "Practical Guide to System Design Vol.1",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000789-5",
+    "price": 11.91,
+    "publishedDate": "1992-12-25",
+    "stockQuantity": 25
+  },
+  {
+    "title": "云原生应用开发 第4版",
+    "author": "马丽",
+    "isbn": "978-0-000000790-4",
+    "price": 55.76,
+    "publishedDate": "2018-07-01",
+    "stockQuantity": 90
+  },
+  {
+    "title": "深入理解 JVM 第19版",
+    "author": "黄磊",
+    "isbn": "978-0-000000791-2",
+    "price": 23.07,
+    "publishedDate": "1998-06-01",
+    "stockQuantity": 1
+  },
+  {
+    "title": "Practical Guide to System Design Vol.20",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000792-3",
+    "price": 85.65,
+    "publishedDate": "2017-06-02",
+    "stockQuantity": 181
+  },
+  {
+    "title": "The Art of System Design Vol.9",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000793-6",
+    "price": 177.99,
+    "publishedDate": "1993-04-15",
+    "stockQuantity": 181
+  },
+  {
+    "title": "The Art of Cloud Computing Vol.11",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000794-3",
+    "price": 74.91,
+    "publishedDate": "2015-11-01",
+    "stockQuantity": 21
+  },
+  {
+    "title": "架构之美 第1版",
+    "author": "徐丽",
+    "isbn": "978-0-000000795-3",
+    "price": 33.11,
+    "publishedDate": "2021-06-16",
+    "stockQuantity": 27
+  },
+  {
+    "title": "The Art of Python Development Vol.12",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000796-7",
+    "price": 50.46,
+    "publishedDate": "1995-12-11",
+    "stockQuantity": 76
+  },
+  {
+    "title": "Linux 系统管理 第19版",
+    "author": "杨杰",
+    "isbn": "978-0-000000797-8",
+    "price": 161.96,
+    "publishedDate": "2011-11-13",
+    "stockQuantity": 129
+  },
+  {
+    "title": "Modern Software Engineering Vol.2",
+    "author": "William Thomas",
+    "isbn": "978-0-000000798-6",
+    "price": 168.40,
+    "publishedDate": "1992-06-18",
+    "stockQuantity": 148
+  },
+  {
+    "title": "Modern API Design Vol.6",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000799-8",
+    "price": 21.89,
+    "publishedDate": "1982-05-14",
+    "stockQuantity": 169
+  },
+  {
+    "title": "深度学习精要 第14版",
+    "author": "林峰",
+    "isbn": "978-0-000000800-1",
+    "price": 162.14,
+    "publishedDate": "1981-10-18",
+    "stockQuantity": 95
+  },
+  {
+    "title": "代码精进之路 第2版",
+    "author": "王芳",
+    "isbn": "978-0-000000801-1",
+    "price": 183.67,
+    "publishedDate": "2009-11-22",
+    "stockQuantity": 64
+  },
+  {
+    "title": "Deep Dive into Microservices Vol.18",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000802-8",
+    "price": 117.55,
+    "publishedDate": "2007-02-05",
+    "stockQuantity": 12
+  },
+  {
+    "title": "云原生应用开发 第4版",
+    "author": "陈静",
+    "isbn": "978-0-000000803-2",
+    "price": 197.11,
+    "publishedDate": "1992-07-03",
+    "stockQuantity": 149
+  },
+  {
+    "title": "Hands-On System Design Vol.11",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000804-8",
+    "price": 171.13,
+    "publishedDate": "2000-02-12",
+    "stockQuantity": 39
+  },
+  {
+    "title": "Learning Network Security Vol.18",
+    "author": "John Smith",
+    "isbn": "978-0-000000805-8",
+    "price": 14.62,
+    "publishedDate": "2020-02-13",
+    "stockQuantity": 63
+  },
+  {
+    "title": "微服务架构设计 第9版",
+    "author": "王芳",
+    "isbn": "978-0-000000806-2",
+    "price": 21.73,
+    "publishedDate": "2013-12-25",
+    "stockQuantity": 118
+  },
+  {
+    "title": "深度学习精要 第10版",
+    "author": "赵敏",
+    "isbn": "978-0-000000807-7",
+    "price": 82.96,
+    "publishedDate": "2019-11-21",
+    "stockQuantity": 42
+  },
+  {
+    "title": "代码精进之路 第17版",
+    "author": "陈静",
+    "isbn": "978-0-000000808-4",
+    "price": 120.71,
+    "publishedDate": "2009-07-04",
+    "stockQuantity": 36
+  },
+  {
+    "title": "云原生应用开发 第13版",
+    "author": "杨杰",
+    "isbn": "978-0-000000809-3",
+    "price": 65.02,
+    "publishedDate": "2010-01-16",
+    "stockQuantity": 97
+  },
+  {
+    "title": "数据库性能优化 第14版",
+    "author": "罗丹",
+    "isbn": "978-0-000000810-7",
+    "price": 111.90,
+    "publishedDate": "1981-01-23",
+    "stockQuantity": 119
+  },
+  {
+    "title": "Introduction to Software Architecture Vol.13",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000811-5",
+    "price": 26.07,
+    "publishedDate": "1980-11-22",
+    "stockQuantity": 153
+  },
+  {
+    "title": "Deep Dive into Cloud Computing Vol.4",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000812-4",
+    "price": 78.34,
+    "publishedDate": "2006-06-11",
+    "stockQuantity": 0
+  },
+  {
+    "title": "Python 编程之道 第1版",
+    "author": "李娜",
+    "isbn": "978-0-000000813-3",
+    "price": 66.71,
+    "publishedDate": "2017-09-05",
+    "stockQuantity": 34
+  },
+  {
+    "title": "Introduction to Network Security Vol.15",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000814-8",
+    "price": 76.25,
+    "publishedDate": "2000-03-18",
+    "stockQuantity": 132
+  },
+  {
+    "title": "Introduction to DevOps Vol.12",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000815-2",
+    "price": 85.49,
+    "publishedDate": "2021-01-23",
+    "stockQuantity": 184
+  },
+  {
+    "title": "技术领导力 第20版",
+    "author": "杨杰",
+    "isbn": "978-0-000000816-2",
+    "price": 102.29,
+    "publishedDate": "2011-07-10",
+    "stockQuantity": 168
+  },
+  {
+    "title": "Advanced Software Architecture Vol.15",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000817-2",
+    "price": 17.73,
+    "publishedDate": "1996-06-01",
+    "stockQuantity": 147
+  },
+  {
+    "title": "人工智能入门 第14版",
+    "author": "陈静",
+    "isbn": "978-0-000000818-8",
+    "price": 66.46,
+    "publishedDate": "2011-06-18",
+    "stockQuantity": 63
+  },
+  {
+    "title": "Effective Cloud Computing Vol.10",
+    "author": "John Smith",
+    "isbn": "978-0-000000819-7",
+    "price": 69.23,
+    "publishedDate": "1986-10-26",
+    "stockQuantity": 116
+  },
+  {
+    "title": "Deep Dive into DevOps Vol.19",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000820-5",
+    "price": 68.83,
+    "publishedDate": "1987-03-21",
+    "stockQuantity": 102
+  },
+  {
+    "title": "Learning Software Engineering Vol.16",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000821-1",
+    "price": 129.71,
+    "publishedDate": "1988-06-21",
+    "stockQuantity": 183
+  },
+  {
+    "title": "产品经理手册 第2版",
+    "author": "周婷",
+    "isbn": "978-0-000000822-9",
+    "price": 55.94,
+    "publishedDate": "1991-07-19",
+    "stockQuantity": 76
+  },
+  {
+    "title": "高并发编程 第8版",
+    "author": "朱勇",
+    "isbn": "978-0-000000823-8",
+    "price": 70.16,
+    "publishedDate": "1987-10-20",
+    "stockQuantity": 57
+  },
+  {
+    "title": "技术领导力 第4版",
+    "author": "徐丽",
+    "isbn": "978-0-000000824-5",
+    "price": 31.47,
+    "publishedDate": "2007-09-28",
+    "stockQuantity": 82
+  },
+  {
+    "title": "编程之美 第3版",
+    "author": "孙强",
+    "isbn": "978-0-000000825-0",
+    "price": 29.46,
+    "publishedDate": "1982-06-24",
+    "stockQuantity": 117
+  },
+  {
+    "title": "Mastering Data Structures Vol.4",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000826-1",
+    "price": 167.35,
+    "publishedDate": "1989-06-27",
+    "stockQuantity": 179
+  },
+  {
+    "title": "编程之美 第12版",
+    "author": "马丽",
+    "isbn": "978-0-000000827-6",
+    "price": 65.65,
+    "publishedDate": "1997-11-28",
+    "stockQuantity": 139
+  },
+  {
+    "title": "Advanced Software Engineering Vol.10",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000828-5",
+    "price": 130.60,
+    "publishedDate": "2007-03-28",
+    "stockQuantity": 138
+  },
+  {
+    "title": "编程之美 第12版",
+    "author": "林峰",
+    "isbn": "978-0-000000829-7",
+    "price": 167.20,
+    "publishedDate": "1983-03-15",
+    "stockQuantity": 73
+  },
+  {
+    "title": "Linux 系统管理 第14版",
+    "author": "吴昊",
+    "isbn": "978-0-000000830-7",
+    "price": 145.89,
+    "publishedDate": "2015-08-14",
+    "stockQuantity": 146
+  },
+  {
+    "title": "The Art of Machine Learning Vol.7",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000831-8",
+    "price": 184.73,
+    "publishedDate": "2020-02-19",
+    "stockQuantity": 80
+  },
+  {
+    "title": "Web 安全攻防 第13版",
+    "author": "王芳",
+    "isbn": "978-0-000000832-8",
+    "price": 114.17,
+    "publishedDate": "1989-10-09",
+    "stockQuantity": 48
+  },
+  {
+    "title": "Introduction to Cloud Computing Vol.15",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000833-9",
+    "price": 130.37,
+    "publishedDate": "2010-05-23",
+    "stockQuantity": 68
+  },
+  {
+    "title": "架构之美 第11版",
+    "author": "刘洋",
+    "isbn": "978-0-000000834-2",
+    "price": 49.60,
+    "publishedDate": "1993-03-12",
+    "stockQuantity": 149
+  },
+  {
+    "title": "人工智能入门 第5版",
+    "author": "赵敏",
+    "isbn": "978-0-000000835-4",
+    "price": 108.72,
+    "publishedDate": "2013-06-24",
+    "stockQuantity": 114
+  },
+  {
+    "title": "Introduction to DevOps Vol.1",
+    "author": "William Thomas",
+    "isbn": "978-0-000000836-3",
+    "price": 94.60,
+    "publishedDate": "2017-03-19",
+    "stockQuantity": 29
+  },
+  {
+    "title": "Essential Python Development Vol.13",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000837-9",
+    "price": 11.31,
+    "publishedDate": "2020-05-16",
+    "stockQuantity": 106
+  },
+  {
+    "title": "Deep Dive into Python Development Vol.18",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000838-1",
+    "price": 29.22,
+    "publishedDate": "1996-03-14",
+    "stockQuantity": 170
+  },
+  {
+    "title": "云原生应用开发 第4版",
+    "author": "孙强",
+    "isbn": "978-0-000000839-2",
+    "price": 155.00,
+    "publishedDate": "1988-02-16",
+    "stockQuantity": 30
+  },
+  {
+    "title": "数据结构与算法 第10版",
+    "author": "何明",
+    "isbn": "978-0-000000840-7",
+    "price": 17.97,
+    "publishedDate": "2010-11-27",
+    "stockQuantity": 157
+  },
+  {
+    "title": "Advanced Data Structures Vol.7",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000841-3",
+    "price": 151.86,
+    "publishedDate": "2024-08-08",
+    "stockQuantity": 103
+  },
+  {
+    "title": "Essential Cloud Computing Vol.19",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000842-9",
+    "price": 130.43,
+    "publishedDate": "1985-11-04",
+    "stockQuantity": 121
+  },
+  {
+    "title": "Comprehensive Algorithms Vol.18",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000843-0",
+    "price": 126.05,
+    "publishedDate": "1990-08-14",
+    "stockQuantity": 105
+  },
+  {
+    "title": "产品经理手册 第6版",
+    "author": "林峰",
+    "isbn": "978-0-000000844-9",
+    "price": 170.11,
+    "publishedDate": "1990-06-18",
+    "stockQuantity": 110
+  },
+  {
+    "title": "Python 编程之道 第11版",
+    "author": "朱勇",
+    "isbn": "978-0-000000845-0",
+    "price": 76.92,
+    "publishedDate": "2021-08-24",
+    "stockQuantity": 50
+  },
+  {
+    "title": "架构之美 第19版",
+    "author": "吴昊",
+    "isbn": "978-0-000000846-0",
+    "price": 123.78,
+    "publishedDate": "1990-11-24",
+    "stockQuantity": 48
+  },
+  {
+    "title": "Learning DevOps Vol.1",
+    "author": "John Smith",
+    "isbn": "978-0-000000847-4",
+    "price": 131.68,
+    "publishedDate": "2008-01-07",
+    "stockQuantity": 110
+  },
+  {
+    "title": "技术领导力 第16版",
+    "author": "郭鑫",
+    "isbn": "978-0-000000848-0",
+    "price": 45.33,
+    "publishedDate": "2017-04-06",
+    "stockQuantity": 103
+  },
+  {
+    "title": "Practical Guide to API Design Vol.14",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000849-5",
+    "price": 38.03,
+    "publishedDate": "2007-08-04",
+    "stockQuantity": 104
+  },
+  {
+    "title": "编程之美 第15版",
+    "author": "吴昊",
+    "isbn": "978-0-000000850-2",
+    "price": 63.61,
+    "publishedDate": "1999-05-17",
+    "stockQuantity": 194
+  },
+  {
+    "title": "Linux 系统管理 第1版",
+    "author": "周婷",
+    "isbn": "978-0-000000851-1",
+    "price": 166.37,
+    "publishedDate": "2007-08-06",
+    "stockQuantity": 189
+  },
+  {
+    "title": "Advanced Python Development Vol.17",
+    "author": "David Wilson",
+    "isbn": "978-0-000000852-5",
+    "price": 141.10,
+    "publishedDate": "1981-01-16",
+    "stockQuantity": 107
+  },
+  {
+    "title": "Advanced Distributed Systems Vol.4",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000853-0",
+    "price": 158.67,
+    "publishedDate": "1988-09-27",
+    "stockQuantity": 16
+  },
+  {
+    "title": "Deep Dive into Cloud Computing Vol.1",
+    "author": "John Smith",
+    "isbn": "978-0-000000854-2",
+    "price": 121.13,
+    "publishedDate": "1982-12-07",
+    "stockQuantity": 168
+  },
+  {
+    "title": "Practical Guide to Network Security Vol.5",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000855-6",
+    "price": 123.53,
+    "publishedDate": "2010-07-12",
+    "stockQuantity": 88
+  },
+  {
+    "title": "Web 安全攻防 第4版",
+    "author": "朱勇",
+    "isbn": "978-0-000000856-8",
+    "price": 100.58,
+    "publishedDate": "1981-01-11",
+    "stockQuantity": 114
+  },
+  {
+    "title": "The Art of DevOps Vol.14",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000857-0",
+    "price": 127.52,
+    "publishedDate": "2000-05-04",
+    "stockQuantity": 171
+  },
+  {
+    "title": "产品经理手册 第11版",
+    "author": "赵敏",
+    "isbn": "978-0-000000858-4",
+    "price": 119.59,
+    "publishedDate": "1982-01-12",
+    "stockQuantity": 136
+  },
+  {
+    "title": "数据库性能优化 第3版",
+    "author": "林峰",
+    "isbn": "978-0-000000859-6",
+    "price": 164.80,
+    "publishedDate": "2008-09-16",
+    "stockQuantity": 56
+  },
+  {
+    "title": "深入理解 JVM 第12版",
+    "author": "黄磊",
+    "isbn": "978-0-000000860-2",
+    "price": 97.18,
+    "publishedDate": "2000-08-19",
+    "stockQuantity": 149
+  },
+  {
+    "title": "Essential System Design Vol.20",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000861-1",
+    "price": 52.50,
+    "publishedDate": "2007-02-06",
+    "stockQuantity": 70
+  },
+  {
+    "title": "Essential System Design Vol.4",
+    "author": "David Wilson",
+    "isbn": "978-0-000000862-3",
+    "price": 30.36,
+    "publishedDate": "2000-06-20",
+    "stockQuantity": 124
+  },
+  {
+    "title": "The Art of Cloud Computing Vol.8",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000863-4",
+    "price": 49.19,
+    "publishedDate": "2020-11-22",
+    "stockQuantity": 110
+  },
+  {
+    "title": "编程之美 第6版",
+    "author": "刘洋",
+    "isbn": "978-0-000000864-4",
+    "price": 104.28,
+    "publishedDate": "2007-04-21",
+    "stockQuantity": 129
+  },
+  {
+    "title": "Mastering Microservices Vol.18",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000865-4",
+    "price": 79.20,
+    "publishedDate": "2011-10-25",
+    "stockQuantity": 19
+  },
+  {
+    "title": "人工智能入门 第5版",
+    "author": "周婷",
+    "isbn": "978-0-000000866-8",
+    "price": 43.66,
+    "publishedDate": "2009-06-09",
+    "stockQuantity": 47
+  },
+  {
+    "title": "深入理解 JVM 第5版",
+    "author": "赵敏",
+    "isbn": "978-0-000000867-8",
+    "price": 62.58,
+    "publishedDate": "2023-07-27",
+    "stockQuantity": 18
+  },
+  {
+    "title": "Java 高级编程 第9版",
+    "author": "赵敏",
+    "isbn": "978-0-000000868-3",
+    "price": 19.23,
+    "publishedDate": "2017-10-21",
+    "stockQuantity": 131
+  },
+  {
+    "title": "大数据处理实战 第16版",
+    "author": "周婷",
+    "isbn": "978-0-000000869-3",
+    "price": 33.09,
+    "publishedDate": "1996-03-04",
+    "stockQuantity": 77
+  },
+  {
+    "title": "The Art of Cloud Computing Vol.9",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000870-1",
+    "price": 173.07,
+    "publishedDate": "2024-04-27",
+    "stockQuantity": 59
+  },
+  {
+    "title": "The Art of Web Development Vol.11",
+    "author": "James White",
+    "isbn": "978-0-000000871-0",
+    "price": 111.58,
+    "publishedDate": "1990-11-05",
+    "stockQuantity": 52
+  },
+  {
+    "title": "Advanced Machine Learning Vol.8",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000872-2",
+    "price": 157.65,
+    "publishedDate": "2014-08-03",
+    "stockQuantity": 139
+  },
+  {
+    "title": "大数据处理实战 第7版",
+    "author": "吴昊",
+    "isbn": "978-0-000000873-5",
+    "price": 94.45,
+    "publishedDate": "2015-09-07",
+    "stockQuantity": 182
+  },
+  {
+    "title": "Mastering Distributed Systems Vol.18",
+    "author": "James White",
+    "isbn": "978-0-000000874-0",
+    "price": 21.56,
+    "publishedDate": "2016-05-28",
+    "stockQuantity": 96
+  },
+  {
+    "title": "人工智能入门 第14版",
+    "author": "张伟",
+    "isbn": "978-0-000000875-6",
+    "price": 10.93,
+    "publishedDate": "2016-09-23",
+    "stockQuantity": 111
+  },
+  {
+    "title": "Advanced Cloud Computing Vol.8",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000876-2",
+    "price": 96.40,
+    "publishedDate": "2002-02-26",
+    "stockQuantity": 142
+  },
+  {
+    "title": "Hands-On Software Architecture Vol.10",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000877-4",
+    "price": 103.11,
+    "publishedDate": "1984-02-18",
+    "stockQuantity": 29
+  },
+  {
+    "title": "Essential Database Systems Vol.16",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000878-3",
+    "price": 16.76,
+    "publishedDate": "2004-05-17",
+    "stockQuantity": 66
+  },
+  {
+    "title": "数据结构与算法 第5版",
+    "author": "王芳",
+    "isbn": "978-0-000000879-8",
+    "price": 33.36,
+    "publishedDate": "1990-11-11",
+    "stockQuantity": 83
+  },
+  {
+    "title": "Modern Database Systems Vol.6",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000880-0",
+    "price": 33.95,
+    "publishedDate": "2016-09-02",
+    "stockQuantity": 12
+  },
+  {
+    "title": "架构之美 第19版",
+    "author": "张伟",
+    "isbn": "978-0-000000881-4",
+    "price": 23.46,
+    "publishedDate": "2021-04-11",
+    "stockQuantity": 140
+  },
+  {
+    "title": "Introduction to System Design Vol.16",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000882-6",
+    "price": 166.45,
+    "publishedDate": "2023-11-18",
+    "stockQuantity": 129
+  },
+  {
+    "title": "Practical Guide to Java Programming Vol.4",
+    "author": "David Wilson",
+    "isbn": "978-0-000000883-3",
+    "price": 65.58,
+    "publishedDate": "2022-06-27",
+    "stockQuantity": 195
+  },
+  {
+    "title": "高并发编程 第1版",
+    "author": "王芳",
+    "isbn": "978-0-000000884-0",
+    "price": 45.90,
+    "publishedDate": "1984-08-17",
+    "stockQuantity": 30
+  },
+  {
+    "title": "Introduction to Database Systems Vol.19",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000885-9",
+    "price": 83.92,
+    "publishedDate": "2016-05-01",
+    "stockQuantity": 183
+  },
+  {
+    "title": "Advanced Python Development Vol.12",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000886-9",
+    "price": 47.76,
+    "publishedDate": "2017-09-04",
+    "stockQuantity": 63
+  },
+  {
+    "title": "Comprehensive Database Systems Vol.5",
+    "author": "David Wilson",
+    "isbn": "978-0-000000887-5",
+    "price": 110.15,
+    "publishedDate": "2023-04-11",
+    "stockQuantity": 2
+  },
+  {
+    "title": "Advanced Algorithms Vol.5",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000888-8",
+    "price": 17.54,
+    "publishedDate": "1990-02-06",
+    "stockQuantity": 23
+  },
+  {
+    "title": "Java 高级编程 第7版",
+    "author": "张伟",
+    "isbn": "978-0-000000889-6",
+    "price": 105.44,
+    "publishedDate": "1994-08-14",
+    "stockQuantity": 120
+  },
+  {
+    "title": "人工智能入门 第15版",
+    "author": "孙强",
+    "isbn": "978-0-000000890-9",
+    "price": 163.95,
+    "publishedDate": "2009-04-03",
+    "stockQuantity": 134
+  },
+  {
+    "title": "人工智能入门 第19版",
+    "author": "张伟",
+    "isbn": "978-0-000000891-1",
+    "price": 17.21,
+    "publishedDate": "2010-12-06",
+    "stockQuantity": 76
+  },
+  {
+    "title": "高并发编程 第7版",
+    "author": "杨杰",
+    "isbn": "978-0-000000892-2",
+    "price": 81.32,
+    "publishedDate": "1981-09-12",
+    "stockQuantity": 48
+  },
+  {
+    "title": "代码重构 第9版",
+    "author": "王芳",
+    "isbn": "978-0-000000893-9",
+    "price": 80.10,
+    "publishedDate": "2012-02-04",
+    "stockQuantity": 83
+  },
+  {
+    "title": "微服务架构设计 第2版",
+    "author": "朱勇",
+    "isbn": "978-0-000000894-1",
+    "price": 159.09,
+    "publishedDate": "2002-11-13",
+    "stockQuantity": 93
+  },
+  {
+    "title": "Modern Software Architecture Vol.4",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000895-4",
+    "price": 160.06,
+    "publishedDate": "2024-09-06",
+    "stockQuantity": 115
+  },
+  {
+    "title": "Introduction to Cloud Computing Vol.19",
+    "author": "William Thomas",
+    "isbn": "978-0-000000896-3",
+    "price": 123.57,
+    "publishedDate": "2002-06-27",
+    "stockQuantity": 184
+  },
+  {
+    "title": "Hands-On Algorithms Vol.12",
+    "author": "John Smith",
+    "isbn": "978-0-000000897-4",
+    "price": 64.52,
+    "publishedDate": "2009-09-20",
+    "stockQuantity": 46
+  },
+  {
+    "title": "Hands-On Data Structures Vol.1",
+    "author": "William Thomas",
+    "isbn": "978-0-000000898-0",
+    "price": 87.79,
+    "publishedDate": "2020-09-19",
+    "stockQuantity": 199
+  },
+  {
+    "title": "Modern DevOps Vol.2",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000899-9",
+    "price": 102.59,
+    "publishedDate": "1991-07-27",
+    "stockQuantity": 147
+  },
+  {
+    "title": "微服务架构设计 第10版",
+    "author": "吴昊",
+    "isbn": "978-0-000000900-4",
+    "price": 149.13,
+    "publishedDate": "1987-09-11",
+    "stockQuantity": 42
+  },
+  {
+    "title": "技术领导力 第18版",
+    "author": "张伟",
+    "isbn": "978-0-000000901-3",
+    "price": 72.95,
+    "publishedDate": "2006-04-18",
+    "stockQuantity": 169
+  },
+  {
+    "title": "Essential Software Engineering Vol.20",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000902-8",
+    "price": 120.64,
+    "publishedDate": "2022-12-10",
+    "stockQuantity": 0
+  },
+  {
+    "title": "编程之美 第18版",
+    "author": "周婷",
+    "isbn": "978-0-000000903-3",
+    "price": 45.97,
+    "publishedDate": "1989-09-07",
+    "stockQuantity": 49
+  },
+  {
+    "title": "编程之美 第3版",
+    "author": "徐丽",
+    "isbn": "978-0-000000904-6",
+    "price": 36.77,
+    "publishedDate": "2008-10-22",
+    "stockQuantity": 29
+  },
+  {
+    "title": "Learning Python Development Vol.12",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000905-6",
+    "price": 80.62,
+    "publishedDate": "1990-04-04",
+    "stockQuantity": 4
+  },
+  {
+    "title": "Advanced System Design Vol.13",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000906-3",
+    "price": 198.40,
+    "publishedDate": "2020-03-24",
+    "stockQuantity": 32
+  },
+  {
+    "title": "Effective Software Architecture Vol.18",
+    "author": "John Smith",
+    "isbn": "978-0-000000907-9",
+    "price": 85.15,
+    "publishedDate": "1989-02-21",
+    "stockQuantity": 178
+  },
+  {
+    "title": "Python 编程之道 第6版",
+    "author": "王芳",
+    "isbn": "978-0-000000908-2",
+    "price": 155.58,
+    "publishedDate": "2003-02-13",
+    "stockQuantity": 143
+  },
+  {
+    "title": "技术领导力 第7版",
+    "author": "朱勇",
+    "isbn": "978-0-000000909-2",
+    "price": 67.70,
+    "publishedDate": "2021-03-06",
+    "stockQuantity": 106
+  },
+  {
+    "title": "代码重构 第14版",
+    "author": "陈静",
+    "isbn": "978-0-000000910-8",
+    "price": 69.16,
+    "publishedDate": "1984-06-01",
+    "stockQuantity": 46
+  },
+  {
+    "title": "数据结构与算法 第12版",
+    "author": "胡晓",
+    "isbn": "978-0-000000911-5",
+    "price": 198.36,
+    "publishedDate": "2023-09-22",
+    "stockQuantity": 0
+  },
+  {
+    "title": "产品经理手册 第11版",
+    "author": "罗丹",
+    "isbn": "978-0-000000912-1",
+    "price": 122.64,
+    "publishedDate": "2016-05-13",
+    "stockQuantity": 17
+  },
+  {
+    "title": "编程之美 第18版",
+    "author": "张伟",
+    "isbn": "978-0-000000913-4",
+    "price": 99.94,
+    "publishedDate": "2009-02-13",
+    "stockQuantity": 43
+  },
+  {
+    "title": "Advanced Python Development Vol.20",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000914-8",
+    "price": 55.07,
+    "publishedDate": "1992-07-01",
+    "stockQuantity": 29
+  },
+  {
+    "title": "Introduction to Algorithms Vol.12",
+    "author": "John Smith",
+    "isbn": "978-0-000000915-9",
+    "price": 50.12,
+    "publishedDate": "1986-06-21",
+    "stockQuantity": 126
+  },
+  {
+    "title": "Learning Web Development Vol.10",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000916-8",
+    "price": 196.60,
+    "publishedDate": "2024-02-12",
+    "stockQuantity": 48
+  },
+  {
+    "title": "Advanced Algorithms Vol.4",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000917-4",
+    "price": 130.01,
+    "publishedDate": "1999-12-03",
+    "stockQuantity": 54
+  },
+  {
+    "title": "Essential Network Security Vol.6",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000918-0",
+    "price": 124.18,
+    "publishedDate": "2006-07-13",
+    "stockQuantity": 41
+  },
+  {
+    "title": "大数据处理实战 第6版",
+    "author": "张伟",
+    "isbn": "978-0-000000919-5",
+    "price": 89.99,
+    "publishedDate": "2002-09-13",
+    "stockQuantity": 108
+  },
+  {
+    "title": "Effective Algorithms Vol.18",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000920-5",
+    "price": 162.07,
+    "publishedDate": "2017-12-14",
+    "stockQuantity": 185
+  },
+  {
+    "title": "Advanced Network Security Vol.5",
+    "author": "David Wilson",
+    "isbn": "978-0-000000921-9",
+    "price": 97.45,
+    "publishedDate": "1983-11-20",
+    "stockQuantity": 177
+  },
+  {
+    "title": "Mastering Data Structures Vol.20",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000922-1",
+    "price": 31.94,
+    "publishedDate": "1980-01-24",
+    "stockQuantity": 15
+  },
+  {
+    "title": "The Art of Web Development Vol.15",
+    "author": "William Thomas",
+    "isbn": "978-0-000000923-3",
+    "price": 193.59,
+    "publishedDate": "1987-11-26",
+    "stockQuantity": 133
+  },
+  {
+    "title": "Modern Machine Learning Vol.20",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000924-2",
+    "price": 83.56,
+    "publishedDate": "2012-09-16",
+    "stockQuantity": 11
+  },
+  {
+    "title": "技术领导力 第19版",
+    "author": "杨杰",
+    "isbn": "978-0-000000925-1",
+    "price": 149.25,
+    "publishedDate": "2022-12-13",
+    "stockQuantity": 106
+  },
+  {
+    "title": "Hands-On Java Programming Vol.9",
+    "author": "Nancy Walker",
+    "isbn": "978-0-000000926-3",
+    "price": 180.86,
+    "publishedDate": "1993-12-27",
+    "stockQuantity": 15
+  },
+  {
+    "title": "Python 编程之道 第18版",
+    "author": "高远",
+    "isbn": "978-0-000000927-6",
+    "price": 97.74,
+    "publishedDate": "1982-12-12",
+    "stockQuantity": 91
+  },
+  {
+    "title": "人工智能入门 第17版",
+    "author": "黄磊",
+    "isbn": "978-0-000000928-4",
+    "price": 190.74,
+    "publishedDate": "2004-02-10",
+    "stockQuantity": 72
+  },
+  {
+    "title": "微服务架构设计 第14版",
+    "author": "罗丹",
+    "isbn": "978-0-000000929-5",
+    "price": 119.15,
+    "publishedDate": "2014-12-26",
+    "stockQuantity": 75
+  },
+  {
+    "title": "Practical Guide to DevOps Vol.6",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000930-8",
+    "price": 32.69,
+    "publishedDate": "2022-05-15",
+    "stockQuantity": 18
+  },
+  {
+    "title": "Advanced Algorithms Vol.1",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000931-9",
+    "price": 149.11,
+    "publishedDate": "1986-04-17",
+    "stockQuantity": 182
+  },
+  {
+    "title": "深度学习精要 第9版",
+    "author": "罗丹",
+    "isbn": "978-0-000000932-4",
+    "price": 67.01,
+    "publishedDate": "1997-07-09",
+    "stockQuantity": 19
+  },
+  {
+    "title": "编程之美 第15版",
+    "author": "胡晓",
+    "isbn": "978-0-000000933-8",
+    "price": 99.14,
+    "publishedDate": "1996-01-16",
+    "stockQuantity": 59
+  },
+  {
+    "title": "Practical Guide to Microservices Vol.10",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000934-6",
+    "price": 81.63,
+    "publishedDate": "2021-05-24",
+    "stockQuantity": 32
+  },
+  {
+    "title": "Practical Guide to Distributed Systems Vol.20",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000935-6",
+    "price": 9.78,
+    "publishedDate": "2002-01-16",
+    "stockQuantity": 66
+  },
+  {
+    "title": "高并发编程 第3版",
+    "author": "孙强",
+    "isbn": "978-0-000000936-3",
+    "price": 78.79,
+    "publishedDate": "2022-07-24",
+    "stockQuantity": 137
+  },
+  {
+    "title": "Comprehensive Software Architecture Vol.3",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000937-1",
+    "price": 51.74,
+    "publishedDate": "2019-11-20",
+    "stockQuantity": 58
+  },
+  {
+    "title": "Essential Distributed Systems Vol.7",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000938-8",
+    "price": 93.74,
+    "publishedDate": "2012-07-04",
+    "stockQuantity": 128
+  },
+  {
+    "title": "Hands-On Software Architecture Vol.6",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000939-0",
+    "price": 140.27,
+    "publishedDate": "1998-05-03",
+    "stockQuantity": 181
+  },
+  {
+    "title": "产品经理手册 第17版",
+    "author": "吴昊",
+    "isbn": "978-0-000000940-3",
+    "price": 173.83,
+    "publishedDate": "2001-03-08",
+    "stockQuantity": 26
+  },
+  {
+    "title": "Comprehensive System Design Vol.17",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000941-7",
+    "price": 125.16,
+    "publishedDate": "2011-08-27",
+    "stockQuantity": 87
+  },
+  {
+    "title": "Comprehensive Distributed Systems Vol.10",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000942-5",
+    "price": 99.22,
+    "publishedDate": "1984-06-15",
+    "stockQuantity": 159
+  },
+  {
+    "title": "代码精进之路 第1版",
+    "author": "刘洋",
+    "isbn": "978-0-000000943-2",
+    "price": 46.80,
+    "publishedDate": "2014-01-28",
+    "stockQuantity": 31
+  },
+  {
+    "title": "代码精进之路 第16版",
+    "author": "胡晓",
+    "isbn": "978-0-000000944-8",
+    "price": 25.14,
+    "publishedDate": "2012-12-13",
+    "stockQuantity": 7
+  },
+  {
+    "title": "Hands-On Microservices Vol.9",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000945-5",
+    "price": 102.80,
+    "publishedDate": "1982-07-02",
+    "stockQuantity": 29
+  },
+  {
+    "title": "Effective Network Security Vol.9",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000946-4",
+    "price": 153.92,
+    "publishedDate": "2022-09-12",
+    "stockQuantity": 147
+  },
+  {
+    "title": "Java 高级编程 第15版",
+    "author": "孙强",
+    "isbn": "978-0-000000947-1",
+    "price": 106.33,
+    "publishedDate": "1983-11-08",
+    "stockQuantity": 82
+  },
+  {
+    "title": "Comprehensive Database Systems Vol.1",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000948-5",
+    "price": 185.26,
+    "publishedDate": "1997-11-09",
+    "stockQuantity": 105
+  },
+  {
+    "title": "微服务架构设计 第2版",
+    "author": "何明",
+    "isbn": "978-0-000000949-3",
+    "price": 176.53,
+    "publishedDate": "1999-04-16",
+    "stockQuantity": 103
+  },
+  {
+    "title": "Python 编程之道 第15版",
+    "author": "林峰",
+    "isbn": "978-0-000000950-5",
+    "price": 199.82,
+    "publishedDate": "1994-06-20",
+    "stockQuantity": 6
+  },
+  {
+    "title": "Deep Dive into Algorithms Vol.10",
+    "author": "Karen Martinez",
+    "isbn": "978-0-000000951-7",
+    "price": 140.52,
+    "publishedDate": "2010-03-01",
+    "stockQuantity": 74
+  },
+  {
+    "title": "Hands-On Software Architecture Vol.3",
+    "author": "John Smith",
+    "isbn": "978-0-000000952-7",
+    "price": 92.09,
+    "publishedDate": "2009-05-01",
+    "stockQuantity": 110
+  },
+  {
+    "title": "Modern System Design Vol.4",
+    "author": "William Thomas",
+    "isbn": "978-0-000000953-1",
+    "price": 187.90,
+    "publishedDate": "2019-07-23",
+    "stockQuantity": 45
+  },
+  {
+    "title": "分布式系统实践 第7版",
+    "author": "刘洋",
+    "isbn": "978-0-000000954-3",
+    "price": 93.02,
+    "publishedDate": "2017-03-26",
+    "stockQuantity": 51
+  },
+  {
+    "title": "技术领导力 第2版",
+    "author": "杨杰",
+    "isbn": "978-0-000000955-2",
+    "price": 137.21,
+    "publishedDate": "1992-07-14",
+    "stockQuantity": 95
+  },
+  {
+    "title": "产品经理手册 第1版",
+    "author": "高远",
+    "isbn": "978-0-000000956-3",
+    "price": 41.88,
+    "publishedDate": "1987-10-14",
+    "stockQuantity": 127
+  },
+  {
+    "title": "Introduction to Database Systems Vol.5",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000957-8",
+    "price": 74.53,
+    "publishedDate": "2021-12-25",
+    "stockQuantity": 192
+  },
+  {
+    "title": "编程之美 第9版",
+    "author": "周婷",
+    "isbn": "978-0-000000958-8",
+    "price": 59.78,
+    "publishedDate": "2000-11-11",
+    "stockQuantity": 90
+  },
+  {
+    "title": "技术领导力 第3版",
+    "author": "孙强",
+    "isbn": "978-0-000000959-0",
+    "price": 137.86,
+    "publishedDate": "2009-11-08",
+    "stockQuantity": 106
+  },
+  {
+    "title": "Effective Python Development Vol.7",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000960-4",
+    "price": 153.28,
+    "publishedDate": "2023-11-23",
+    "stockQuantity": 125
+  },
+  {
+    "title": "Effective Java Programming Vol.17",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000961-9",
+    "price": 81.26,
+    "publishedDate": "1987-12-06",
+    "stockQuantity": 198
+  },
+  {
+    "title": "数据结构与算法 第12版",
+    "author": "刘洋",
+    "isbn": "978-0-000000962-7",
+    "price": 147.88,
+    "publishedDate": "2012-03-25",
+    "stockQuantity": 55
+  },
+  {
+    "title": "Modern Web Development Vol.1",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000963-8",
+    "price": 162.14,
+    "publishedDate": "1990-11-19",
+    "stockQuantity": 12
+  },
+  {
+    "title": "Web 安全攻防 第5版",
+    "author": "赵敏",
+    "isbn": "978-0-000000964-3",
+    "price": 10.94,
+    "publishedDate": "2015-04-08",
+    "stockQuantity": 175
+  },
+  {
+    "title": "分布式系统实践 第6版",
+    "author": "孙强",
+    "isbn": "978-0-000000965-8",
+    "price": 90.34,
+    "publishedDate": "2014-01-11",
+    "stockQuantity": 7
+  },
+  {
+    "title": "编程之美 第5版",
+    "author": "马丽",
+    "isbn": "978-0-000000966-3",
+    "price": 10.91,
+    "publishedDate": "1998-08-16",
+    "stockQuantity": 54
+  },
+  {
+    "title": "深入理解 JVM 第20版",
+    "author": "陈静",
+    "isbn": "978-0-000000967-9",
+    "price": 175.33,
+    "publishedDate": "1999-12-27",
+    "stockQuantity": 125
+  },
+  {
+    "title": "Modern Software Architecture Vol.2",
+    "author": "Barbara Clark",
+    "isbn": "978-0-000000968-9",
+    "price": 112.52,
+    "publishedDate": "2012-04-23",
+    "stockQuantity": 108
+  },
+  {
+    "title": "Java 高级编程 第11版",
+    "author": "陈静",
+    "isbn": "978-0-000000969-1",
+    "price": 137.69,
+    "publishedDate": "1982-09-15",
+    "stockQuantity": 121
+  },
+  {
+    "title": "大数据处理实战 第3版",
+    "author": "陈静",
+    "isbn": "978-0-000000970-1",
+    "price": 128.09,
+    "publishedDate": "2024-11-09",
+    "stockQuantity": 37
+  },
+  {
+    "title": "Hands-On Machine Learning Vol.12",
+    "author": "Sarah Davis",
+    "isbn": "978-0-000000971-3",
+    "price": 158.24,
+    "publishedDate": "1987-08-07",
+    "stockQuantity": 87
+  },
+  {
+    "title": "架构之美 第8版",
+    "author": "吴昊",
+    "isbn": "978-0-000000972-9",
+    "price": 161.86,
+    "publishedDate": "2010-02-19",
+    "stockQuantity": 48
+  },
+  {
+    "title": "深入理解 JVM 第8版",
+    "author": "马丽",
+    "isbn": "978-0-000000973-6",
+    "price": 94.39,
+    "publishedDate": "1983-09-10",
+    "stockQuantity": 165
+  },
+  {
+    "title": "Linux 系统管理 第13版",
+    "author": "黄磊",
+    "isbn": "978-0-000000974-3",
+    "price": 39.12,
+    "publishedDate": "2016-08-21",
+    "stockQuantity": 105
+  },
+  {
+    "title": "Deep Dive into Web Development Vol.15",
+    "author": "William Thomas",
+    "isbn": "978-0-000000975-5",
+    "price": 135.70,
+    "publishedDate": "1993-05-01",
+    "stockQuantity": 90
+  },
+  {
+    "title": "代码重构 第20版",
+    "author": "陈静",
+    "isbn": "978-0-000000976-9",
+    "price": 192.74,
+    "publishedDate": "1992-12-19",
+    "stockQuantity": 135
+  },
+  {
+    "title": "Introduction to Python Development Vol.14",
+    "author": "Daniel Lewis",
+    "isbn": "978-0-000000977-6",
+    "price": 166.52,
+    "publishedDate": "1993-04-16",
+    "stockQuantity": 182
+  },
+  {
+    "title": "编程之美 第15版",
+    "author": "陈静",
+    "isbn": "978-0-000000978-0",
+    "price": 51.32,
+    "publishedDate": "2020-10-18",
+    "stockQuantity": 163
+  },
+  {
+    "title": "Effective API Design Vol.17",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000979-0",
+    "price": 43.50,
+    "publishedDate": "2016-02-13",
+    "stockQuantity": 128
+  },
+  {
+    "title": "大数据处理实战 第12版",
+    "author": "郭鑫",
+    "isbn": "978-0-000000980-1",
+    "price": 44.69,
+    "publishedDate": "2015-04-21",
+    "stockQuantity": 7
+  },
+  {
+    "title": "Web 安全攻防 第11版",
+    "author": "何明",
+    "isbn": "978-0-000000981-3",
+    "price": 147.56,
+    "publishedDate": "1986-03-13",
+    "stockQuantity": 101
+  },
+  {
+    "title": "Learning Database Systems Vol.16",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000982-1",
+    "price": 102.77,
+    "publishedDate": "2001-07-15",
+    "stockQuantity": 29
+  },
+  {
+    "title": "Effective Java Programming Vol.5",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000983-2",
+    "price": 116.24,
+    "publishedDate": "1996-12-03",
+    "stockQuantity": 103
+  },
+  {
+    "title": "The Art of Algorithms Vol.20",
+    "author": "Michael Brown",
+    "isbn": "978-0-000000984-6",
+    "price": 89.53,
+    "publishedDate": "2011-05-13",
+    "stockQuantity": 154
+  },
+  {
+    "title": "Mastering Microservices Vol.3",
+    "author": "Lisa Anderson",
+    "isbn": "978-0-000000985-5",
+    "price": 58.31,
+    "publishedDate": "2002-02-06",
+    "stockQuantity": 68
+  },
+  {
+    "title": "Practical Guide to Distributed Systems Vol.7",
+    "author": "Jennifer Miller",
+    "isbn": "978-0-000000986-5",
+    "price": 191.63,
+    "publishedDate": "1985-07-22",
+    "stockQuantity": 103
+  },
+  {
+    "title": "Mastering Database Systems Vol.4",
+    "author": "Emily Johnson",
+    "isbn": "978-0-000000987-6",
+    "price": 32.27,
+    "publishedDate": "2012-03-08",
+    "stockQuantity": 10
+  },
+  {
+    "title": "The Art of Database Systems Vol.17",
+    "author": "Patricia Lee",
+    "isbn": "978-0-000000988-3",
+    "price": 68.24,
+    "publishedDate": "2004-12-06",
+    "stockQuantity": 11
+  },
+  {
+    "title": "Learning Database Systems Vol.15",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000989-5",
+    "price": 96.24,
+    "publishedDate": "2017-12-24",
+    "stockQuantity": 156
+  },
+  {
+    "title": "人工智能入门 第8版",
+    "author": "王芳",
+    "isbn": "978-0-000000990-5",
+    "price": 137.65,
+    "publishedDate": "2000-05-07",
+    "stockQuantity": 70
+  },
+  {
+    "title": "数据库性能优化 第13版",
+    "author": "徐丽",
+    "isbn": "978-0-000000991-9",
+    "price": 124.07,
+    "publishedDate": "1995-05-23",
+    "stockQuantity": 76
+  },
+  {
+    "title": "Introduction to Web Development Vol.3",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000992-6",
+    "price": 41.32,
+    "publishedDate": "1988-04-01",
+    "stockQuantity": 94
+  },
+  {
+    "title": "Python 编程之道 第16版",
+    "author": "吴昊",
+    "isbn": "978-0-000000993-8",
+    "price": 190.50,
+    "publishedDate": "1982-08-02",
+    "stockQuantity": 93
+  },
+  {
+    "title": "数据结构与算法 第6版",
+    "author": "徐丽",
+    "isbn": "978-0-000000994-7",
+    "price": 194.60,
+    "publishedDate": "2012-03-23",
+    "stockQuantity": 10
+  },
+  {
+    "title": "Java 高级编程 第20版",
+    "author": "马丽",
+    "isbn": "978-0-000000995-8",
+    "price": 46.85,
+    "publishedDate": "1986-03-28",
+    "stockQuantity": 23
+  },
+  {
+    "title": "Practical Guide to Machine Learning Vol.14",
+    "author": "Robert Taylor",
+    "isbn": "978-0-000000996-1",
+    "price": 164.69,
+    "publishedDate": "2001-12-02",
+    "stockQuantity": 116
+  },
+  {
+    "title": "Essential Data Structures Vol.5",
+    "author": "Christopher Harris",
+    "isbn": "978-0-000000997-7",
+    "price": 94.44,
+    "publishedDate": "1994-03-17",
+    "stockQuantity": 50
+  },
+  {
+    "title": "Advanced Database Systems Vol.6",
+    "author": "David Wilson",
+    "isbn": "978-0-000000998-9",
+    "price": 92.29,
+    "publishedDate": "2005-06-14",
+    "stockQuantity": 123
+  },
+  {
+    "title": "架构之美 第13版",
+    "author": "刘洋",
+    "isbn": "978-0-000000999-8",
+    "price": 31.13,
+    "publishedDate": "1991-09-11",
+    "stockQuantity": 172
+  },
+  {
+    "title": "Introduction to Java Programming Vol.10",
+    "author": "John Smith",
+    "isbn": "978-0-000001000-6",
+    "price": 86.67,
+    "publishedDate": "2008-01-06",
+    "stockQuantity": 162
+  }
+]

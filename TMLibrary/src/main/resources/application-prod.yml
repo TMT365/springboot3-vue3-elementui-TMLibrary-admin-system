@@ -1,0 +1,8 @@
+# Production overrides — all connection details must come from environment
+# variables. Never commit real credentials.
+spring:
+  datasource:
+    url: ${DB_URL}
+    username: ${DB_USERNAME}
+    password: ${DB_PASSWORD}
+    driver-class-name: com.mysql.cj.jdbc.Driver

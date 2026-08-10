@@ -1,0 +1,33 @@
+spring:
+  application:
+    name: TMLibrary
+  profiles:
+    active: dev
+  datasource:
+    # URL / 用户名 / 密码一律从环境变量读，本地开发启动前请执行：
+    #   export DB_URL='jdbc:mysql://localhost:3306/tmlibrary?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai'
+    #   export DB_USERNAME='root'
+    #   export DB_PASSWORD='your_password'
+    # 留空默认值是故意的——让缺环境变量时启动失败，避免再把密码写进 yml
+    url:      ${DB_URL:}
+    username: ${DB_USERNAME:}
+    password: ${DB_PASSWORD:}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+
+mybatis:
+  # XML mapper location — hand-written SQL goes here, one XML per mapper interface
+  # mapper-locations: classpath:mapper/*.xml 是 MyBatis 扫描的 XML 映射文件路径，多个路径用逗号分隔
+  mapper-locations: classpath:mapper/*.xml
+  # Type aliases let XML refer to "Book" instead of "com.tmt.TMLibrary.entity.Book"
+  # type-aliases-package: 是 MyBatis 扫描的实体类包路径，多个包用逗号分隔
+  type-aliases-package: com.tmt.TMLibrary.entity
+  # log-impl 由 MyBatisConfig 手动设(因 SB starter 与 SB 4.x 不兼容,yml 这块读不到)
+  # 默认值: org.apache.ibatis.logging.stdout.StdOutImpl(打到控制台)
+  # 生产想关掉可设: mybatis.log-impl=org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+# 应用层自定义配置(非 Spring/MyBatis 标准)
+app:
+  cors:
+    # 多个 origin 用逗号分隔;不要用 *,否则连 credentials 一起被禁掉
+    # 生产环境按域名收敛,例如: https://admin.example.com
+    origins: http://localhost:5173

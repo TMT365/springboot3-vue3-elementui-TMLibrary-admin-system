@@ -1,0 +1,296 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!-- BookMapper.xml 这是MyBatis的映射文件，用于定义Book实体类与数据库表之间的映射关系。 -->
+<!-- 这里有2种方式来定义映射关系：注解方式和XML方式， 但是XML方式更加灵活和强大。 -->
+
+<!-- 文档类型声明 -->
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!-- Mapper根元素 -->
+<mapper namespace="com.tmt.TMLibrary.mapper.BookMapper">
+    <!-- SQL语句 SQL 标签: <resultMap> / <sql> / <insert> / <update> / <delete> -->
+
+    <!-- <resultMap> 自定义结果映射-->
+    <resultMap id="BookResultMap" type="com.tmt.TMLibrary.entity.Book">
+        <id column="id" property="id" />
+        <result column="title" property="title" />
+        <result column="author" property="author" />
+        <result column="isbn" property="isbn" />
+        <result column="price" property="price" />
+        <result column="published_date" property="publishedDate" />
+        <result column="created_time" property="createdTime" />
+        <result column="updated_time" property="updatedTime" />
+        <result column="stock_quantity" property="stockQuantity" />
+    </resultMap>
+    <!-- 如果设置了map-underscore-to-camel-case: true，那么下划线命名的列名会自动转换为驼峰命名的属性名，
+    只有在字段名和属性名不一致时才会自定义<resultMap> -->
+
+    <sql id="Base_Column_List">
+        id, title, author, isbn, price, published_date, created_time, updated_time, stock_quantity
+    </sql>
+    <!-- sql 标签用于定义可重用的SQL片段，定义后用 <include refid="Base_Column_List"/> 引用，避免每次 SELECT 都把列名抄一遍。 -->
+
+    <!-- CRUD操作， 真正写 SQL 的地方 -->
+    <!-- #{} 和 ${} 是MyBatis中两种不同的参数占位符，#{} 用于预编译，${} 用于直接替换 -->
+    <!-- #{} 用于预编译，防止SQL注入 || ${} 用于直接替换，不安全，慎用 -->
+
+    <insert id="insertBook" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO book (title, author, isbn, price, published_date, created_time, updated_time, stock_quantity)
+        VALUES (#{title}, #{author}, #{isbn}, #{price}, #{publishedDate}, #{createdTime}, #{updatedTime}, #{stockQuantity})
+    </insert>
+    <!-- useGeneratedKeys="true" 执行完 insert 之后，传入的 book 对象`book.getId()`就可以拿到数据库生成的 id。 -->
+
+    <delete id="deleteBookById">
+        DELETE FROM book WHERE id = #{id}
+    </delete>
+
+    <delete id="deleteBookByISBN">
+        DELETE FROM book WHERE isbn = #{isbn}
+    </delete>
+
+    <update id="updateBookById">
+        UPDATE book
+        <set>
+            <if test="title != null and title != '' ">title = #{title},</if>
+            <if test="author != null and author != '' ">author = #{author},</if>
+            <if test="isbn != null and isbn != '' ">isbn = #{isbn},</if>
+            <if test="price != null ">price = #{price},</if>
+            <if test="publishedDate != null ">published_date = #{publishedDate},</if>
+            <if test="createdTime != null ">created_time = #{createdTime},</if>
+            <if test="updatedTime != null ">updated_time = #{updatedTime},</if>
+            <if test="stockQuantity != null ">stock_quantity = #{stockQuantity},</if>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+    <update id="updateBookByISBN">
+        UPDATE book
+        <set>
+            <if test="title != null and title != '' ">title = #{title},</if>
+            <if test="author != null and author != '' ">author = #{author},</if>
+            <if test="price != null ">price = #{price},</if>
+            <if test="publishedDate != null ">published_date = #{publishedDate},</if>
+            <if test="createdTime != null ">created_time = #{createdTime},</if>
+            <if test="updatedTime != null ">updated_time = #{updatedTime},</if>
+            <if test="stockQuantity != null ">stock_quantity = #{stockQuantity},</if>
+        </set>
+        WHERE isbn = #{isbn}
+    </update>
+
+    <select id="selectBookById" resultMap="BookResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM book
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectBookByISBN" resultMap="BookResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM book
+        WHERE isbn = #{isbn}
+    </select>
+
+    <!-- ASC 是升序，DESC 是降序 -->
+    <select id="selectList" resultMap="BookResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM book
+        ORDER BY id ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="selectListByTitle" resultMap="BookResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM book
+        WHERE title LIKE CONCAT('%', #{title}, '%')
+        ORDER BY id ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="selectListByAuthor" resultMap="BookResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM book
+        WHERE author LIKE CONCAT('%', #{author}, '%')
+        ORDER BY id ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="selectListByPublishedDate" resultMap="BookResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM book
+        WHERE published_date = #{publishedDate}
+        ORDER BY id ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="selectListByCreatedTime" resultMap="BookResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM book
+        WHERE created_time = #{createdTime}
+        ORDER BY id ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="selectListByUpdatedTime" resultMap="BookResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM book
+        WHERE updated_time = #{updatedTime}
+        ORDER BY id ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="selectListByStockQuantityRange" resultMap="BookResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM book
+        <![CDATA[
+        WHERE stock_quantity >= #{minStock} AND stock_quantity <= #{maxStock}
+        ORDER BY id ASC
+        LIMIT #{offset}, #{limit}
+        ]]>
+    </select>
+
+    <select id="selectListByPriceRange" resultMap="BookResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM book
+        <![CDATA[
+        WHERE price >= #{minPrice} AND price <= #{maxPrice}
+        ORDER BY id ASC
+        LIMIT #{offset}, #{limit}
+        ]]>
+    </select>
+
+    <select id="countBooks">
+        SELECT COUNT(*) FROM book
+    </select>
+
+    <select id="countBooksByTitle">
+        SELECT COUNT(*) FROM book WHERE title LIKE CONCAT('%', #{title}, '%')
+    </select>
+
+    <select id="countBooksByAuthor">
+        SELECT COUNT(*) FROM book WHERE author LIKE CONCAT('%', #{author}, '%')
+    </select>
+
+    <select id="countBooksByPublishedDate">
+        SELECT COUNT(*) FROM book WHERE published_date = #{publishedDate}
+    </select>
+
+    <select id="countBooksByCreatedTime">
+        SELECT COUNT(*) FROM book WHERE created_time = #{createdTime}
+    </select>
+
+    <select id="countBooksByUpdatedTime">
+        SELECT COUNT(*) FROM book WHERE updated_time = #{updatedTime}
+    </select>
+
+    <select id="countBooksByStockQuantityRange">
+        <![CDATA[
+        SELECT COUNT(*) FROM book WHERE stock_quantity >= #{minStock} AND stock_quantity <= #{maxStock}
+        ]]>
+    </select>
+
+    <select id="countBooksByPriceRange">
+        <![CDATA[
+        SELECT COUNT(*) FROM book WHERE price >= #{minPrice} AND price <= #{maxPrice}
+        ]]>
+    </select>
+
+    <!-- ============================================================== -->
+    <!-- P1 第一个子任务:GET /api/books 多条件搜索(动态 SQL)             -->
+    <!-- <where> 自动判断有无条件 + 自动剥离首个 AND/OR,避免 WHERE 1=1  -->
+    <!-- list 与 count 共享同一段 WHERE 逻辑,保证总数与列表不脱节      -->
+    <!-- ============================================================== -->
+    <sql id="BookSearchWhere">
+        <where>
+            <if test="q.title != null and q.title != ''">
+                AND title LIKE CONCAT('%', #{q.title}, '%')
+            </if>
+            <if test="q.author != null and q.author != ''">
+                AND author LIKE CONCAT('%', #{q.author}, '%')
+            </if>
+            <if test="q.publishedDate != null">
+                AND published_date = #{q.publishedDate}
+            </if>
+            <if test="q.minPrice != null">
+                <![CDATA[ AND price >= #{q.minPrice} ]]>
+            </if>
+            <if test="q.maxPrice != null">
+                <![CDATA[ AND price <= #{q.maxPrice} ]]>
+            </if>
+            <if test="q.minStock != null">
+                <![CDATA[ AND stock_quantity >= #{q.minStock} ]]>
+            </if>
+            <if test="q.maxStock != null">
+                <![CDATA[ AND stock_quantity <= #{q.maxStock} ]]>
+            </if>
+        </where>
+    </sql>
+
+    <select id="selectListBySearch" resultMap="BookResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM book
+        <include refid="BookSearchWhere"/>
+        ORDER BY id ASC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countBySearch">
+        SELECT COUNT(*) FROM book
+        <include refid="BookSearchWhere"/>
+    </select>
+
+    <!-- ============================================================== -->
+    <!-- 任务二:时间粒度区间查询                                          -->
+    <!-- 半开区间 [start, end) — Java 端根据 year/month/day/hour/minute -->
+    <!-- 算好 start/end 后传入,Mapper 只管区间扫描                      -->
+    <!-- 索引友好(B-tree range scan),不依赖 YEAR()/MONTH() 函数         -->
+    <!-- ============================================================== -->
+
+    <!-- publishedDate(LocalDate 列) -->
+    <select id="selectListByPublishedDateRange" resultMap="BookResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM book
+        <![CDATA[
+        WHERE published_date >= #{start} AND published_date < #{end}
+        ORDER BY id ASC
+        LIMIT #{offset}, #{limit}
+        ]]>
+    </select>
+
+    <select id="countByPublishedDateRange">
+        <![CDATA[
+        SELECT COUNT(*) FROM book WHERE published_date >= #{start} AND published_date < #{end}
+        ]]>
+    </select>
+
+    <!-- createdTime(LocalDateTime 列) -->
+    <select id="selectListByCreatedTimeRange" resultMap="BookResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM book
+        <![CDATA[
+        WHERE created_time >= #{start} AND created_time < #{end}
+        ORDER BY id ASC
+        LIMIT #{offset}, #{limit}
+        ]]>
+    </select>
+
+    <select id="countByCreatedTimeRange">
+        <![CDATA[
+        SELECT COUNT(*) FROM book WHERE created_time >= #{start} AND created_time < #{end}
+        ]]>
+    </select>
+
+    <!-- updatedTime(LocalDateTime 列) -->
+    <select id="selectListByUpdatedTimeRange" resultMap="BookResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM book
+        <![CDATA[
+        WHERE updated_time >= #{start} AND updated_time < #{end}
+        ORDER BY id ASC
+        LIMIT #{offset}, #{limit}
+        ]]>
+    </select>
+
+    <select id="countByUpdatedTimeRange">
+        <![CDATA[
+        SELECT COUNT(*) FROM book WHERE updated_time >= #{start} AND updated_time < #{end}
+        ]]>
+    </select>
+</mapper>

@@ -1,0 +1,12 @@
+# Local development overrides (auto-merged on top of application.yml).
+# MySQL connection details — match your local install.
+# 密码、用户名、URL 仍由环境变量注入，本文件不再放任何敏感信息。
+# 启动前执行：
+#   export DB_URL='jdbc:mysql://localhost:3306/tmlibrary?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai'
+#   export DB_USERNAME='root'
+#   export DB_PASSWORD='your_password'
+spring:
+  datasource:
+    url:      ${DB_URL:}
+    username: ${DB_USERNAME:}
+    password: ${DB_PASSWORD:}
