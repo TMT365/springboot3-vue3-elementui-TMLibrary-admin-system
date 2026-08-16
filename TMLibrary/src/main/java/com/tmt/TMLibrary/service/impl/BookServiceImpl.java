@@ -32,6 +32,7 @@ public class BookServiceImpl implements BookService {
     // 唯一构造器，Spring自动调用，把容器中的bookMapper传进来，不需要写@Autowired
     public BookServiceImpl(BookMapper bookMapper) {
         this.bookMapper = bookMapper;
+        // Mybatis 已经帮我们实现了 BookMapper 接口的动态代理对象，并放在IOC中，Spring 会自动注入到这里。
     }
 
     @Override

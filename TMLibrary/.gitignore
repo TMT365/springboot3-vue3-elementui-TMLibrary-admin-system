@@ -1,4 +1,5 @@
 HELP.md
+
 target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
@@ -40,3 +41,10 @@ build/
 .env
 .env.local
 *.local.env
+
+#### doc 文件不上传 ####
+docs/
+
+### src/main/java/com/tmt/TMLibrary/*/function.md 不上传 ####
+src/main/java/com/tmt/TMLibrary/*/function.md
+src/main/resources/db/

@@ -24,10 +24,3 @@ mybatis:
   # log-impl 由 MyBatisConfig 手动设(因 SB starter 与 SB 4.x 不兼容,yml 这块读不到)
   # 默认值: org.apache.ibatis.logging.stdout.StdOutImpl(打到控制台)
   # 生产想关掉可设: mybatis.log-impl=org.apache.ibatis.logging.nologging.NoLoggingImpl
-
-# 应用层自定义配置(非 Spring/MyBatis 标准)
-app:
-  cors:
-    # 多个 origin 用逗号分隔;不要用 *,否则连 credentials 一起被禁掉
-    # 生产环境按域名收敛,例如: https://admin.example.com
-    origins: http://localhost:5173

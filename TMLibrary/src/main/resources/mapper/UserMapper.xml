@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tmt.TMLibrary.mapper.UserMapper">
+
+<resultMap id="userResultMap" type="com.tmt.TMLibrary.entity.User">
+    <id property="id" column="id" />
+    <result property="username" column="username" />
+    <result property="email" column="email" />
+    <result property="passwordHash" column="password_hash" />
+    <result property="createdTime" column="created_time" />
+    <result property="updatedTime" column="updated_time" />
+    <result property="role" column="role" />
+    <result property="salt" column="salt" />
+    <result property="lastLoginTime" column="last_login_time" />
+    <result property="lastLoginIp" column="last_login_ip" />
+    <result property="failedLoginAttempts" column="failed_login_attempts"/>
+    <result property="accountLockedUntil" column="account_locked_until"/>
+    <result property="passwordResetToken" column="password_reset_token" />
+    <result property="passwordResetTokenExpiration" column="password_reset_token_expiration" />
+    <result property="status" column="status" />
+    <result property="deletedAt" column="deleted_at" />
+    <result property="phoneNumber" column="phone_number" />
+</resultMap>
+
+<sql id="Base_Column_List">
+    id, username, email, phone_number, password_hash, created_time, updated_time, role, salt,
+    last_login_time, last_login_ip, failed_login_attempts, account_locked_until,
+    password_reset_token, password_reset_token_expiration, status, deleted_at
+</sql>
+
+<insert id="insertUser" parameterType="com.tmt.TMLibrary.entity.User" useGeneratedKeys="true" keyProperty="id" timeout="3">
+    INSERT INTO users (username, email, phone_number, password_hash, created_time, updated_time, role, salt,
+            last_login_time, last_login_ip, failed_login_attempts, account_locked_until,
+            password_reset_token, password_reset_token_expiration, status, deleted_at)
+    VALUES (#{username}, #{email}, #{phoneNumber}, #{passwordHash}, #{createdTime}, #{updatedTime}, #{role}, #{salt},
+            #{lastLoginTime}, #{lastLoginIp}, #{failedLoginAttempts}, #{accountLockedUntil},
+            #{passwordResetToken}, #{passwordResetTokenExpiration}, #{status}, #{deletedAt})
+</insert>
+
+<delete id="deleteUserByUserNameAndPassword" timeout="3">
+    DELETE FROM users WHERE username = #{userName} AND password_hash = #{password}
+</delete>
+
+<select id="selectUserByUserNameAndPassword" resultMap="userResultMap" timeout="3">
+    SELECT <include refid="Base_Column_List" />
+    FROM users
+    WHERE username = #{userName} AND password_hash = #{password}
+</select>
+
+<select id="selectUserById" resultMap="userResultMap" timeout="3">
+    SELECT <include refid="Base_Column_List" />
+    FROM users
+    WHERE id = #{id}
+</select>
+
+<select id="selectByUsername" resultMap="userResultMap" timeout="3">
+    SELECT <include refid="Base_Column_List" />
+    FROM users
+    WHERE username = #{username}
+</select>
+
+<update id="updateUserById" parameterType="com.tmt.TMLibrary.entity.User" timeout="3">
+    UPDATE users
+    <set>
+        <if test="user.username != null and user.username != '' ">username = #{user.username},</if>
+        <if test="user.email != null and user.email != ''">email = #{user.email},</if>
+        <if test="user.phoneNumber !=null and user.phoneNumber != '' ">phone_number = #{user.phoneNumber},</if>
+        <if test="user.passwordHash != null and user.passwordHash != '' ">password_hash = #{user.passwordHash},</if>
+        <if test="user.salt != null and user.salt != '' ">salt = #{user.salt},</if>
+        <if test="user.lastLoginTime != null">last_login_time = #{user.lastLoginTime},</if>
+        <if test="user.lastLoginIp != null and user.lastLoginIp != '' ">last_login_ip = #{user.lastLoginIp},</if>
+        <if test="user.failedLoginAttempts != null">failed_login_attempts = #{user.failedLoginAttempts},</if>
+        <if test="user.accountLockedUntil != null">account_locked_until = #{user.accountLockedUntil},</if>
+        <if test="user.passwordResetToken != null and user.passwordResetToken != '' ">password_reset_token = #{user.passwordResetToken},</if>
+        <if test="user.passwordResetTokenExpiration != null">password_reset_token_expiration = #{user.passwordResetTokenExpiration},</if>
+        <if test="user.status != null ">status = #{user.status},</if>
+        <if test="user.deletedAt != null">deleted_at = #{user.deletedAt},</if>
+        <if test="user.role != null ">role = #{user.role},</if>
+    </set>
+    WHERE id = #{id}
+</update>
+
+<select id="selectUsersByCriteria" resultMap="userResultMap" timeout="3">
+    SELECT <include refid="Base_Column_List" />
+    FROM users
+    <where>
+        <if test="userSearchRequest.username != null and userSearchRequest.username != '' ">AND username LIKE CONCAT('%', #{userSearchRequest.username}, '%')</if>
+        <if test="userSearchRequest.phoneNumber != null and userSearchRequest.phoneNumber != '' ">AND phone_number LIKE CONCAT('%', #{userSearchRequest.phoneNumber}, '%')</if>
+        <if test="role == T(com.tmt.TMLibrary.common.User.UserRole).ADMIN">AND role = 'USER'</if>
+        <if test="role == T(com.tmt.TMLibrary.common.User.UserRole).BOSS">AND 1=1</if>
+        <if test="userSearchRequest.status != null">AND status = #{userSearchRequest.status}</if>
+        <if test="userSearchRequest.deletedAtStart != null">AND deleted_at &gt;= #{userSearchRequest.deletedAtStart}</if>
+        <if test="userSearchRequest.deletedAtEnd != null">AND deleted_at &lt;= #{userSearchRequest.deletedAtEnd}</if>
+        <if test="userSearchRequest.createdTimeStart != null">AND created_time &gt;= #{userSearchRequest.createdTimeStart}</if>
+        <if test="userSearchRequest.createdTimeEnd != null">AND created_time &lt;= #{userSearchRequest.createdTimeEnd}</if>
+        <if test="userSearchRequest.updatedTimeStart != null">AND updated_time &gt;= #{userSearchRequest.updatedTimeStart}</if>
+        <if test="userSearchRequest.updatedTimeEnd != null">AND updated_time &lt;= #{userSearchRequest.updatedTimeEnd}</if>
+        <if test="userSearchRequest.lastLoginTimeStart != null">AND last_login_time &gt;= #{userSearchRequest.lastLoginTimeStart}</if>
+        <if test="userSearchRequest.lastLoginTimeEnd != null">AND last_login_time &lt;= #{userSearchRequest.lastLoginTimeEnd}</if>
+        <if test="userSearchRequest.accountLockedUntilStart != null">AND account_locked_until &gt;= #{userSearchRequest.accountLockedUntilStart}</if>
+        <if test="userSearchRequest.accountLockedUntilEnd != null">AND account_locked_until &lt;= #{userSearchRequest.accountLockedUntilEnd}</if>
+        <if test="userSearchRequest.lastLoginIp != null and userSearchRequest.lastLoginIp != '' ">AND last_login_ip = #{userSearchRequest.lastLoginIp}</if>
+    </where>
+    LIMIT #{offset}, #{limit}
+</select>
+
+<select id="countUsersByCriteria" resultType="int" timeout="3">
+    SELECT COUNT(*) FROM users
+    <where>
+        <if test="userSearchRequest.username != null and userSearchRequest.username != '' ">AND username LIKE CONCAT('%', #{userSearchRequest.username}, '%')</if>
+        <if test="userSearchRequest.phoneNumber != null and userSearchRequest.phoneNumber != '' ">AND phone_number LIKE CONCAT('%', #{userSearchRequest.phoneNumber}, '%')</if>
+        <if test="role == T(com.tmt.TMLibrary.common.User.UserRole).ADMIN">AND role = 'USER'</if>
+        <if test="role == T(com.tmt.TMLibrary.common.User.UserRole).BOSS">AND 1=1</if>
+        <if test="userSearchRequest.status != null">AND status = #{userSearchRequest.status}</if>
+        <if test="userSearchRequest.deletedAtStart != null">AND deleted_at &gt;= #{userSearchRequest.deletedAtStart}</if>
+        <if test="userSearchRequest.deletedAtEnd != null">AND deleted_at &lt;= #{userSearchRequest.deletedAtEnd}</if>
+        <if test="userSearchRequest.createdTimeStart != null">AND created_time &gt;= #{userSearchRequest.createdTimeStart}</if>
+        <if test="userSearchRequest.createdTimeEnd != null">AND created_time &lt;= #{userSearchRequest.createdTimeEnd}</if>
+        <if test="userSearchRequest.updatedTimeStart != null">AND updated_time &gt;= #{userSearchRequest.updatedTimeStart}</if>
+        <if test="userSearchRequest.updatedTimeEnd != null">AND updated_time &lt;= #{userSearchRequest.updatedTimeEnd}</if>
+        <if test="userSearchRequest.lastLoginTimeStart != null">AND last_login_time &gt;= #{userSearchRequest.lastLoginTimeStart}</if>
+        <if test="userSearchRequest.lastLoginTimeEnd != null">AND last_login_time &lt;= #{userSearchRequest.lastLoginTimeEnd}</if>
+        <if test="userSearchRequest.accountLockedUntilStart != null">AND account_locked_until &gt;= #{userSearchRequest.accountLockedUntilStart}</if>
+        <if test="userSearchRequest.accountLockedUntilEnd != null">AND account_locked_until &lt;= #{userSearchRequest.accountLockedUntilEnd}</if>
+        <if test="userSearchRequest.lastLoginIp != null and userSearchRequest.lastLoginIp != '' ">AND last_login_ip = #{userSearchRequest.lastLoginIp}</if>
+    </where>
+</select>
+
+</mapper>

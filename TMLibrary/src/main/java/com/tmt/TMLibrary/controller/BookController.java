@@ -181,6 +181,7 @@ public class BookController {
      * url = GET /api/books?title=&author=&minPrice=&maxPrice=&minStock=&maxStock=&publishedDate=&page=1&size=10
      * 所有参数都可选;Service 层负责归一化(空串→null、负数→null、page/size 兜底、size 上限 100)
      * @param query Spring 用 @ModelAttribute 从 query 参数自动绑到 DTO 字段
+     * @ModelAttribute 
      */
     @GetMapping
     public Result<PageResult<Book>> search(@ModelAttribute BookSearchRequest query) {

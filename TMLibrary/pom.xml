@@ -64,6 +64,33 @@
 			<scope>test</scope>
 		</dependency>
 
+		<dependency>
+    		<groupId>org.springframework.security</groupId>
+    		<artifactId>spring-security-crypto</artifactId>
+		</dependency>
+
+		<!-- API：编译期写代码用，不加scope -->
+		<dependency>
+    		<groupId>io.jsonwebtoken</groupId>
+    		<artifactId>jjwt-api</artifactId>
+    		<version>0.12.6</version>
+		</dependency>
+		<!-- impl：运行时实现，scope=runtime，编译看不到类，只有运行加载 -->
+		<dependency>
+    	<groupId>io.jsonwebtoken</groupId>
+    		<artifactId>jjwt-impl</artifactId>
+    		<version>0.12.6</version>
+    		<scope>runtime</scope>
+		</dependency>
+		<!-- jackson序列化，runtime，SpringBoot自带jackson，刚好匹配 -->
+		<dependency>
+    		<groupId>io.jsonwebtoken</groupId>
+    		<artifactId>jjwt-jackson</artifactId>
+    		<version>0.12.6</version>
+    		<scope>runtime</scope>
+		</dependency>
+
+
 		<!-- H2 内存数据库 — 集成测试用,避免污染真实 MySQL -->
 		<dependency>
 			<groupId>com.h2database</groupId>
