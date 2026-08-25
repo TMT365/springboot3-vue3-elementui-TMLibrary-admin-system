@@ -16,8 +16,8 @@ public class UserSearchRequest {
     private LocalDateTime createdTimeStart; // 区间查询
     private LocalDateTime createdTimeEnd; // 区间查询
 
-    private LocalDateTime updateTimeStart; // 区间查询
-    private LocalDateTime updateTimeEnd; // 区间查询
+    private LocalDateTime updatedTimeStart; // 区间查询
+    private LocalDateTime updatedTimeEnd; // 区间查询
 
     private LocalDateTime lastLoginTimeStart; // 区间查询
     private LocalDateTime lastLoginTimeEnd; // 区间查询
@@ -62,9 +62,9 @@ public class UserSearchRequest {
             createdTimeEnd = null;
         }
 
-        if (updateTimeStart != null && updateTimeEnd != null && updateTimeStart.isAfter(updateTimeEnd)) {
-            updateTimeStart = null;
-            updateTimeEnd = null;
+        if (updatedTimeStart != null && updatedTimeEnd != null && updatedTimeStart.isAfter(updatedTimeEnd)) {
+            updatedTimeStart = null;
+            updatedTimeEnd = null;
         }
 
         if (lastLoginTimeStart != null && lastLoginTimeEnd != null && lastLoginTimeStart.isAfter(lastLoginTimeEnd)) {

@@ -10,7 +10,7 @@ import lombok.ToString;
 @Getter
 @Setter
 @ToString
-public class UserRegisterRequest extends UserCommonRequest {
+public class UserRegisterRequest {
     @NotBlank(message = "Email cannot be blank") // 添加非空验证注解
     @Email(message = "Email should be valid") // 添加邮箱格式验证注解
     private String email; // 用户的邮箱地址
