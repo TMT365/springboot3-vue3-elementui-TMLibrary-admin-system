@@ -12,6 +12,7 @@ import jakarta.validation.Valid;
 
 import lombok.RequiredArgsConstructor;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -26,16 +27,17 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 
-
+@Slf4j
 @RestController
 @RequestMapping("/api/books")
+// @RequiredArgsConstructor 注解会生成一个包含所有 final 字段的构造函数, 这样 Spring 就可以通过构造函数注入 BookService 实例
 @RequiredArgsConstructor
 public class BookController {
 
     private final BookService bookService;
 
     /**
-     * @brief url = /api/books/list?page=1&size=10
+     * url = /api/books/list?page=1&size=10
      * @param page
      * @param size
      * @return
@@ -44,6 +46,7 @@ public class BookController {
     public Result<PageResult<Book>> list(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
+        log.info("前端请求/api/books/list?page={}&size={}", page, size);
         return Result.success(bookService.page(page, size));
     }
     /**
@@ -53,6 +56,7 @@ public class BookController {
      */
     @GetMapping("/display")
     public Result<Book> getById(@RequestParam(defaultValue = "1") int id) {
+        log.info("前端请求/api/books/display?id={}", id);
         return Result.success(bookService.getById(id));
     }
 
@@ -63,6 +67,7 @@ public class BookController {
      */
     @PostMapping("/created")
     public Result<Void> create(@RequestBody @Valid BookSaveRequest req) {
+        log.info("前端请求/api/books/created, req={}", req);
         bookService.create(req);
         return Result.success();
     }
@@ -75,6 +80,7 @@ public class BookController {
     @PatchMapping("/updated")
     public Result<Void> update(@RequestParam(required = true) int id,
             @RequestBody @Valid BookSaveRequest req) {
+        log.info("前端请求/api/books/updated?id={}, 参数={}", id, req);
         bookService.updateById(id, req);
         return Result.success();
     }
@@ -86,6 +92,7 @@ public class BookController {
      */
     @DeleteMapping("/deleted/id/{id}")
     public Result<Void> delete(@PathVariable(name = "id", required = true) int id) {
+        log.info("前端请求/api/books/deleted/id/{}", id);
         bookService.deleteById(id);
         return Result.success();
     }
@@ -97,6 +104,7 @@ public class BookController {
      */
     @DeleteMapping("/deleted/isbn/{isbn}")
     public Result<Void> deleteByISBN(@PathVariable(name = "isbn", required = true) String isbn) {
+        log.info("前端请求/api/books/deleted/isbn/{}", isbn);
         bookService.deleteByISBN(isbn);
         return Result.success();
     }
@@ -108,12 +116,14 @@ public class BookController {
      */
     @PatchMapping("/updated/isbn/{isbn}")
     public Result<Void> updateByISBN(@PathVariable(name = "isbn", required = true) String isbn, @RequestBody @Valid BookSaveRequest req) {
+        log.info("前端请求/api/books/updated/isbn/{}, 参数={}", isbn, req);
         bookService.updateByISBN(isbn, req);
         return Result.success();
     }
 
     @GetMapping("/display/isbn/{isbn}")
     public Result<Book> getByISBN(@PathVariable(name = "isbn", required = true) String isbn) {
+        log.info("前端请求/api/books/display/isbn/{}", isbn);
         return Result.success(bookService.getByISBN(isbn));
     }
 
@@ -121,6 +131,7 @@ public class BookController {
     public Result<PageResult<Book>> searchByTitle(@PathVariable(name = "title", required = true) String title,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
+        log.info("前端请求/api/books/search/title/{}?page={}&size={}", title, page, size);
         return Result.success(bookService.searchByTitle(title, page, size));
     }
 
@@ -128,6 +139,7 @@ public class BookController {
     public Result<PageResult<Book>> searchByAuthor(@PathVariable(name = "author", required = true) String author,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
+        log.info("前端请求/api/books/search/Author/{}?page={}&size={}", author, page, size);
         return Result.success(bookService.searchByAuthor(author, page, size));
     }
 
@@ -135,6 +147,7 @@ public class BookController {
     public Result<PageResult<Book>> searchByPublishedDate(@PathVariable(name = "publishedDate", required = true) String publishedDate,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
+        log.info("前端请求/api/books/search/publishedDate/{}?page={}&size={}", publishedDate, page, size);
         // 进行类型转换，将字符串转换为LocalDate
         LocalDate parsedPublishedDate = LocalDate.parse(publishedDate);
         return Result.success(bookService.searchByPublishedDate(parsedPublishedDate, page, size));
@@ -144,6 +157,7 @@ public class BookController {
     public Result<PageResult<Book>> searchByCreatedTime(@PathVariable(name = "createdTime", required = true) String createdTime,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
+        log.info("前端请求/api/books/search/CreatedTime/{}?page={}&size={}", createdTime, page, size);
         // 进行类型转换，将字符串转换为LocalDateTime
         LocalDateTime parsedCreatedTime = LocalDateTime.parse(createdTime);
         return Result.success(bookService.searchByCreatedTime(parsedCreatedTime, page, size));
@@ -153,6 +167,7 @@ public class BookController {
     public Result<PageResult<Book>> searchByUpdatedTime(@PathVariable(name = "updatedTime", required = true) String updatedTime,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
+        log.info("前端请求/api/books/search/UpdatedTime/{}?page={}&size={}", updatedTime, page, size);
         // 进行类型转换，将字符串转换为LocalDateTime
         LocalDateTime parsedUpdatedTime = LocalDateTime.parse(updatedTime);
         return Result.success(bookService.searchByUpdatedTime(parsedUpdatedTime, page, size));
@@ -163,6 +178,7 @@ public class BookController {
             @PathVariable(name = "max", required = true) BigDecimal max,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
+        log.info("前端请求/api/books/search/PriceRange/{}/{}?page={}&size={}", min, max, page, size);
         return Result.success(bookService.searchByPriceRange(min, max, page, size));
     }
 
@@ -171,6 +187,7 @@ public class BookController {
             @PathVariable(name = "max", required = true) int max,
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
+        log.info("前端请求/api/books/search/StockQuantityRange/{}/{}?page={}&size={}", min, max, page, size);
         return Result.success(bookService.searchByStockQuantityRange(min, max, page, size));
     }
 
@@ -180,11 +197,12 @@ public class BookController {
      * @brief 多条件组合查询(走动态 SQL)
      * url = GET /api/books?title=&author=&minPrice=&maxPrice=&minStock=&maxStock=&publishedDate=&page=1&size=10
      * 所有参数都可选;Service 层负责归一化(空串→null、负数→null、page/size 兜底、size 上限 100)
-     * @param query Spring 用 @ModelAttribute 从 query 参数自动绑到 DTO 字段
+     * @param query Spring 用 @ModelAttribute 从 query 参数自动绑到 DTO 字段</br>
      * @ModelAttribute 
      */
     @GetMapping
     public Result<PageResult<Book>> search(@ModelAttribute BookSearchRequest query) {
+        log.info("前端请求/api/books, 参数={}", query);
         return Result.success(bookService.search(query));
     }
 
@@ -197,6 +215,7 @@ public class BookController {
      */
     @GetMapping("/search/publishedDate/by")
     public Result<PageResult<Book>> searchByPublishedDateBy(@ModelAttribute BookPublishedDateByRequest req) {
+        log.info("前端请求/api/books/search/publishedDate/by, 参数={}", req);
         return Result.success(bookService.searchByPublishedDateBy(req));
     }
 
@@ -206,6 +225,7 @@ public class BookController {
      */
     @GetMapping("/search/CreatedTime/by")
     public Result<PageResult<Book>> searchByCreatedTimeBy(@ModelAttribute BookDateTimeByRequest req) {
+        log.info("前端请求/api/books/search/CreatedTime/by, 参数={}", req);
         return Result.success(bookService.searchByCreatedTimeBy(req));
     }
 
@@ -215,6 +235,7 @@ public class BookController {
      */
     @GetMapping("/search/UpdatedTime/by")
     public Result<PageResult<Book>> searchByUpdatedTimeBy(@ModelAttribute BookDateTimeByRequest req) {
+        log.info("前端请求/api/books/search/UpdatedTime/by, 参数={}", req);
         return Result.success(bookService.searchByUpdatedTimeBy(req));
     }
 }
