@@ -1,5 +1,8 @@
 package com.tmt.TMLibrary.common.Result;
 
+import lombok.Getter;
+
+@Getter
 public enum ResultCode {
     SUCCESS(200, "成功"),
     BAD_REQUEST(400, "请求参数错误"),
@@ -7,7 +10,7 @@ public enum ResultCode {
     FORBIDDEN(403, "权限不足，禁止访问"),
     NOT_FOUND(404, "资源不存在"),
     METHOD_NOT_ALLOWED(405, "请求方法不允许"),
-    CONFLICT(409, "资源冲突"),
+    CONFLICT(409, "请求条件冲突，所发请求已经存在"),
     UNPROCESSABLE_ENTITY(422, "业务规则不满足"),
     INTERNAL_ERROR(500, "服务器内部错误");
 
