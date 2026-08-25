@@ -2,9 +2,9 @@
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   line-height: 1.5;
   font-weight: 400;
+  /* 让 Element Plus 等组件库知道我们支持双主题。
+     具体背景 / 文字由各 layout(Landing / AdminLayout / Login)自己管。 */
   color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
 }
 
 * {
@@ -15,11 +15,4 @@ body {
   margin: 0;
   min-width: 320px;
   min-height: 100vh;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
 }
