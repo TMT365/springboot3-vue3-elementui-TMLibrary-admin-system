@@ -73,15 +73,21 @@ public class MyBatisConfig {
 
         // 手动应用 log-impl:new 原生 Configuration 绕过 starter.applyTo() 的 SB 4.x 不兼容
         org.apache.ibatis.session.Configuration ibatisConfig = new org.apache.ibatis.session.Configuration();
+        // ==========开启下划线 → 驼峰转换 ==========
+        ibatisConfig.setMapUnderscoreToCamelCase(true); //核心开关！
+        
         String impl = (logImplClassName == null || logImplClassName.isBlank())
                 ? DEFAULT_LOG_IMPL
                 : logImplClassName;
         try {
             Class<?> clazz = Class.forName(impl);
-            ibatisConfig.setLogImpl((Class<? extends Log>) clazz);
+            ibatisConfig.setLogImpl(clazz.asSubclass(Log.class));
         } catch (ClassNotFoundException e) {
             throw new IllegalStateException(
                     "mybatis.log-impl 指定的类不存在: " + impl, e);
+        } catch (ClassCastException e) {
+            throw new IllegalStateException(
+                    "mybatis.log-impl 指定的类未实现 Log 接口: " + impl, e);
         }
         factoryBean.setConfiguration(ibatisConfig);
 
