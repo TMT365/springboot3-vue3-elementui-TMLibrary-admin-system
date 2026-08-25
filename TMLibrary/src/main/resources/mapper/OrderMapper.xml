@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tmt.TMLibrary.mapper.OrderMapper">
+    <resultMap id="OrderResultMap" type="com.tmt.TMLibrary.entity.Order">
+        <id property="id" column="id"/>
+        <result property="orderNumber" column="order_number"/>
+        <result property="userId" column="user_id" />
+        <result property="totalAmount" column="total_amount" />
+        <result property="orderStatus" column="order_status" />
+        <result property="createdTime" column="created_time" />
+        <result property="updatedTime" column="updated_time" />
+    </resultMap>
+
+    <resultMap id="OrderItemResultMap" type="com.tmt.TMLibrary.entity.OrderItem">
+        <id property="id" column="id"/>
+        <result property="orderId" column="order_id"/>
+        <result property="bookId" column="book_id"/>
+        <result property="quantity" column="quantity"/>
+        <result property="price" column="price"/>
+        <result property="createdTime" column="created_time"/>
+    </resultMap>
+
+    <!-- 映射订单和订单项的组合 ； 联表查询，JOIN -->
+    <!-- 也可以使用嵌套select -->
+    <resultMap id="OrderWithItemsResultMap" type="com.tmt.TMLibrary.entity.OrderWithItems">
+        <!-- association：映射单个对象 private Order order; -->
+        <association property="order" javaType="com.tmt.TMLibrary.entity.Order">
+            <!-- column写SQL里的别名 o_id -->
+            <id property="id" column="o_id"/>
+            <result property="userId" column="user_id"/>
+            <result property="totalAmount" column="total_amount"/>
+            <result property="orderStatus" column="order_status"/>
+            <result property="createdTime" column="created_time"/>
+            <result property="updatedTime" column="updated_time"/>
+        </association>
+
+        <!-- collection：映射集合 private List<OrderItem> items; -->
+        <collection property="items" ofType="com.tmt.TMLibrary.entity.OrderItem">
+            <id property="id" column="item_id"/>
+            <result property="orderId" column="item_order_id"/>
+            <result property="bookId" column="item_book_id"/>
+            <result property="quantity" column="item_quantity"/>
+            <result property="price" column="item_price"/>
+        </collection>
+    </resultMap>
+
+
+    <sql id="Order_Base_Column_List">
+        id, order_number, user_id, total_amount, order_status, created_time, updated_time
+    </sql>
+
+    <sql id="OrderItem_Base_Column_List">
+        id, order_id, book_id, quantity, price, created_time
+    </sql>
+
+    <insert id="insertOrder" parameterType="com.tmt.TMLibrary.entity.Order" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO orders (order_number, user_id, total_amount, order_status)
+        VALUES (#{orderNumber}, #{userId}, #{totalAmount}, #{orderStatus.getCode()})
+    </insert>
+
+    <insert id="insertOrderItem" parameterType="com.tmt.TMLibrary.entity.OrderItem" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO order_items (order_id, book_id, quantity, price)
+        VALUES (#{orderId}, #{bookId}, #{quantity}, #{price})
+    </insert>
+
+    <select id="selectOrderByIdForUpdate" resultMap="OrderResultMap" parameterType="int">
+        SELECT <include refid="Order_Base_Column_List"/>
+        FROM orders
+        WHERE id = #{id.intValue()}
+        FOR UPDATE
+    </select>
+
+    <select id="selectOrderById" resultMap="OrderResultMap" parameterType="Integer">
+        SELECT <include refid="Order_Base_Column_List"/>
+        FROM orders
+        WHERE id = #{id.intValue()}
+    </select>
+
+    <select id="selectOrderItemsByOrderId" resultMap="OrderItemResultMap" parameterType="Integer">
+        SELECT <include refid="OrderItem_Base_Column_List"/>
+        FROM order_items
+        WHERE order_id = #{orderId}
+    </select>
+
+    <select id="selectOrderItemById" resultMap="OrderItemResultMap" parameterType="Integer">
+        SELECT <include refid="OrderItem_Base_Column_List"/>
+        FROM order_items
+        WHERE id = #{id}
+    </select>
+
+    <select id="selectOrderWithItemsByOrderId" resultMap="OrderWithItemsResultMap" parameterType="Integer">
+        SELECT o.id AS o_id, 
+        o.order_number, 
+        o.user_id,
+        o.total_amount,
+        o.order_status,
+        o.created_time,
+        o.updated_time,
+
+        oi.id AS item_id,
+        oi.order_id AS item_order_id,
+        oi.book_id AS item_book_id,
+        oi.quantity AS item_quantity,
+        oi.price AS item_price
+        FROM orders AS o
+        LEFT JOIN order_items AS oi ON o.id = oi.order_id
+        WHERE o.id = #{orderId}
+    </select>
+    <!-- 左连接: 包含所有订单，即使没有对应的订单项, 就是把左边的表全部包含进来 -->
+    <!-- 内连接: 只包含有对应关系的记录，即两边都有匹配的记录，格式：INNER JOIN -->
+    <!-- 全连接: 包含两个表中的所有记录，无论是否有匹配的记录，都会被包含，格式：FULL OUTER JOIN -->
+    <!-- 交叉连接: 生成两个表的笛卡尔积，所有可能的组合 格式：CROSS JOIN -->
+    <!-- 右连接: 包含所有订单项，即使没有对应的订单，格式：RIGHT JOIN -->
+    <!-- union: 合并两个或多个 SELECT 语句的结果，格式：UNION -->
+
+    <update id="updateStatusById">
+        UPDATE orders
+        SET order_status = #{status}
+        WHERE id = #{id}
+    </update>
+
+    <select id="selectOrderWithItemsByUserId" resultMap="OrderWithItemsResultMap" parameterType="Integer">
+        SELECT o.id AS o_id,
+        o.order_number,
+        o.user_id,
+        o.total_amount,
+        o.order_status,
+        o.created_time,
+        o.updated_time,
+
+        oi.id AS item_id,
+        oi.order_id AS item_order_id,
+        oi.book_id AS item_book_id,
+        oi.quantity AS item_quantity,
+        oi.price AS item_price
+        FROM orders AS o
+        LEFT JOIN order_items AS oi ON o.id = oi.order_id
+        WHERE o.user_id = #{userId}
+    </select>
+
+</mapper>

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<configuration>
+    <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder>
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <!-- <pattern>%d{HH:mm:ss.SSS} [%thread] %clr(%5p) %logger{36} - %msg%n</pattern> -->
+        </encoder>
+    </appender>
+    <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_FILE:-/opt/logs/tmlibrary.log}</file>
+        <!-- 只写这一个rollingPolicy，不要嵌套别的policy标签 -->
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+             <!-- 归档日志文件名模板 -->
+            <fileNamePattern>${LOG_FILE:-/opt/logs/tmlibrary}.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
+            <!-- 单文件最大，超过就切分，同一天内会增加%i序号 -->
+            <maxFileSize>10MB</maxFileSize>
+            <!-- 保留多少天历史日志，超过自动删除旧文件 -->
+            <maxHistory>30</maxHistory>
+            <!-- 总日志磁盘上限，防止日志占满磁盘（可选） -->
+            <totalSizeCap>5GB</totalSizeCap>
+        </rollingPolicy>
+
+        <encoder>
+            <!-- 文件写入不能带颜色 -->
+            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+        </encoder>
+    </appender>
+    <root level="INFO">
+        <appender-ref ref="CONSOLE" />
+        <appender-ref ref="FILE" />
+    </root>
+</configuration>
+<!-- 配置完成后，重启应用即可生效 -->
