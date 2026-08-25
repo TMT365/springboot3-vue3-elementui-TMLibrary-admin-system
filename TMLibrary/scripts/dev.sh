@@ -49,7 +49,8 @@ echo "✅ 已加载 $ENV_FILE"
 echo "   DB_URL      = $DB_URL"
 echo "   DB_USERNAME = $DB_USERNAME"
 echo "   DB_PASSWORD = *** (${#DB_PASSWORD} chars)"
-echo
+echo "   LOG_FILE     = ${LOG_FILE:-(/opt/logs/tmlibrary.log)}"
+echo 
 
 # ---------- 5. 启动后端 (exec 让 Ctrl-C 直接传给 Maven) ----------
 cd "$PROJECT_ROOT"
