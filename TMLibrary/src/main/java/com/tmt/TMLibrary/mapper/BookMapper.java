@@ -76,7 +76,7 @@ public interface BookMapper {
          * @brief 查询书籍总数
          * @return
          */
-        int countBooks();
+        Integer countBooks();
         // mybatis的xml映射文件，不支持函数重载的写法，因为在xml中，方法名是唯一标识符，不能有相同的方法名，即使参数不同也不行。
 
         /**
@@ -94,7 +94,7 @@ public interface BookMapper {
          * @param title
          * @return
          */
-        int countBooksByTitle(@Param("title") String title);
+        Integer countBooksByTitle(@Param("title") String title);
 
         /**
          * @brief 根据keyword查询书籍列表
@@ -111,7 +111,7 @@ public interface BookMapper {
          * @param author
          * @return
          */
-        int countBooksByAuthor(@Param("author") String author);
+        Integer countBooksByAuthor(@Param("author") String author);
 
         /**
          * @brief 根据(出版日期)查询书籍列表
@@ -129,7 +129,7 @@ public interface BookMapper {
          * @param publishedDate
          * @return
          */
-        int countBooksByPublishedDate(@Param("publishedDate") LocalDate publishedDate);
+        Integer countBooksByPublishedDate(@Param("publishedDate") LocalDate publishedDate);
 
         /**
          * @brief 根据(创建日期)查询书籍列表
@@ -146,7 +146,7 @@ public interface BookMapper {
          * @param createdTime
          * @return
          */
-        int countBooksByCreatedTime(@Param("createdTime") LocalDateTime createdTime);
+        Integer countBooksByCreatedTime(@Param("createdTime") LocalDateTime createdTime);
 
         /**
          * @brief 根据(更新日期)查询书籍列表
@@ -163,7 +163,7 @@ public interface BookMapper {
          * @param updateTime
          * @return
          */
-        int countBooksByUpdatedTime(@Param("updateTime") LocalDateTime updateTime);
+        Integer countBooksByUpdatedTime(@Param("updateTime") LocalDateTime updateTime);
 
         /**
          * @brief 根据价格范围查询书籍列表
@@ -183,7 +183,7 @@ public interface BookMapper {
          * @param maxPrice
          * @return
          */
-        int countBooksByPriceRange(@Param("minPrice") BigDecimal minPrice, @Param("maxPrice") BigDecimal maxPrice);
+        Integer countBooksByPriceRange(@Param("minPrice") BigDecimal minPrice, @Param("maxPrice") BigDecimal maxPrice);
 
         /**
          * @brief 根据库存数量范围查询书籍列表
@@ -202,7 +202,7 @@ public interface BookMapper {
          * @param maxStock
          * @return
          */
-        int countBooksByStockQuantityRange(@Param("minStock") int minStock, @Param("maxStock") int maxStock);
+        Integer countBooksByStockQuantityRange(@Param("minStock") int minStock, @Param("maxStock") int maxStock);
 
         // ============== P1 第一个子任务:多条件组合查询 ==============
 
@@ -219,7 +219,7 @@ public interface BookMapper {
         /**
          * @brief 多条件组合查询的总数 — 与 selectListBySearch 同一份 WHERE 逻辑
          */
-        int countBySearch(@Param("q") BookSearchRequest q);
+        Integer countBySearch(@Param("q") BookSearchRequest q);
 
         // ============== 任务二:时间粒度区间查询 ==============
 
@@ -229,7 +229,7 @@ public interface BookMapper {
                         @Param("offset") int offset,
                         @Param("limit") int limit);
 
-        int countByPublishedDateRange(@Param("start") LocalDate start,
+        Integer countByPublishedDateRange(@Param("start") LocalDate start,
                         @Param("end") LocalDate end);
 
         // created_time(半开区间 [start, end))
@@ -238,7 +238,7 @@ public interface BookMapper {
                         @Param("offset") int offset,
                         @Param("limit") int limit);
 
-        int countByCreatedTimeRange(@Param("start") LocalDateTime start,
+        Integer countByCreatedTimeRange(@Param("start") LocalDateTime start,
                         @Param("end") LocalDateTime end);
 
         // updated_time(半开区间 [start, end))
@@ -247,6 +247,12 @@ public interface BookMapper {
                         @Param("offset") int offset,
                         @Param("limit") int limit);
 
-        int countByUpdatedTimeRange(@Param("start") LocalDateTime start,
+        Integer countByUpdatedTimeRange(@Param("start") LocalDateTime start,
                         @Param("end") LocalDateTime end);
+
+        Book selectByIdForUpdate(@Param("id") int id);
+
+        int atomicDecrementStock(@Param("id") int id, @Param("decrement") int decrement);
+
+        int atomicIncrementStock(@Param("id") int id, @Param("increment") int increment);
 }

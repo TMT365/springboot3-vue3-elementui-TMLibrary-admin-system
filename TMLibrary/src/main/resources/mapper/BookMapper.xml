@@ -156,37 +156,37 @@
         ]]>
     </select>
 
-    <select id="countBooks">
+    <select id="countBooks" resultType="java.lang.Integer">
         SELECT COUNT(*) FROM book
     </select>
 
-    <select id="countBooksByTitle">
+    <select id="countBooksByTitle" resultType="java.lang.Integer">
         SELECT COUNT(*) FROM book WHERE title LIKE CONCAT('%', #{title}, '%')
     </select>
 
-    <select id="countBooksByAuthor">
+    <select id="countBooksByAuthor" resultType="java.lang.Integer">
         SELECT COUNT(*) FROM book WHERE author LIKE CONCAT('%', #{author}, '%')
     </select>
 
-    <select id="countBooksByPublishedDate">
+    <select id="countBooksByPublishedDate" resultType="java.lang.Integer">
         SELECT COUNT(*) FROM book WHERE published_date = #{publishedDate}
     </select>
 
-    <select id="countBooksByCreatedTime">
+    <select id="countBooksByCreatedTime" resultType="java.lang.Integer">
         SELECT COUNT(*) FROM book WHERE created_time = #{createdTime}
     </select>
 
-    <select id="countBooksByUpdatedTime">
+    <select id="countBooksByUpdatedTime" resultType="java.lang.Integer">
         SELECT COUNT(*) FROM book WHERE updated_time = #{updatedTime}
     </select>
 
-    <select id="countBooksByStockQuantityRange">
+    <select id="countBooksByStockQuantityRange" resultType="java.lang.Integer">
         <![CDATA[
         SELECT COUNT(*) FROM book WHERE stock_quantity >= #{minStock} AND stock_quantity <= #{maxStock}
         ]]>
     </select>
 
-    <select id="countBooksByPriceRange">
+    <select id="countBooksByPriceRange" resultType="java.lang.Integer">
         <![CDATA[
         SELECT COUNT(*) FROM book WHERE price >= #{minPrice} AND price <= #{maxPrice}
         ]]>
@@ -231,7 +231,7 @@
         LIMIT #{offset}, #{limit}
     </select>
 
-    <select id="countBySearch">
+    <select id="countBySearch" resultType="java.lang.Integer">
         SELECT COUNT(*) FROM book
         <include refid="BookSearchWhere"/>
     </select>
@@ -254,7 +254,7 @@
         ]]>
     </select>
 
-    <select id="countByPublishedDateRange">
+    <select id="countByPublishedDateRange" resultType="java.lang.Integer">
         <![CDATA[
         SELECT COUNT(*) FROM book WHERE published_date >= #{start} AND published_date < #{end}
         ]]>
@@ -271,7 +271,7 @@
         ]]>
     </select>
 
-    <select id="countByCreatedTimeRange">
+    <select id="countByCreatedTimeRange" resultType="java.lang.Integer">
         <![CDATA[
         SELECT COUNT(*) FROM book WHERE created_time >= #{start} AND created_time < #{end}
         ]]>
@@ -288,9 +288,28 @@
         ]]>
     </select>
 
-    <select id="countByUpdatedTimeRange">
+    <select id="countByUpdatedTimeRange" resultType="java.lang.Integer">
         <![CDATA[
         SELECT COUNT(*) FROM book WHERE updated_time >= #{start} AND updated_time < #{end}
         ]]>
     </select>
+
+    <select id="selectByIdForUpdate" resultMap="BookResultMap">
+        SELECT <include refid="Base_Column_List"/>
+        FROM book
+        WHERE id = #{id}
+        FOR UPDATE
+    </select>
+
+    <update id="atomicDecrementStock">
+        UPDATE book
+        SET stock_quantity = stock_quantity - #{decrement}
+        WHERE id = #{id} AND stock_quantity >= #{decrement}
+    </update>
+
+    <update id="atomicIncrementStock">
+        UPDATE book
+        SET stock_quantity = stock_quantity + #{increment}
+        WHERE id = #{id}
+    </update>
 </mapper>

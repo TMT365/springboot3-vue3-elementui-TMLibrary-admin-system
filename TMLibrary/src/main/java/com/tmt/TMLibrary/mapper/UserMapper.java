@@ -6,6 +6,7 @@ import com.tmt.TMLibrary.dto.UserSearchRequest;
 import com.tmt.TMLibrary.common.User.UserRole;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
+import java.time.LocalDateTime;
 
 /**
  * @brief UserMapper接口，用于定义对User实体类的数据库操作方法。
@@ -21,9 +22,9 @@ import org.apache.ibatis.annotations.Param;
  * UserMapper
  * <p> 在这里关于用户的所有操作,且都是要基于UserName+password/email+Verification/phoneNumber+Verification进行验证的 </p>
  * <p> 1. 创建用户 {@link #insertUser(User)} </p>
- * <p> 2. 删除用户 {@link #deleteUserByUserNameAndPassword(String, String)} </p>
- * <p> 3. 查询用户 {@link #selectUserByUserNameAndPassword(String, String)} </p>
- * <p> 4. 更新用户 {@link #updateUserByUserNameAndPassword(String, String, User)} </p>
+ * <p> 2. 删除用户 {@link #deleteUserById(int)} </p>
+ * <p> 3. 查询用户 {@link #selectUserByUsername(String)} )} </p>
+ * <p> 4. 更新用户 {@link #updateUserById(int, User)} (String, String, User)} </p>
  */ 
 @Mapper
 public interface UserMapper {
@@ -31,8 +32,6 @@ public interface UserMapper {
     int insertUser(User user);
 
     //=====================删除User======================
-    int deleteUserByUserNameAndPassword(@Param("userName") String userName, @Param("password") String password);
-
     int deleteUserById(@Param("id") int id);
     
 
@@ -42,7 +41,7 @@ public interface UserMapper {
     /**
      * 按 username 查用户 — AuthService.login 用,JWT 明天接通时直接用
      */
-    User selectByUsername(@Param("username") String username);
+    User selectUserByUsername(@Param("username") String username);
     //================模糊分页查询User======================
     // 这里可以定义一个方法用于模糊查询用户信息，并支持分页功能
     // 例如：
@@ -53,5 +52,16 @@ public interface UserMapper {
 
     //=====================更新User=====================
     
-    int updateUserById(@Param("id") int id, @Param("user") User user);
+    int updateUserById(@Param("id") int id, @Param("user") User user); 
+
+    //=======================其他业务逻辑========================
+    int incrementFailedLoginAttempts(@Param("id") int id);
+
+    int lockUserAccount(@Param("id") int id, @Param("lockUntil") LocalDateTime lockUntil);
+
+    int resetFailedLoginAttempts(@Param("id") int id);
+
+    int setLastLoginTime(@Param("id") int id, @Param("lastLoginTime") LocalDateTime lastLoginTime);
+
+    int setLastLoginIp(@Param("id") int id, @Param("lastLoginIp") String lastLoginIp);
 }

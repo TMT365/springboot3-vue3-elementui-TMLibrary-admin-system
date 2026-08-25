@@ -17,10 +17,12 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+@Slf4j
 @Service
 // @RequiredArgsConstructor //lombok注解
 public class BookServiceImpl implements BookService {
@@ -46,10 +48,11 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public Book getById(int id) {
+        String where = '[' + this.getClass().getName() +"]"+ ".getId";
         // 这里实现根据ID查询图书信息的逻辑，例如调用BookMapper的查询方法。
         Book book = bookMapper.selectBookById(id);
         if (book == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND,"图书不存在, id=" + id);
+            throw new BusinessException(ResultCode.NOT_FOUND,"图书不存在, id=" + id, where);
         }
         return book;
     }
@@ -71,10 +74,11 @@ public class BookServiceImpl implements BookService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int updateById(int id, BookSaveRequest request) {
+        String where = '[' + this.getClass().getName() +"]"+ ".updateById";
         // 这里实现根据ID更新图书信息的逻辑，例如调用BookMapper的更新方法。
         Book book = bookMapper.selectBookById(id);
         if (book == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND,"图书不存在, id=" + id);
+            throw new BusinessException(ResultCode.NOT_FOUND,"图书不存在, id=" + id, where);
         }
         BeanUtils.copyProperties(request, book);
         book.setUpdatedTime(LocalDateTime.now());
@@ -85,10 +89,11 @@ public class BookServiceImpl implements BookService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int deleteById(int id) {
+        String where = '[' + this.getClass().getName() +"]"+ ".deleteById";
         // 这里实现根据ID删除图书信息的逻辑，例如调用BookMapper的删除方法。
         Book book = bookMapper.selectBookById(id);
         if (book == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND,"图书不存在, id=" + id);
+            throw new BusinessException(ResultCode.NOT_FOUND,"图书不存在, id=" + id, where);
         }
         int rowsAffected = bookMapper.deleteBookById(id);
         return rowsAffected;
@@ -97,9 +102,10 @@ public class BookServiceImpl implements BookService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int deleteByISBN(String isbn) {
+        String where = '[' + this.getClass().getName() +"]"+ ".deleteByISBN";
         Book book = bookMapper.selectBookByISBN(isbn);
         if (book == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND,"图书不存在, isbn=" + isbn);
+            throw new BusinessException(ResultCode.NOT_FOUND,"图书不存在, isbn=" + isbn, where);
         }
         int rowsAffected = bookMapper.deleteBookByISBN(isbn);
         return rowsAffected;
@@ -108,9 +114,10 @@ public class BookServiceImpl implements BookService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int updateByISBN(String isbn, BookSaveRequest request) {
+        String where = '[' + this.getClass().getName() +"]"+ ".updateByISBN";
         Book book = bookMapper.selectBookByISBN(isbn);
         if (book == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND,"图书不存在, isbn=" + isbn);
+            throw new BusinessException(ResultCode.NOT_FOUND,"图书不存在, isbn=" + isbn, where);
         }
         BeanUtils.copyProperties(request, book);
         book.setUpdatedTime(LocalDateTime.now());
@@ -120,9 +127,10 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public Book getByISBN(String isbn) {
+        String where = '[' + this.getClass().getName() +"]"+ ".getByISBN";
         Book book = bookMapper.selectBookByISBN(isbn);
         if (book == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "图书不存在, isbn=" + isbn);
+            throw new BusinessException(ResultCode.NOT_FOUND, "图书不存在, isbn=" + isbn, where);
         }
         return book;
     }

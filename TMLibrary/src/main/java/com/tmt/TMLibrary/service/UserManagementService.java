@@ -26,7 +26,7 @@ public interface UserManagementService {
     /**
      * 搜索用户列表(ADMIN / BOSS)
      */
-    PageResult<User> selectUsersByCriteria(UserSearchRequest req, UserRole currentRole);
+    PageResult<User> selectUsersByCriteria(UserSearchRequest req, Integer currentRole);
 
     /**
      * 更新用户信息

@@ -10,3 +10,7 @@ spring:
     url:      ${DB_URL:}
     username: ${DB_USERNAME:}
     password: ${DB_PASSWORD:}
+
+jwt:
+  secret: "NCcgznliTCsFAuXpzu4YTD+Y634fbw53"
+  expiration-seconds: 3600

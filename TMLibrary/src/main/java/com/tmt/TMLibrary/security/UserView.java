@@ -14,5 +14,5 @@ import lombok.Data;
 public class UserView {
     private Integer id;
     private String username;
-    private UserRole role;
+    private Integer role;
 }

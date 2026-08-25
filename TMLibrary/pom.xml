@@ -90,6 +90,19 @@
     		<scope>runtime</scope>
 		</dependency>
 
+		<!-- logback -->
+		<dependency>
+			<groupId>ch.qos.logback</groupId>
+			<artifactId>logback-classic</artifactId>
+		</dependency>
+		<!-- AOP -->
+		<dependency>
+    		<groupId>org.springframework.boot</groupId>
+			<!--2026 年就改名字了-->
+    		<artifactId>spring-boot-starter-aspectj</artifactId>
+			<!-- <version>4.1.0</version> -->
+			
+		</dependency>
 
 		<!-- H2 内存数据库 — 集成测试用,避免污染真实 MySQL -->
 		<dependency>
