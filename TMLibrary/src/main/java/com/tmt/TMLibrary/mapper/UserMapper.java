@@ -2,14 +2,14 @@ package com.tmt.TMLibrary.mapper;
 
 import org.apache.ibatis.annotations.Mapper;
 import com.tmt.TMLibrary.entity.User;
-import com.tmt.TMLibrary.dto.UserSearchRequest;
+import com.tmt.TMLibrary.dto.request.UserSearchRequest;
 import com.tmt.TMLibrary.common.User.UserRole;
 import java.util.List;
 import org.apache.ibatis.annotations.Param;
 import java.time.LocalDateTime;
 
 /**
- * @brief UserMapper接口，用于定义对User实体类的数据库操作方法。
+ * UserMapper接口，用于定义对User实体类的数据库操作方法。
  * 这个接口使用MyBatis的@Mapper注解，表示它是一个MyBatis的映射器接口。MyBatis会为这个接口生成一个实现类，并将其注册到Spring的IOC容器中，以便在需要时进行依赖注入。
  * 
  * @author tmt
@@ -45,9 +45,9 @@ public interface UserMapper {
     //================模糊分页查询User======================
     // 这里可以定义一个方法用于模糊查询用户信息，并支持分页功能
     // 例如：
-    List<User> selectUsersByCriteria(@Param("userSearchRequest") UserSearchRequest userSearchRequest, @Param("role") UserRole role, @Param("offset") int offset, @Param("limit") int limit);
+    List<User> selectUsersByCriteria(@Param("userSearchRequest") UserSearchRequest userSearchRequest, @Param("role") Integer role, @Param("offset") int offset, @Param("limit") int limit);
 
-    int countUsersByCriteria(@Param("userSearchRequest") UserSearchRequest userSearchRequest, @Param("role") UserRole role);
+    int countUsersByCriteria(@Param("userSearchRequest") UserSearchRequest userSearchRequest, @Param("role") Integer role);
     
 
     //=====================更新User=====================
@@ -55,13 +55,17 @@ public interface UserMapper {
     int updateUserById(@Param("id") int id, @Param("user") User user); 
 
     //=======================其他业务逻辑========================
-    int incrementFailedLoginAttempts(@Param("id") int id);
+    int AcquiredFailedLoginAttempts(@Param("id") int id);
 
-    int lockUserAccount(@Param("id") int id, @Param("lockUntil") LocalDateTime lockUntil);
+    int incrementFailedLoginAttemptsById(@Param("id") int id);
 
-    int resetFailedLoginAttempts(@Param("id") int id);
+    LocalDateTime getAccountLockedUntilById(@Param("id") int id);
 
-    int setLastLoginTime(@Param("id") int id, @Param("lastLoginTime") LocalDateTime lastLoginTime);
+    int lockUserAccountById(@Param("id") int id, @Param("lockUntil") LocalDateTime lockUntil);
 
-    int setLastLoginIp(@Param("id") int id, @Param("lastLoginIp") String lastLoginIp);
+    int resetFailedLoginAttemptsById(@Param("id") int id);
+
+    int setLastLoginTimeById(@Param("id") int id, @Param("lastLoginTime") LocalDateTime lastLoginTime);
+
+    int setLastLoginIpById(@Param("id") int id, @Param("lastLoginIp") String lastLoginIp);
 }

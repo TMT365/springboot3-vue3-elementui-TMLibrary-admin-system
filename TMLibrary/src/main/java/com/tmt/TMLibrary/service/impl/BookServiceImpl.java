@@ -1,28 +1,33 @@
 package com.tmt.TMLibrary.service.impl;
 
+import com.tmt.TMLibrary.dto.request.BookSearchRequest;
+import com.tmt.TMLibrary.dto.request.BookPublishedDateByRequest;
+import com.tmt.TMLibrary.dto.request.BookDateTimeByRequest;
+import com.tmt.TMLibrary.dto.request.BookUpdateRequest;
+import com.tmt.TMLibrary.dto.request.BookSaveRequest;
 import com.tmt.TMLibrary.service.BookService;
 
-// import lombok.RequiredArgsConstructor;
 import com.tmt.TMLibrary.entity.Book;
 import com.tmt.TMLibrary.exception.BusinessException;
 import com.tmt.TMLibrary.common.Result.PageResult;
 import com.tmt.TMLibrary.common.Result.ResultCode;
-import com.tmt.TMLibrary.dto.BookDateTimeByRequest;
-import com.tmt.TMLibrary.dto.BookPublishedDateByRequest;
-import com.tmt.TMLibrary.dto.BookSaveRequest;
-import com.tmt.TMLibrary.dto.BookSearchRequest;
 import com.tmt.TMLibrary.mapper.BookMapper;
 import java.util.List;
-import java.math.BigDecimal;
+
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
+import org.springframework.data.redis.core.StringRedisTemplate;
+import org.springframework.data.redis.core.types.Expiration;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import tools.jackson.databind.ObjectMapper;
+import java.util.concurrent.TimeUnit;
+import com.tmt.TMLibrary.common.utils.RandomExpirationTimeWithOffset;
 
-@Slf4j
+
+
 @Service
 // @RequiredArgsConstructor //lombok注解
 public class BookServiceImpl implements BookService {
@@ -30,32 +35,28 @@ public class BookServiceImpl implements BookService {
     // 你可以在这里添加业务逻辑，例如验证输入数据、处理异常等。
 
     private final BookMapper bookMapper;
-    
+    private final ObjectMapper objectMapper;
+    private final StringRedisTemplate stringRedisTemplate;
+
+    private static final String REDIS_BOOKS_INFO_PATH = "tmlibrary:user:books:";
+
     // 唯一构造器，Spring自动调用，把容器中的bookMapper传进来，不需要写@Autowired
-    public BookServiceImpl(BookMapper bookMapper) {
+    public BookServiceImpl(BookMapper bookMapper, StringRedisTemplate stringRedisTemplate, ObjectMapper objectMapper) {
         this.bookMapper = bookMapper;
+        this.stringRedisTemplate = stringRedisTemplate;
+        this.objectMapper = objectMapper;
         // Mybatis 已经帮我们实现了 BookMapper 接口的动态代理对象，并放在IOC中，Spring 会自动注入到这里。
     }
 
     @Override
     public PageResult<Book> page(int page, int size) {
-        // 这里实现分页查询图书信息的逻辑，例如调用BookMapper的分页查询方法。
+        // 不走Redis，直接查询 MySql
         int offset = (page -1) * size;
         int total = bookMapper.countBooks();
         List<Book> books = bookMapper.selectList(offset, size);
         return new PageResult<>(total, books);
     }
 
-    @Override
-    public Book getById(int id) {
-        String where = '[' + this.getClass().getName() +"]"+ ".getId";
-        // 这里实现根据ID查询图书信息的逻辑，例如调用BookMapper的查询方法。
-        Book book = bookMapper.selectBookById(id);
-        if (book == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND,"图书不存在, id=" + id, where);
-        }
-        return book;
-    }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -73,123 +74,71 @@ public class BookServiceImpl implements BookService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public int updateById(int id, BookSaveRequest request) {
-        String where = '[' + this.getClass().getName() +"]"+ ".updateById";
-        // 这里实现根据ID更新图书信息的逻辑，例如调用BookMapper的更新方法。
-        Book book = bookMapper.selectBookById(id);
-        if (book == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND,"图书不存在, id=" + id, where);
-        }
-        BeanUtils.copyProperties(request, book);
-        book.setUpdatedTime(LocalDateTime.now());
-        int rowsAffected = bookMapper.updateBookById(book);
-        return rowsAffected;
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
-    public int deleteById(int id) {
-        String where = '[' + this.getClass().getName() +"]"+ ".deleteById";
-        // 这里实现根据ID删除图书信息的逻辑，例如调用BookMapper的删除方法。
-        Book book = bookMapper.selectBookById(id);
-        if (book == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND,"图书不存在, id=" + id, where);
-        }
-        int rowsAffected = bookMapper.deleteBookById(id);
-        return rowsAffected;
-    }
-
-    @Override
-    @Transactional(rollbackFor = Exception.class)
     public int deleteByISBN(String isbn) {
-        String where = '[' + this.getClass().getName() +"]"+ ".deleteByISBN";
+        // 先删除数据库
         Book book = bookMapper.selectBookByISBN(isbn);
         if (book == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND,"图书不存在, isbn=" + isbn, where);
+            throw new BusinessException(ResultCode.NOT_FOUND,"图书不存在, isbn=" + isbn);
         }
         int rowsAffected = bookMapper.deleteBookByISBN(isbn);
+        if (rowsAffected > 0) {
+            // 执行删除 Redis
+            stringRedisTemplate.delete(REDIS_BOOKS_INFO_PATH + isbn);
+
+        }
         return rowsAffected;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public int updateByISBN(String isbn, BookSaveRequest request) {
-        String where = '[' + this.getClass().getName() +"]"+ ".updateByISBN";
+    public int updateByISBN(String isbn, BookUpdateRequest request) {
+        // 先更新 MySql
         Book book = bookMapper.selectBookByISBN(isbn);
         if (book == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND,"图书不存在, isbn=" + isbn, where);
+            throw new BusinessException(ResultCode.NOT_FOUND,"图书不存在, isbn=" + isbn);
         }
         BeanUtils.copyProperties(request, book);
         book.setUpdatedTime(LocalDateTime.now());
         int rowsAffected = bookMapper.updateBookByISBN(book);
+        if (rowsAffected > 0) {
+            // 在删除 Redis
+            stringRedisTemplate.delete(REDIS_BOOKS_INFO_PATH + isbn);
+        }
+        // 为什么要延迟双删？
         return rowsAffected;
     }
 
     @Override
     public Book getByISBN(String isbn) {
-        String where = '[' + this.getClass().getName() +"]"+ ".getByISBN";
-        Book book = bookMapper.selectBookByISBN(isbn);
-        if (book == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND, "图书不存在, isbn=" + isbn, where);
+        // 先查询 Redis
+        String jsonString = stringRedisTemplate.opsForValue().get(REDIS_BOOKS_INFO_PATH + isbn);
+
+        Book book;
+        if (jsonString == null) {
+            // 查询数据库
+            book = bookMapper.selectBookByISBN(isbn);
+            if (book == null) {
+                // 如果数据库没有，防止缓存击穿，设置一个TTL时间短的空值
+                stringRedisTemplate.opsForValue().set(REDIS_BOOKS_INFO_PATH + isbn, "", Expiration.from(3L, TimeUnit.MINUTES));
+                throw new BusinessException(ResultCode.NOT_FOUND, "图书不存在, isbn=" + isbn);
+            }
+            String json = objectMapper.writeValueAsString(book);
+            // 同样写入带偏移量的TTL
+            stringRedisTemplate.opsForValue().set(REDIS_BOOKS_INFO_PATH + isbn, json, RandomExpirationTimeWithOffset.get(30L, TimeUnit.MINUTES));
+
+        } else {
+            // 反序列化
+            book = objectMapper.readValue(jsonString, Book.class);
         }
+
+        if (book == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "图书不存在, isbn=" + isbn);
+        }
+
         return book;
     }
 
-    @Override
-    public PageResult<Book> searchByTitle(String title, int page, int size) {
-        int offset = (page -1) * size;
-        int total = bookMapper.countBooksByTitle(title);
-        List<Book> books = bookMapper.selectListByTitle(title, offset, size);
-        return new PageResult<> (total, books);
-    }
-
-    @Override
-    public PageResult<Book> searchByAuthor(String author, int page, int size) {
-        int offset  = (page - 1) * size;
-        int total = bookMapper.countBooksByAuthor(author);
-        List<Book> books = bookMapper.selectListByAuthor(author, offset, size);
-        return new PageResult<> (total, books);
-    }
-
-    @Override
-    public PageResult<Book> searchByPublishedDate(LocalDate publishedDate, int page, int size) {
-        int offset = (page - 1) * size;
-        int total = bookMapper.countBooksByPublishedDate(publishedDate);
-        List<Book> books = bookMapper.selectListByPublishedDate(publishedDate, offset, size);
-        return new PageResult<>(total, books);
-    }
-
-    @Override
-    public PageResult<Book> searchByCreatedTime(LocalDateTime createdTime, int page, int size) {
-        int offset = (page - 1) * size;
-        int total = bookMapper.countBooksByCreatedTime(createdTime);
-        List<Book> books = bookMapper.selectListByCreatedTime(createdTime, offset, size);
-        return new PageResult<>(total, books);
-    }
-
-    @Override
-    public PageResult<Book> searchByUpdatedTime(LocalDateTime updatedTime, int page, int size) {
-        int offset = (page - 1) * size;
-        int total = bookMapper.countBooksByUpdatedTime(updatedTime);
-        List<Book> books = bookMapper.selectListByUpdatedTime(updatedTime, offset, size);
-        return new PageResult<>(total, books);
-    }
-
-    @Override
-    public PageResult<Book> searchByPriceRange(BigDecimal minPrice, BigDecimal maxPrice, int page, int size) {
-        int offset = (page - 1) * size;
-        int total = bookMapper.countBooksByPriceRange(minPrice, maxPrice);
-        List<Book> books = bookMapper.selectListByPriceRange(minPrice, maxPrice, offset, size);
-        return new PageResult<>(total, books);
-    }
-
-    @Override
-    public PageResult<Book> searchByStockQuantityRange(int minStock, int maxStock, int page, int size) {
-        int offset = (page - 1) * size;
-        int total = bookMapper.countBooksByStockQuantityRange(minStock, maxStock);
-        List<Book> books = bookMapper.selectListByStockQuantityRange(minStock, maxStock, offset, size);
-        return new PageResult<>(total, books);
-    }
+    // 这些区间查询无法走 Redis 查询，直接走数据库比 Redis 好
 
     // ============== P1 第一个子任务:多条件组合查询 ==============
 
@@ -237,7 +186,7 @@ public class BookServiceImpl implements BookService {
     // ============== 区间端点计算(私有工具) ==============
 
     /**
-     * @brief 根据 year/month/day 算半开区间 [start, end)
+     * 根据 year/month/day 算半开区间 [start, end)
      *        year 必填;month/day 由 compact() 保证连续性
      * @return [start, end]
      */
@@ -262,7 +211,7 @@ public class BookServiceImpl implements BookService {
     }
 
     /**
-     * @brief 根据 year/month/day/hour/minute 算半开区间 [start, end)
+     * 根据 year/month/day/hour/minute 算半开区间 [start, end)
      *        year 必填;其余由 compact() 保证连续性
      * @return [start, end]
      */

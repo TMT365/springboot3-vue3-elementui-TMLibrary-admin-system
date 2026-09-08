@@ -5,9 +5,14 @@ import lombok.Getter;
 
 @Getter
 public enum OrderStatus {
+    // 未支付
     PENDING(0,"待支付"),
+    // 已支付
     PAID(1,"已支付"),
-    CANCELLED(2,"已取消");
+    // 取消订单
+    CANCELLED(2,"已取消"),
+    // 订单超时
+    TIMEOUT(3,"订单超时取消");
 
     private final Integer code;
     private final String description;

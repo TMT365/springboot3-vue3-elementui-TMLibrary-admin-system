@@ -8,6 +8,8 @@ import lombok.Data;
  */
 @Data
 public class OrderWithItems {
+    // orderNumber 单独拿出来作为items的归类依据, 这里的orderNumber也要写，不写会出现org.apache.ibatis.reflection.ReflectionException
+    private Long orderNumber;
     private Order order;
     private List<OrderItem> items; 
 }

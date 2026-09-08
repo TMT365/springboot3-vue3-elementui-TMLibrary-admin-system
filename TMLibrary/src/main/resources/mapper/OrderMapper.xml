@@ -10,10 +10,11 @@
         <result property="orderStatus" column="order_status" />
         <result property="createdTime" column="created_time" />
         <result property="updatedTime" column="updated_time" />
+        <result property="expireTime" column="expire_time" />
     </resultMap>
 
     <resultMap id="OrderItemResultMap" type="com.tmt.TMLibrary.entity.OrderItem">
-        <id property="id" column="id"/>
+        <id property="id" column="item_id"/>
         <result property="orderId" column="order_id"/>
         <result property="bookId" column="book_id"/>
         <result property="quantity" column="quantity"/>
@@ -24,10 +25,15 @@
     <!-- 映射订单和订单项的组合 ； 联表查询，JOIN -->
     <!-- 也可以使用嵌套select -->
     <resultMap id="OrderWithItemsResultMap" type="com.tmt.TMLibrary.entity.OrderWithItems">
+        <!-- 如果不加这个 id , 数据库查询到多条字段无法整合到一起 -->
+        <id column="order_number" property="orderNumber" />
         <!-- association：映射单个对象 private Order order; -->
         <association property="order" javaType="com.tmt.TMLibrary.entity.Order">
             <!-- column写SQL里的别名 o_id -->
             <id property="id" column="o_id"/>
+            <!-- orderNumber 这行不加，会出现null-->
+            <result property="orderNumber" column="order_number"/>
+
             <result property="userId" column="user_id"/>
             <result property="totalAmount" column="total_amount"/>
             <result property="orderStatus" column="order_status"/>
@@ -55,8 +61,8 @@
     </sql>
 
     <insert id="insertOrder" parameterType="com.tmt.TMLibrary.entity.Order" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO orders (order_number, user_id, total_amount, order_status)
-        VALUES (#{orderNumber}, #{userId}, #{totalAmount}, #{orderStatus.getCode()})
+        INSERT INTO orders (order_number, user_id, total_amount, order_status, expire_time)
+        VALUES (#{orderNumber}, #{userId}, #{totalAmount}, #{orderStatus}, #{expireTime})
     </insert>
 
     <insert id="insertOrderItem" parameterType="com.tmt.TMLibrary.entity.OrderItem" useGeneratedKeys="true" keyProperty="id">
@@ -64,32 +70,33 @@
         VALUES (#{orderId}, #{bookId}, #{quantity}, #{price})
     </insert>
 
-    <select id="selectOrderByIdForUpdate" resultMap="OrderResultMap" parameterType="int">
+    <select id="selectOrderByOrderNumberForUpdate" resultMap="OrderResultMap">
         SELECT <include refid="Order_Base_Column_List"/>
         FROM orders
-        WHERE id = #{id.intValue()}
+        WHERE order_number = #{orderNumber}
         FOR UPDATE
     </select>
 
-    <select id="selectOrderById" resultMap="OrderResultMap" parameterType="Integer">
+    <select id="selectOrderByOrderNumber" resultMap="OrderResultMap">
         SELECT <include refid="Order_Base_Column_List"/>
         FROM orders
-        WHERE id = #{id.intValue()}
+        WHERE order_number = #{orderNumber}
     </select>
 
-    <select id="selectOrderItemsByOrderId" resultMap="OrderItemResultMap" parameterType="Integer">
-        SELECT <include refid="OrderItem_Base_Column_List"/>
-        FROM order_items
-        WHERE order_id = #{orderId}
+    <select id="selectOrderItemsByOrderNumber" resultMap="OrderItemResultMap">
+        SELECT
+        oi.id AS item_id,
+        oi.order_id,
+        oi.book_id,
+        oi.quantity,
+        oi.price
+        FROM order_items AS oi
+        INNER JOIN orders AS o ON o.id = oi.order_id
+        WHERE  o.order_number= #{orderNumber}
     </select>
 
-    <select id="selectOrderItemById" resultMap="OrderItemResultMap" parameterType="Integer">
-        SELECT <include refid="OrderItem_Base_Column_List"/>
-        FROM order_items
-        WHERE id = #{id}
-    </select>
 
-    <select id="selectOrderWithItemsByOrderId" resultMap="OrderWithItemsResultMap" parameterType="Integer">
+    <select id="selectOrderWithItemsByOrderNumber" resultMap="OrderWithItemsResultMap" >
         SELECT o.id AS o_id, 
         o.order_number, 
         o.user_id,
@@ -105,7 +112,7 @@
         oi.price AS item_price
         FROM orders AS o
         LEFT JOIN order_items AS oi ON o.id = oi.order_id
-        WHERE o.id = #{orderId}
+        WHERE o.order_number = #{orderNumber}
     </select>
     <!-- 左连接: 包含所有订单，即使没有对应的订单项, 就是把左边的表全部包含进来 -->
     <!-- 内连接: 只包含有对应关系的记录，即两边都有匹配的记录，格式：INNER JOIN -->
@@ -114,13 +121,13 @@
     <!-- 右连接: 包含所有订单项，即使没有对应的订单，格式：RIGHT JOIN -->
     <!-- union: 合并两个或多个 SELECT 语句的结果，格式：UNION -->
 
-    <update id="updateStatusById">
+    <update id="updateStatusByOrderNumber">
         UPDATE orders
         SET order_status = #{status}
-        WHERE id = #{id}
+        WHERE order_number = #{orderNumber}
     </update>
 
-    <select id="selectOrderWithItemsByUserId" resultMap="OrderWithItemsResultMap" parameterType="Integer">
+    <select id="selectOrderWithItemsByUserId" resultMap="OrderWithItemsResultMap">
         SELECT o.id AS o_id,
         o.order_number,
         o.user_id,

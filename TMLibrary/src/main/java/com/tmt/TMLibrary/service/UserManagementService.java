@@ -1,11 +1,12 @@
 package com.tmt.TMLibrary.service;
 
-import com.tmt.TMLibrary.common.User.UserRole;
-import com.tmt.TMLibrary.dto.UserRegisterRequest;
-import com.tmt.TMLibrary.dto.UserSearchRequest;
-import com.tmt.TMLibrary.dto.UserUpdatedRequest;
+import com.tmt.TMLibrary.vo.UserVo;
+import com.tmt.TMLibrary.dto.request.UserRegisterRequest;
+import com.tmt.TMLibrary.dto.request.UserSearchRequest;
+import com.tmt.TMLibrary.dto.request.UserUpdatedRequest;
 import com.tmt.TMLibrary.entity.User;
 import com.tmt.TMLibrary.common.Result.PageResult;
+
 
 public interface UserManagementService {
 
@@ -21,12 +22,12 @@ public interface UserManagementService {
      * @param currentRole    当前操作用户角色
      * @param currentUserId  当前操作用户 id(用于区分自己/他人)
      */
-    int deleteUser(int targetUserId, String password, UserRole currentRole, Integer currentUserId);
+    int deleteUser(int targetUserId, String password, Integer currentRole, Integer currentUserId);
 
     /**
      * 搜索用户列表(ADMIN / BOSS)
      */
-    PageResult<User> selectUsersByCriteria(UserSearchRequest req, Integer currentRole);
+    PageResult<UserVo> selectUsersByCriteria(UserSearchRequest req, Integer currentRole);
 
     /**
      * 更新用户信息
@@ -34,7 +35,7 @@ public interface UserManagementService {
      * @param currentRole   当前操作用户角色
      * @param currentUserId 当前操作用户 id(用于区分自己/他人)
      */
-    int updateUser(UserUpdatedRequest req, UserRole currentRole, Integer currentUserId);
+    int updateUser(UserUpdatedRequest req, Integer currentRole, Integer currentUserId);
 
     /**
      * 修改密码 — 必须 currentUserId == targetUserId(只能改自己)。
@@ -45,5 +46,5 @@ public interface UserManagementService {
     /**
      * 获取单个用户(排除软删)
      */
-    User getUserById(int id);
+    UserVo getUserById(int id);
 }

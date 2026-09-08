@@ -10,7 +10,34 @@ spring:
     url:      ${DB_URL:}
     username: ${DB_USERNAME:}
     password: ${DB_PASSWORD:}
+  # Redis 配置
+  data:
+    redis:
+      username : admin
+      password : w15274695856w
+      port : 6379
+      host : localhost
+      timeout: 2000ms # 命令超时时间
+      database : 0
+      # lettuce连接池配置，需要commons‑pool2才生效
+      lettuce:
+        pool:
+          enabled : true
+          max-active: 8   #最大连接数
+          max-idle: 8     #最大空闲
+          min-idle: 2     #最小空闲
+          max-wait: 500ms #获取连接最大等待时间
+
 
 jwt:
   secret: "NCcgznliTCsFAuXpzu4YTD+Y634fbw53"
-  expiration-seconds: 3600
+  expiration-seconds: 604800
+
+# 可以使用这个命令查看 Bean 的注册，看是否有自动配置未生效
+#logging:
+#  level:
+#    org.springframework.boot.autoconfigure: debug
+#    org.springframework.beans: debug
+
+
+

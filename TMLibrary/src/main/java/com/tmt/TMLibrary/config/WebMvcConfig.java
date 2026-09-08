@@ -8,7 +8,7 @@ import org.springframework.web.method.support.HandlerMethodArgumentResolver;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
-import com.tmt.TMLibrary.security.CurrentUserArgumentResolver;
+import com.tmt.TMLibrary.security.context.CurrentUserArgumentResolver;
 
 import lombok.RequiredArgsConstructor;
 

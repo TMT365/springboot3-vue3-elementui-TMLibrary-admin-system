@@ -10,11 +10,14 @@ import lombok.Data;
 public class Order {
     // 主键
     private Integer id;
-    private String orderNumber;
+    private Long orderNumber;
     private Integer userId;
     // BigDecimal 在创建对象时要使用字符串创建
     private BigDecimal totalAmount;
     private Integer orderStatus;
     private LocalDateTime createdTime;
     private LocalDateTime updatedTime;
+
+    // 过期时间
+    private LocalDateTime expireTime;
 }

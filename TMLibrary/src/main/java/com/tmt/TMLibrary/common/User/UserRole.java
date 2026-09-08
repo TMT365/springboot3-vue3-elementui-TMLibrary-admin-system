@@ -4,14 +4,7 @@ import com.tmt.TMLibrary.exception.BusinessException;
 import lombok.Getter;
 import com.tmt.TMLibrary.common.Result.ResultCode;
 
-/**
- * @brief 这个类定义了用户角色的枚举类型，用于表示不同的用户权限和访问级别。
- * @author tmt
- * @version 1.0
- * @since 2026-08-14
- * @see com.tmt.TMLibrary.service.UserManagementService
- * UserRole
- */
+//这个类定义了用户角色的枚举类型，用于表示不同的用户权限和访问级别。
 @Getter
 public enum UserRole {
     USER(0, "普通用户"),

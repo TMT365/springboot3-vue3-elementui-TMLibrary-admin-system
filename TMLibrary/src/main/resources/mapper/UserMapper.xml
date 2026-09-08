@@ -31,7 +31,7 @@
 
     <insert id="insertUser" parameterType="com.tmt.TMLibrary.entity.User" useGeneratedKeys="true" keyProperty="id" timeout="3">
         INSERT INTO users (username, email, phone_number, password_hash, created_time, role, status)
-        VALUES (#{username}, #{email}, #{phoneNumber}, #{passwordHash}, #{createdTime}, #{role.getCode()}, #{status.getCode()})
+        VALUES (#{username}, #{email}, #{phoneNumber}, #{passwordHash}, #{createdTime}, #{role}, #{status})
     </insert>
     <delete id="deleteUserById" parameterType="int" timeout="3">
         DELETE FROM users WHERE id = #{id}
@@ -69,9 +69,9 @@
             <if test="user.accountLockedUntil != null">account_locked_until = #{user.accountLockedUntil},</if>
             <if test="user.passwordResetToken != null and user.passwordResetToken != '' ">password_reset_token = #{user.passwordResetToken},</if>
             <if test="user.passwordResetTokenExpiration != null">password_reset_token_expiration = #{user.passwordResetTokenExpiration},</if>
-            <if test="user.status != null ">status = #{user.status.getCode()},</if>
+            <if test="user.status != null ">status = #{user.status},</if>
             <if test="user.deletedAt != null">deleted_at = #{user.deletedAt},</if>
-            <if test="user.role != null ">role = #{user.role.getCode()},</if>
+            <if test="user.role != null ">role = #{user.role},</if>
         </set>
         WHERE id = #{id}
     </update>
@@ -82,9 +82,9 @@
         <where>
             <if test="userSearchRequest.username != null and userSearchRequest.username != '' ">AND username LIKE CONCAT('%', #{userSearchRequest.username}, '%')</if>
             <if test="userSearchRequest.phoneNumber != null and userSearchRequest.phoneNumber != '' ">AND phone_number LIKE CONCAT('%', #{userSearchRequest.phoneNumber}, '%')</if>
-            <if test="role.getCode() == 1">AND role = 'USER'</if>
-            <if test="role.getCode() == 2">AND 1=1</if>
-            <if test="userSearchRequest.status != null">AND status = #{userSearchRequest.status.getCode()}</if>
+            <if test="role == 1">AND role = #{role}</if>
+            <if test="role == 2">AND 1=1</if>
+            <if test="userSearchRequest.status != null">AND status = #{userSearchRequest.status}</if>
             <if test="userSearchRequest.deletedAtStart != null">AND deleted_at &gt;= #{userSearchRequest.deletedAtStart}</if>
             <if test="userSearchRequest.deletedAtEnd != null">AND deleted_at &lt;= #{userSearchRequest.deletedAtEnd}</if>
             <if test="userSearchRequest.createdTimeStart != null">AND created_time &gt;= #{userSearchRequest.createdTimeStart}</if>
@@ -105,9 +105,9 @@
         <where>
             <if test="userSearchRequest.username != null and userSearchRequest.username != '' ">AND username LIKE CONCAT('%', #{userSearchRequest.username}, '%')</if>
             <if test="userSearchRequest.phoneNumber != null and userSearchRequest.phoneNumber != '' ">AND phone_number LIKE CONCAT('%', #{userSearchRequest.phoneNumber}, '%')</if>
-            <if test="role.getCode() == 1">AND role = 'USER'</if>
-            <if test="role.getCode() == 2">AND 1=1</if>
-            <if test="userSearchRequest.status != null">AND status = #{userSearchRequest.status.getCode()}</if>
+            <if test="role == 1">AND role = #{role}</if>
+            <if test="role == 2">AND 1=1</if>
+            <if test="userSearchRequest.status != null">AND status = #{userSearchRequest.status}</if>
             <if test="userSearchRequest.deletedAtStart != null">AND deleted_at &gt;= #{userSearchRequest.deletedAtStart}</if>
             <if test="userSearchRequest.deletedAtEnd != null">AND deleted_at &lt;= #{userSearchRequest.deletedAtEnd}</if>
             <if test="userSearchRequest.createdTimeStart != null">AND created_time &gt;= #{userSearchRequest.createdTimeStart}</if>
@@ -122,34 +122,45 @@
         </where>
     </select>
 
-    <update id="incrementFailedLoginAttempts" timeout="3">
+    <update id="incrementFailedLoginAttemptsById" timeout="3">
         UPDATE users
         SET failed_login_attempts = failed_login_attempts + 1
         WHERE id = #{id}
     </update>
 
-    <update id="lockUserAccount" timeout="3">
+    <select id="getAccountLockedUntilById" resultType="java.time.LocalDateTime">
+        SELECT account_locked_until
+        FROM users
+        WHERE id = #{id}
+    </select>
+
+    <update id="lockUserAccountById" timeout="3">
         UPDATE users
         SET account_locked_until = #{lockUntil}
         WHERE id = #{id}
     </update>
 
-    <update id="resetFailedLoginAttempts" timeout="3">
+    <update id="resetFailedLoginAttemptsById" timeout="3">
         UPDATE users
         SET failed_login_attempts = 0, account_locked_until = NULL
         WHERE id = #{id}
     </update>
 
-    <update id="setLastLoginTime" timeout="3">
+    <update id="setLastLoginTimeById" timeout="3">
         UPDATE users
         SET last_login_time = #{lastLoginTime}
         WHERE id = #{id}
     </update>
 
-    <update id="setLastLoginIp" timeout="3">
+    <update id="setLastLoginIpById" timeout="3">
         UPDATE users
         SET last_login_ip = #{lastLoginIp}
         WHERE id = #{id}
     </update>
 
+    <select id="AcquiredFailedLoginAttempts" timeout="3" resultType="Integer">
+        SELECT failed_login_attempts
+        FROM users
+        WHERE id = #{id}
+    </select>
 </mapper>

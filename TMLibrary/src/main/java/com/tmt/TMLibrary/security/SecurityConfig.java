@@ -1,9 +1,13 @@
 package com.tmt.TMLibrary.security;
 
+import com.tmt.TMLibrary.security.jwt.JwtAuthFilter;
+import com.tmt.TMLibrary.security.jwt.JwtProperties;
+import com.tmt.TMLibrary.security.jwt.JwtService;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
@@ -30,14 +34,16 @@ public class SecurityConfig {
     }
 
     /**
-     * 自己注册一个 JwtAuthFilter @Bean,控制 URL pattern + 顺序。
-     * 
-     * @param filter
-     * @return
+     * 自己注册一个 JwtAuthFilter &#64;Bean,控制 URL pattern + 顺序。
+     *
+     * @param jwtService JWT 解析服务
+     * @param errorWriter 错误响应写入器
+     * @param stringRedisTemplate Redis 模板(JWT 黑名单)
+     * @return JwtAuthFilter 实例
      */
     @Bean
-    public JwtAuthFilter jwtAuthFilter(JwtService jwtService, AuthErrorWriter errorWriter) {
-        return new JwtAuthFilter(jwtService, errorWriter);
+    public JwtAuthFilter jwtAuthFilter(JwtService jwtService, AuthErrorWriter errorWriter, StringRedisTemplate stringRedisTemplate) {
+        return new JwtAuthFilter(jwtService, errorWriter, stringRedisTemplate);
     }
 
     /**
@@ -52,7 +58,7 @@ public class SecurityConfig {
     @Bean
     public FilterRegistrationBean<JwtAuthFilter> jwtAuthFilterRegistration(JwtAuthFilter filter) {
         FilterRegistrationBean<JwtAuthFilter> reg = new FilterRegistrationBean<>(filter);
-        reg.addUrlPatterns("/*");
+        reg.addUrlPatterns("/api/*");
         reg.setOrder(10);
         reg.setName("jwtAuthFilter");
         return reg;

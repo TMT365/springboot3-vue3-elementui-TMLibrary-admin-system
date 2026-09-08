@@ -439,7 +439,7 @@ public class BookSaveRequest {
 package com.tmt.TMLibrary.service;
 
 import com.tmt.TMLibrary.common.PageResult;
-import com.tmt.TMLibrary.dto.BookSaveRequest;
+import com.tmt.TMLibrary.dto.request.BookSaveRequest;
 import com.tmt.TMLibrary.entity.Book;
 
 public interface BookService {
@@ -471,7 +471,6 @@ package com.tmt.TMLibrary.service.impl;
 
 import com.tmt.TMLibrary.common.PageResult;
 import com.tmt.TMLibrary.common.ResultCode;
-import com.tmt.TMLibrary.dto.BookSaveRequest;
 import com.tmt.TMLibrary.entity.Book;
 import com.tmt.TMLibrary.exception.BusinessException;
 import com.tmt.TMLibrary.mapper.BookMapper;
@@ -508,7 +507,7 @@ public class BookServiceImpl implements BookService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void create(BookSaveRequest req) {
+    public void create(com.tmt.TMLibrary.dto.request.BookSaveRequest req) {
         Book book = new Book();
         BeanUtils.copyProperties(req, book);
         bookMapper.insert(book);
@@ -516,7 +515,7 @@ public class BookServiceImpl implements BookService {
 
     @Override
     @Transactional(rollbackFor = Exception.class)
-    public void update(Long id, BookSaveRequest req) {
+    public void update(Long id, com.tmt.TMLibrary.dto.request.BookSaveRequest req) {
         Book existing = getById(id);                       // 不存在直接抛 NOT_FOUND
         BeanUtils.copyProperties(req, existing);           // 不复制 null -> 部分更新
         existing.setId(id);                                // BeanUtils 不覆盖已有值
@@ -601,7 +600,7 @@ package com.tmt.TMLibrary.controller;
 
 import com.tmt.TMLibrary.common.PageResult;
 import com.tmt.TMLibrary.common.Result;
-import com.tmt.TMLibrary.dto.BookSaveRequest;
+import com.tmt.TMLibrary.dto.request.BookSaveRequest;
 import com.tmt.TMLibrary.entity.Book;
 import com.tmt.TMLibrary.service.BookService;
 import jakarta.validation.Valid;
@@ -626,7 +625,7 @@ public class BookController {
     @GetMapping
     public Result<PageResult<Book>> list(
             @RequestParam(required = false) String keyword,
-            @RequestParam(defaultValue = "1")  int page,
+            @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
         return Result.success(bookService.page(keyword, page, size));
     }
@@ -669,7 +668,7 @@ public class BookController {
 
 ### 2.14 `db/schema.sql`
 
-**路径**: `src/main/resources/db/schema.sql`
+**路径**: `src/main/resources/db/books.sql`
 
 ```sql
 CREATE DATABASE IF NOT EXISTS tmlibrary DEFAULT CHARACTER SET utf8mb4;
@@ -700,7 +699,7 @@ INSERT INTO book (title, author, isbn, price, stock) VALUES
 - `ON UPDATE CURRENT_TIMESTAMP` 让任何 UPDATE 自动更新 `update_time`
 - 跑完这个文件后,**手动执行一次**:
   ```bash
-  mysql -u root -p < /home/tmt/JavaPractice/Maven/my-admin-project/TMLibrary/src/main/resources/db/schema.sql
+  mysql -u root -p < /home/tmt/JavaPractice/Maven/my-admin-project/TMLibrary/src/main/resources/db/books.sql
   ```
 
 ---
@@ -769,7 +768,7 @@ curl -X POST http://localhost:8080/api/books \
 - ❌ 引 Spring Security / JWT(P2 阶段)
 - ❌ 引 MyBatis-Plus(偏好纯 MyBatis)
 - ❌ 密码加密(P2)
-- ❌ Flyway / Liquibase(单文件 schema.sql 够用)
+- ❌ Flyway / Liquibase(单文件 books.sql 够用)
 - ❌ Hutool / Apache Commons(暂时不需要)
 - ❌ Redis / 缓存
 

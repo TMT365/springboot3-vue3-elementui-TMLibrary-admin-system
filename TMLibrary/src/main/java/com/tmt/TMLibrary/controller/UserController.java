@@ -4,20 +4,21 @@ import com.tmt.TMLibrary.common.Result.PageResult;
 import com.tmt.TMLibrary.common.Result.Result;
 import com.tmt.TMLibrary.common.Result.ResultCode;
 import com.tmt.TMLibrary.common.User.UserRole;
-import com.tmt.TMLibrary.dto.UserDeleteRequest;
-import com.tmt.TMLibrary.dto.UserPasswordRequest;
-import com.tmt.TMLibrary.dto.PurchaseResponse;
-import com.tmt.TMLibrary.dto.UserRegisterRequest;
-import com.tmt.TMLibrary.dto.UserSearchRequest;
-import com.tmt.TMLibrary.dto.UserUpdatedRequest;
-import com.tmt.TMLibrary.entity.User;
+import com.tmt.TMLibrary.dto.request.UserDeleteRequest;
+import com.tmt.TMLibrary.dto.request.UserPasswordRequest;
+import com.tmt.TMLibrary.dto.response.PurchaseResponse;
+import com.tmt.TMLibrary.dto.request.UserRegisterRequest;
+import com.tmt.TMLibrary.dto.request.UserSearchRequest;
+import com.tmt.TMLibrary.dto.request.UserUpdatedRequest;
+import com.tmt.TMLibrary.vo.UserVo;
 import com.tmt.TMLibrary.exception.AuthException;
 import com.tmt.TMLibrary.exception.BusinessException;
-import com.tmt.TMLibrary.security.CurrentUser;
-import com.tmt.TMLibrary.security.UserView;
+import com.tmt.TMLibrary.security.context.CurrentUser;
+import com.tmt.TMLibrary.security.context.UserView;
 import com.tmt.TMLibrary.service.PurchaseService;
 import com.tmt.TMLibrary.service.UserManagementService;
 
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 
 import java.util.List;
@@ -33,28 +34,32 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import com.tmt.TMLibrary.dto.LoginResponse;
+import org.springframework.web.bind.annotation.ModelAttribute;
+import com.tmt.TMLibrary.dto.response.LoginResponse;
 import com.tmt.TMLibrary.service.AuthService;
-import com.tmt.TMLibrary.dto.LoginRequest;
+import com.tmt.TMLibrary.dto.request.LoginRequest;
 
 /**
- * @brief 用户管理 RESTful Controller。
+ * 用户管理 RESTful Controller。
  *
  *        <p>
  *        端点:
- * 
+ *
  *        <pre>
  *   POST   /api/users/register                  — 注册
- *   GET    /api/users/list                  — 列表查询(ADMIN/BOSS)
- *   GET    /api/users/{id}             — 详情
- *   PATCH  /api/users/{id}             — 更新用户信息
- *   DELETE /api/users/{id}             — 软删(body: password)
- *   PATCH  /api/users/{id}/password    — 改密(只能改自己)
+ *   POST   /api/users/login                     — 登录
+ *   POST   /api/users/logout                    — 登出
+ *   GET    /api/users/list                      — 列表查询(ADMIN/BOSS)
+ *   GET    /api/users/{id}                      — 详情
+ *   PATCH  /api/users/{id}                      — 更新用户信息
+ *   DELETE /api/users/{id}                      — 软删(body: password)
+ *   PATCH  /api/users/{id}/password             — 改密(只能改自己)
+ *   GET    /api/users/{id}/purchases            — 看订单(自己 or BOSS)
  *        </pre>
  *
  *        <p>
- *        当前用户从 request attribute "CURRENT_USER" 读 — 明天 JwtAuthFilter 接通后自动写入。
- *        现在临时用 BOSS 占位(dev 环境随便测)。
+ *        当前用户从 request attribute "CURRENT_USER" 读 — JwtAuthFilter 写入,
+ *        &#64;CurrentUser UserView me 注入到方法参数。
  */
 @Slf4j
 @RestController
@@ -69,7 +74,7 @@ public class UserController {
     /** 注册 — POST /api/users */
     @PostMapping("/register")
     public Result<Integer> create(@Valid @RequestBody UserRegisterRequest req) {
-        log.info("前端请求/api/users/register, 参数=username={}, email={}, phoneNumber={}, password=***",
+        log.info("前端请求/api/users/register, 参数 username={}, email={}, phoneNumber={}, password=***",
                 req.getUsername(), req.getEmail(), req.getPhoneNumber());
         int id = userManagementService.createUser(req);
         return Result.success(id);
@@ -83,9 +88,17 @@ public class UserController {
         return Result.success(response);
     }
 
-    /** 列表查询 — GET /api/users?username=&role=&page=1&size=10 */
+    /** 登出 - POST /api/users/logout */
+    @PostMapping("/logout")
+    public Result<Void> logout(HttpServletRequest request) {
+        log.info("前端发送/api/users/logout");
+        authService.logout(request);
+        return Result.success();
+    }
+
+    /** 列表查询 — GET /api/users/list?username=&amp;role=&amp;page=1&amp;size=10 */
     @GetMapping("/list")
-    public Result<PageResult<User>> list(@Valid UserSearchRequest query,
+    public Result<PageResult<UserVo>> list(@ModelAttribute @Valid UserSearchRequest query,
             @CurrentUser UserView me) {
         requireLogin(me);
         log.info("前端请求/api/users/list, 参数={}", query);
@@ -94,7 +107,7 @@ public class UserController {
 
     /** 详情 — GET /api/users/{id} */
     @GetMapping("/{id}")
-    public Result<User> getById(@PathVariable(value = "id") int id) {
+    public Result<UserVo> getById(@PathVariable(value = "id") int id) {
         log.info("前端请求/api/users/{}", id);
         return Result.success(userManagementService.getUserById(id));
     }
@@ -107,7 +120,7 @@ public class UserController {
         requireLogin(me);
         log.info("前端请求/api/users/{}, 参数={}", id, req);
         req.setId(id); // URL id 覆盖 body id(防止前端串改)
-        userManagementService.updateUser(req, UserRole.getUserRoleByCode(me.getRole()), me.getId());
+        userManagementService.updateUser(req, me.getRole(), me.getId());
         return Result.success();
     }
 
@@ -117,8 +130,8 @@ public class UserController {
             @Valid @RequestBody UserDeleteRequest req,
             @CurrentUser UserView me) {
         requireLogin(me);
-        log.info("前端请求/api/users/{}, password=***", id);
-        userManagementService.deleteUser(id, req.getPassword(), UserRole.getUserRoleByCode(me.getRole()), me.getId());
+        log.info("前端请求/api/users/delete/{}, password=***", id);
+        userManagementService.deleteUser(id, req.getPassword(), me.getRole(), me.getId());
         return Result.success();
     }
 

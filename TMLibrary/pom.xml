@@ -103,12 +103,15 @@
 			<!-- <version>4.1.0</version> -->
 			
 		</dependency>
-
-		<!-- H2 内存数据库 — 集成测试用,避免污染真实 MySQL -->
+		<!--spring-boot 的redis 依赖-->
 		<dependency>
-			<groupId>com.h2database</groupId>
-			<artifactId>h2</artifactId>
-			<scope>test</scope>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-redis</artifactId>
+		</dependency>
+		<!-- 如果需要连接池！Lettuce/Jedis 都需要 commons‑pool2 连接池依赖 -->
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>commons-pool2</artifactId>
 		</dependency>
 	</dependencies>
 

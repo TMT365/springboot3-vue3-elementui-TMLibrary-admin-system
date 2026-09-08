@@ -30,14 +30,14 @@ public class GlobalExceptionHandler {
     private static final Pattern DUPLICATE_KEY_PATTERN =
             Pattern.compile("for key '[^.]+\\.([^']+)'");
     /**
-     * @brief 处理业务异常
+     * 处理业务异常
      * 业务异常是指程序逻辑上可以预见的异常情况，例如用户输入错误、资源不存在等。通过捕获业务异常，可以向前端返回明确的错误
      * @param e
      * @return
      */
     @ExceptionHandler(BusinessException.class)
     public Result<Void> handleBusiness(BusinessException e) {
-        log.warn("业务异常: code={}, msg={}]]], occurrence in {}", e.getCode(), e.getMessage(), e.getWhere());
+        log.warn("业务异常: code={}, msg={}]]],", e.getCode(), e.getMessage(), e);
         return Result.fail(e.getCode(), e.getMessage());
     }
 
@@ -49,13 +49,13 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(DuplicateKeyException.class)
     public Result<Void> handleDuplicateKey(DuplicateKeyException e) {
         String field = extractConflictField(e.getMessage());
-        log.warn("唯一约束冲突: field={}, raw={}", field, e.getMessage());
+        log.warn("唯一约束冲突: field={}, raw={}", field, e.getMessage(), e);
         return Result.fail(ResultCode.CONFLICT.getCode(),
                 "数据已存在,字段 [" + field + "] 重复");
     }
 
     /**
-     * @brief 处理参数校验异常
+     * 处理参数校验异常
      * @param e
      * @return
      */
@@ -64,12 +64,12 @@ public class GlobalExceptionHandler {
         String msg = e.getBindingResult().getFieldErrors().stream()
                 .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
                 .collect(Collectors.joining("; "));
-        log.warn("参数校验失败: {}", msg);
+        log.warn("参数校验失败: {}", msg, e);
         return Result.fail(ResultCode.BAD_REQUEST.getCode(), msg);
     }
 
     /**
-     * @brief 处理请求体解析异常, 例如 JSON 格式错误:缺胳膊少腿的，或者是多了
+     * 处理请求体解析异常, 例如 JSON 格式错误:缺胳膊少腿的，或者是多了
      * @param e
      * @return
      */
@@ -82,7 +82,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * @brief 处理参数类型不匹配异常，例如前端传了字符串给整型参数
+     * 处理参数类型不匹配异常，例如前端传了字符串给整型参数
      * @param e
      * @return
      */
@@ -94,13 +94,13 @@ public class GlobalExceptionHandler {
         String msg = "参数类型不匹配: 参数名=[" + e.getName()
                 + "],期望=[" + typeName
                 + "],实际=[" + e.getValue() + "]";
-        log.warn("参数类型不匹配: {}", msg);
+        log.warn("参数类型不匹配: {}", msg, e);
         String userMsg = "prod".equals(activeProfile) ? "参数类型不匹配" : msg;
         return Result.fail(ResultCode.BAD_REQUEST.getCode(), userMsg);
     }
 
     /**
-     * @brief 处理日期/时间解析异常 — Controller 里 LocalDate.parse / LocalDateTime.parse 失败时抛
+     * 处理日期/时间解析异常 — Controller 里 LocalDate.parse / LocalDateTime.parse 失败时抛
      *        之前会被 handleAny 兜底成 500,实际是用户输入问题,应转 400
      * @param e
      * @return
@@ -110,13 +110,13 @@ public class GlobalExceptionHandler {
         // 解析失败的字符串 + 期望格式提示给前端,方便排查
         String msg = "日期/时间格式错误: 输入=[" + e.getParsedString()
                 + "],期望格式=[" + (e.getErrorIndex() >= 0 ? "ISO-8601 (yyyy-MM-dd 或 yyyy-MM-ddTHH:mm:ss)" : "ISO-8601") + "]";
-        log.warn("日期/时间解析失败: {}", msg);
+        log.warn("日期/时间解析失败: {}", msg, e);
         String userMsg = "prod".equals(activeProfile) ? "日期/时间格式错误" : msg;
         return Result.fail(ResultCode.BAD_REQUEST.getCode(), userMsg);
     }
 
     /**
-     * @brief 处理系统异常
+     * 处理系统异常
      * 系统异常是指程序逻辑上无法预见的异常情况，例如空指针异常、数据库连接失败等。通过捕获系统异常，可以向前端返回通
      * @param e
      * @return
@@ -133,7 +133,7 @@ public class GlobalExceptionHandler {
     }
 
     /**
-     * @brief 从 MySQL DuplicateKeyException 消息里抽出冲突字段名
+     * 从 MySQL DuplicateKeyException 消息里抽出冲突字段名
      * 例如: Duplicate entry '978-7-121-15535-2' for key 'book.isbn'，抽出 isbn. pattern 可以自己通过打印 DuplicateKeyException 的 message 来调试。
      * @param message
      * @return

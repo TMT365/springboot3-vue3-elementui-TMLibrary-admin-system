@@ -1,0 +1,284 @@
+2026-09-03 23:04:49.354 [restartedMain] INFO  c.tmt.TMLibrary.TmLibraryApplication - Starting TmLibraryApplication using Java 25.0.4 with PID 13246 (/home/tmt/JavaPractice/Maven/my-admin-project/TMLibrary/target/classes started by tmt in /home/tmt/JavaPractice/Maven/my-admin-project/TMLibrary)
+2026-09-03 23:04:49.356 [restartedMain] INFO  c.tmt.TMLibrary.TmLibraryApplication - The following 1 profile is active: "dev"
+2026-09-03 23:04:49.387 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-09-03 23:04:49.387 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-09-03 23:04:49.487 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 9.1.0.Final
+2026-09-03 23:04:49.869 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-09-03 23:04:49.871 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-09-03 23:04:49.898 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 10 ms. Found 0 Redis repository interfaces.
+2026-09-03 23:04:50.437 [restartedMain] INFO  o.s.boot.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-09-03 23:04:50.445 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
+2026-09-03 23:04:50.447 [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-09-03 23:04:50.447 [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/11.0.22]
+2026-09-03 23:04:50.465 [restartedMain] INFO  o.s.b.w.c.s.WebApplicationContextInitializer - Root WebApplicationContext: initialization completed in 1078 ms
+2026-09-03 23:04:51.372 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
+2026-09-03 23:04:51.380 [restartedMain] INFO  o.s.boot.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-09-03 23:04:51.384 [restartedMain] INFO  c.tmt.TMLibrary.TmLibraryApplication - Started TmLibraryApplication in 2.421 seconds (process running for 2.799)
+2026-09-03 23:06:21.964 [http-nio-8080-exec-1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-03 23:06:21.964 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-09-03 23:06:21.965 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-09-03 23:06:22.126 [http-nio-8080-exec-1] INFO  c.t.T.controller.UserController - 前端发送/api/users/logout, 参数=org.apache.catalina.connector.RequestFacade@6ba93147
+2026-09-03 23:06:22.128 [http-nio-8080-exec-1] ERROR c.t.T.e.GlobalExceptionHandler - 系统异常
+java.lang.NullPointerException: Cannot invoke "Object.toString()" because the return value of "jakarta.servlet.http.HttpServletRequest.getAttribute(String)" is null
+	at com.tmt.TMLibrary.service.impl.AuthServiceImpl.logout(AuthServiceImpl.java:115)
+	at com.tmt.TMLibrary.controller.UserController.logout(UserController.java:93)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.springframework.aop.support.AopUtils.invokeJoinpointUsingReflection(AopUtils.java:359)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.invokeJoinpoint(ReflectiveMethodInvocation.java:190)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:158)
+	at org.springframework.aop.aspectj.MethodInvocationProceedingJoinPoint.proceed(MethodInvocationProceedingJoinPoint.java:82)
+	at com.tmt.TMLibrary.common.utils.TimeCostAspect.logExecutionTime(TimeCostAspect.java:17)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.springframework.aop.aspectj.AbstractAspectJAdvice.invokeAdviceMethodWithGivenArgs(AbstractAspectJAdvice.java:648)
+	at org.springframework.aop.aspectj.AbstractAspectJAdvice.invokeAdviceMethod(AbstractAspectJAdvice.java:630)
+	at org.springframework.aop.aspectj.AspectJAroundAdvice.invoke(AspectJAroundAdvice.java:70)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179)
+	at org.springframework.aop.interceptor.ExposeInvocationInterceptor.invoke(ExposeInvocationInterceptor.java:96)
+	at org.springframework.aop.framework.ReflectiveMethodInvocation.proceed(ReflectiveMethodInvocation.java:179)
+	at org.springframework.aop.framework.CglibAopProxy$DynamicAdvisedInterceptor.intercept(CglibAopProxy.java:719)
+	at com.tmt.TMLibrary.controller.UserController$$SpringCGLIB$$0.logout(<generated>)
+	at java.base/jdk.internal.reflect.DirectMethodHandleAccessor.invoke(DirectMethodHandleAccessor.java:104)
+	at java.base/java.lang.reflect.Method.invoke(Method.java:565)
+	at org.springframework.web.method.support.InvocableHandlerMethod.doInvoke(InvocableHandlerMethod.java:252)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:184)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000)
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at com.tmt.TMLibrary.security.jwt.JwtAuthFilter.doFilterInternal(JwtAuthFilter.java:67)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1272)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1801)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+2026-09-03 23:06:22.162 [http-nio-8080-exec-1] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [java.lang.NullPointerException: Cannot invoke "Object.toString()" because the return value of "jakarta.servlet.http.HttpServletRequest.getAttribute(String)" is null]
+2026-09-03 23:09:42.768 [SpringApplicationShutdownHook] INFO  o.s.boot.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-09-03 23:09:42.777 [tomcat-shutdown] INFO  o.s.boot.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-09-03 23:09:49.319 [restartedMain] INFO  c.tmt.TMLibrary.TmLibraryApplication - Starting TmLibraryApplication using Java 25.0.4 with PID 13427 (/home/tmt/JavaPractice/Maven/my-admin-project/TMLibrary/target/classes started by tmt in /home/tmt/JavaPractice/Maven/my-admin-project/TMLibrary)
+2026-09-03 23:09:49.321 [restartedMain] INFO  c.tmt.TMLibrary.TmLibraryApplication - The following 1 profile is active: "dev"
+2026-09-03 23:09:49.351 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-09-03 23:09:49.352 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-09-03 23:09:49.433 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 9.1.0.Final
+2026-09-03 23:09:49.740 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-09-03 23:09:49.741 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-09-03 23:09:49.760 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 10 ms. Found 0 Redis repository interfaces.
+2026-09-03 23:09:50.147 [restartedMain] INFO  o.s.boot.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-09-03 23:09:50.161 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
+2026-09-03 23:09:50.162 [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-09-03 23:09:50.162 [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/11.0.22]
+2026-09-03 23:09:50.181 [restartedMain] INFO  o.s.b.w.c.s.WebApplicationContextInitializer - Root WebApplicationContext: initialization completed in 828 ms
+2026-09-03 23:09:50.931 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
+2026-09-03 23:09:50.939 [restartedMain] INFO  o.s.boot.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-09-03 23:09:50.943 [restartedMain] INFO  c.tmt.TMLibrary.TmLibraryApplication - Started TmLibraryApplication in 1.922 seconds (process running for 2.156)
+2026-09-03 23:10:42.129 [SpringApplicationShutdownHook] INFO  o.s.boot.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-09-03 23:10:42.135 [tomcat-shutdown] INFO  o.s.boot.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-09-03 23:10:46.989 [restartedMain] INFO  c.tmt.TMLibrary.TmLibraryApplication - Starting TmLibraryApplication using Java 25.0.4 with PID 13563 (/home/tmt/JavaPractice/Maven/my-admin-project/TMLibrary/target/classes started by tmt in /home/tmt/JavaPractice/Maven/my-admin-project/TMLibrary)
+2026-09-03 23:10:46.990 [restartedMain] INFO  c.tmt.TMLibrary.TmLibraryApplication - The following 1 profile is active: "dev"
+2026-09-03 23:10:47.019 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-09-03 23:10:47.019 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-09-03 23:10:47.081 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 9.1.0.Final
+2026-09-03 23:10:47.397 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-09-03 23:10:47.399 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-09-03 23:10:47.429 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 13 ms. Found 0 Redis repository interfaces.
+2026-09-03 23:10:47.795 [restartedMain] INFO  o.s.boot.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-09-03 23:10:47.806 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
+2026-09-03 23:10:47.807 [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-09-03 23:10:47.807 [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/11.0.22]
+2026-09-03 23:10:47.822 [restartedMain] INFO  o.s.b.w.c.s.WebApplicationContextInitializer - Root WebApplicationContext: initialization completed in 803 ms
+2026-09-03 23:10:48.540 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
+2026-09-03 23:10:48.547 [restartedMain] INFO  o.s.boot.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-09-03 23:10:48.551 [restartedMain] INFO  c.tmt.TMLibrary.TmLibraryApplication - Started TmLibraryApplication in 1.856 seconds (process running for 2.078)
+2026-09-03 23:10:53.431 [http-nio-8080-exec-1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-03 23:10:53.431 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-09-03 23:10:53.432 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-09-03 23:10:53.559 [http-nio-8080-exec-1] INFO  c.t.T.controller.UserController - 前端发送/api/users/logout, 参数=org.apache.catalina.connector.RequestFacade@4b878cb9
+2026-09-03 23:10:53.908 [http-nio-8080-exec-1] INFO  c.t.T.common.utils.TimeCostAspect - Result com.tmt.TMLibrary.controller.UserController.logout(HttpServletRequest) executed in 349ms
+2026-09-03 23:15:48.539 [SpringApplicationShutdownHook] INFO  o.s.boot.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-09-03 23:15:48.547 [tomcat-shutdown] INFO  o.s.boot.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-09-03 23:15:54.760 [restartedMain] INFO  c.tmt.TMLibrary.TmLibraryApplication - Starting TmLibraryApplication using Java 25.0.4 with PID 13813 (/home/tmt/JavaPractice/Maven/my-admin-project/TMLibrary/target/classes started by tmt in /home/tmt/JavaPractice/Maven/my-admin-project/TMLibrary)
+2026-09-03 23:15:54.762 [restartedMain] INFO  c.tmt.TMLibrary.TmLibraryApplication - The following 1 profile is active: "dev"
+2026-09-03 23:15:54.790 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-09-03 23:15:54.791 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-09-03 23:15:54.858 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 9.1.0.Final
+2026-09-03 23:15:55.170 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-09-03 23:15:55.171 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-09-03 23:15:55.191 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 10 ms. Found 0 Redis repository interfaces.
+2026-09-03 23:15:55.592 [restartedMain] INFO  o.s.boot.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-09-03 23:15:55.600 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
+2026-09-03 23:15:55.601 [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-09-03 23:15:55.601 [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/11.0.22]
+2026-09-03 23:15:55.617 [restartedMain] INFO  o.s.b.w.c.s.WebApplicationContextInitializer - Root WebApplicationContext: initialization completed in 826 ms
+2026-09-03 23:15:56.360 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
+2026-09-03 23:15:56.369 [restartedMain] INFO  o.s.boot.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-09-03 23:15:56.374 [restartedMain] INFO  c.tmt.TMLibrary.TmLibraryApplication - Started TmLibraryApplication in 1.902 seconds (process running for 2.131)
+2026-09-03 23:16:11.586 [http-nio-8080-exec-1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-03 23:16:11.586 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-09-03 23:16:11.587 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-09-03 23:16:11.661 [http-nio-8080-exec-1] WARN  c.t.T.e.GlobalExceptionHandler - 参数校验失败: captcha: 验证码不能为空
+org.springframework.web.bind.MethodArgumentNotValidException: Validation failed for argument [1] in public com.tmt.TMLibrary.common.Result.Result<com.tmt.TMLibrary.dto.response.LoginResponse> com.tmt.TMLibrary.controller.AuthController.login(jakarta.servlet.http.HttpServletRequest,com.tmt.TMLibrary.dto.request.LoginRequest): [Field error in object 'loginRequest' on field 'captcha': rejected value [null]; codes [NotBlank.loginRequest.captcha,NotBlank.captcha,NotBlank.java.lang.String,NotBlank]; arguments [org.springframework.context.support.DefaultMessageSourceResolvable: codes [loginRequest.captcha,captcha]; arguments []; default message [captcha]]; default message [验证码不能为空]] 
+	at org.springframework.web.servlet.mvc.method.annotation.RequestResponseBodyMethodProcessor.resolveArgument(RequestResponseBodyMethodProcessor.java:165)
+	at org.springframework.web.method.support.HandlerMethodArgumentResolverComposite.resolveArgument(HandlerMethodArgumentResolverComposite.java:122)
+	at org.springframework.web.method.support.InvocableHandlerMethod.getMethodArgumentValues(InvocableHandlerMethod.java:224)
+	at org.springframework.web.method.support.InvocableHandlerMethod.invokeForRequest(InvocableHandlerMethod.java:174)
+	at org.springframework.web.servlet.mvc.method.annotation.ServletInvocableHandlerMethod.invokeAndHandle(ServletInvocableHandlerMethod.java:117)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.invokeHandlerMethod(RequestMappingHandlerAdapter.java:934)
+	at org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerAdapter.handleInternal(RequestMappingHandlerAdapter.java:853)
+	at org.springframework.web.servlet.mvc.method.AbstractHandlerMethodAdapter.handle(AbstractHandlerMethodAdapter.java:86)
+	at org.springframework.web.servlet.DispatcherServlet.doDispatch(DispatcherServlet.java:963)
+	at org.springframework.web.servlet.DispatcherServlet.doService(DispatcherServlet.java:866)
+	at org.springframework.web.servlet.FrameworkServlet.processRequest(FrameworkServlet.java:1000)
+	at org.springframework.web.servlet.FrameworkServlet.doPost(FrameworkServlet.java:903)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:649)
+	at org.springframework.web.servlet.FrameworkServlet.service(FrameworkServlet.java:874)
+	at jakarta.servlet.http.HttpServlet.service(HttpServlet.java:710)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:128)
+	at org.apache.tomcat.websocket.server.WsFilter.doFilter(WsFilter.java:53)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at com.tmt.TMLibrary.security.jwt.JwtAuthFilter.doFilterInternal(JwtAuthFilter.java:43)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at org.springframework.web.filter.RequestContextFilter.doFilterInternal(RequestContextFilter.java:100)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at org.springframework.web.filter.FormContentFilter.doFilterInternal(FormContentFilter.java:93)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at org.springframework.web.filter.CharacterEncodingFilter.doFilterInternal(CharacterEncodingFilter.java:199)
+	at org.springframework.web.filter.OncePerRequestFilter.doFilter(OncePerRequestFilter.java:116)
+	at org.apache.catalina.core.ApplicationFilterChain.doFilter(ApplicationFilterChain.java:107)
+	at org.apache.catalina.core.StandardWrapperValve.invoke(StandardWrapperValve.java:165)
+	at org.apache.catalina.core.StandardContextValve.invoke(StandardContextValve.java:77)
+	at org.apache.catalina.authenticator.AuthenticatorBase.invoke(AuthenticatorBase.java:492)
+	at org.apache.catalina.core.StandardHostValve.invoke(StandardHostValve.java:113)
+	at org.apache.catalina.valves.ErrorReportValve.invoke(ErrorReportValve.java:83)
+	at org.apache.catalina.core.StandardEngineValve.invoke(StandardEngineValve.java:72)
+	at org.apache.catalina.connector.CoyoteAdapter.service(CoyoteAdapter.java:341)
+	at org.apache.coyote.http11.Http11Processor.service(Http11Processor.java:397)
+	at org.apache.coyote.AbstractProcessorLight.process(AbstractProcessorLight.java:63)
+	at org.apache.coyote.AbstractProtocol$ConnectionHandler.process(AbstractProtocol.java:1272)
+	at org.apache.tomcat.util.net.NioEndpoint$SocketProcessor.doRun(NioEndpoint.java:1801)
+	at org.apache.tomcat.util.net.SocketProcessorBase.run(SocketProcessorBase.java:52)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor.runWorker(ThreadPoolExecutor.java:946)
+	at org.apache.tomcat.util.threads.ThreadPoolExecutor$Worker.run(ThreadPoolExecutor.java:480)
+	at org.apache.tomcat.util.threads.TaskThread$WrappingRunnable.run(TaskThread.java:57)
+	at java.base/java.lang.Thread.run(Thread.java:1474)
+2026-09-03 23:16:11.680 [http-nio-8080-exec-1] WARN  o.s.w.s.m.m.a.ExceptionHandlerExceptionResolver - Resolved [org.springframework.web.bind.MethodArgumentNotValidException: Validation failed for argument [1] in public com.tmt.TMLibrary.common.Result.Result<com.tmt.TMLibrary.dto.response.LoginResponse> com.tmt.TMLibrary.controller.AuthController.login(jakarta.servlet.http.HttpServletRequest,com.tmt.TMLibrary.dto.request.LoginRequest): [Field error in object 'loginRequest' on field 'captcha': rejected value [null]; codes [NotBlank.loginRequest.captcha,NotBlank.captcha,NotBlank.java.lang.String,NotBlank]; arguments [org.springframework.context.support.DefaultMessageSourceResolvable: codes [loginRequest.captcha,captcha]; arguments []; default message [captcha]]; default message [验证码不能为空]] ]
+2026-09-03 23:16:47.256 [SpringApplicationShutdownHook] INFO  o.s.boot.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-09-03 23:16:47.262 [tomcat-shutdown] INFO  o.s.boot.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-09-03 23:16:53.532 [restartedMain] INFO  c.tmt.TMLibrary.TmLibraryApplication - Starting TmLibraryApplication using Java 25.0.4 with PID 13948 (/home/tmt/JavaPractice/Maven/my-admin-project/TMLibrary/target/classes started by tmt in /home/tmt/JavaPractice/Maven/my-admin-project/TMLibrary)
+2026-09-03 23:16:53.533 [restartedMain] INFO  c.tmt.TMLibrary.TmLibraryApplication - The following 1 profile is active: "dev"
+2026-09-03 23:16:53.560 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-09-03 23:16:53.560 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-09-03 23:16:53.627 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 9.1.0.Final
+2026-09-03 23:16:53.914 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-09-03 23:16:53.916 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-09-03 23:16:53.937 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 13 ms. Found 0 Redis repository interfaces.
+2026-09-03 23:16:54.307 [restartedMain] INFO  o.s.boot.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-09-03 23:16:54.317 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
+2026-09-03 23:16:54.318 [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-09-03 23:16:54.319 [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/11.0.22]
+2026-09-03 23:16:54.335 [restartedMain] INFO  o.s.b.w.c.s.WebApplicationContextInitializer - Root WebApplicationContext: initialization completed in 775 ms
+2026-09-03 23:16:54.996 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
+2026-09-03 23:16:55.003 [restartedMain] INFO  o.s.boot.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-09-03 23:16:55.007 [restartedMain] INFO  c.tmt.TMLibrary.TmLibraryApplication - Started TmLibraryApplication in 1.759 seconds (process running for 1.973)
+2026-09-03 23:17:01.829 [http-nio-8080-exec-1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-03 23:17:01.829 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-09-03 23:17:01.830 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-09-03 23:17:17.483 [http-nio-8080-exec-1] INFO  c.t.T.controller.AuthController - 前端请求/api/auth/login, 参数=LoginRequest{username='tmt', password='null', ipAddress='172.21.224.1'}
+2026-09-03 23:17:17.794 [http-nio-8080-exec-1] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-09-03 23:17:18.033 [http-nio-8080-exec-1] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@374385b2
+2026-09-03 23:17:18.035 [http-nio-8080-exec-1] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-09-03 23:17:18.291 [http-nio-8080-exec-1] INFO  c.t.T.common.utils.TimeCostAspect - Result com.tmt.TMLibrary.controller.AuthController.login(HttpServletRequest,LoginRequest) executed in 16392ms
+2026-09-03 23:18:57.710 [http-nio-8080-exec-3] INFO  c.t.T.controller.UserController - 前端发送/api/users/logout, 参数=org.apache.catalina.connector.RequestFacade@4e652f93
+2026-09-03 23:18:57.714 [http-nio-8080-exec-3] INFO  c.t.T.common.utils.TimeCostAspect - Result com.tmt.TMLibrary.controller.UserController.logout(HttpServletRequest) executed in 4ms
+2026-09-03 23:25:19.431 [SpringApplicationShutdownHook] INFO  o.s.boot.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-09-03 23:25:19.435 [tomcat-shutdown] INFO  o.s.boot.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-09-03 23:25:19.456 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-09-03 23:25:19.459 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2026-09-03 23:25:32.750 [restartedMain] INFO  c.tmt.TMLibrary.TmLibraryApplication - Starting TmLibraryApplication using Java 25.0.4 with PID 14239 (/home/tmt/JavaPractice/Maven/my-admin-project/TMLibrary/target/classes started by tmt in /home/tmt/JavaPractice/Maven/my-admin-project/TMLibrary)
+2026-09-03 23:25:32.752 [restartedMain] INFO  c.tmt.TMLibrary.TmLibraryApplication - The following 1 profile is active: "dev"
+2026-09-03 23:25:32.780 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-09-03 23:25:32.781 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-09-03 23:25:32.845 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 9.1.0.Final
+2026-09-03 23:25:33.139 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-09-03 23:25:33.140 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-09-03 23:25:33.163 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 14 ms. Found 0 Redis repository interfaces.
+2026-09-03 23:25:33.542 [restartedMain] INFO  o.s.boot.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-09-03 23:25:33.551 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
+2026-09-03 23:25:33.553 [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-09-03 23:25:33.553 [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/11.0.22]
+2026-09-03 23:25:33.569 [restartedMain] INFO  o.s.b.w.c.s.WebApplicationContextInitializer - Root WebApplicationContext: initialization completed in 788 ms
+2026-09-03 23:25:34.262 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
+2026-09-03 23:25:34.271 [restartedMain] INFO  o.s.boot.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-09-03 23:25:34.276 [restartedMain] INFO  c.tmt.TMLibrary.TmLibraryApplication - Started TmLibraryApplication in 1.835 seconds (process running for 2.05)
+2026-09-03 23:25:44.174 [http-nio-8080-exec-1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-03 23:25:44.174 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-09-03 23:25:44.175 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 1 ms
+2026-09-03 23:25:44.713 [http-nio-8080-exec-1] INFO  c.t.T.controller.AuthController - 前端请求/api/auth/login, 参数=LoginRequest{username='tmt', password='null', ipAddress='172.21.224.1'}
+2026-09-03 23:25:45.014 [http-nio-8080-exec-1] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Starting...
+2026-09-03 23:25:45.212 [http-nio-8080-exec-1] INFO  com.zaxxer.hikari.pool.HikariPool - HikariPool-1 - Added connection com.mysql.cj.jdbc.ConnectionImpl@6da2ec70
+2026-09-03 23:25:45.213 [http-nio-8080-exec-1] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Start completed.
+2026-09-03 23:25:45.446 [http-nio-8080-exec-1] INFO  c.t.T.common.utils.TimeCostAspect - Result com.tmt.TMLibrary.controller.AuthController.login(HttpServletRequest,LoginRequest) executed in 1201ms
+2026-09-03 23:26:30.848 [http-nio-8080-exec-2] INFO  c.t.T.controller.UserController - 前端发送/api/users/logout, 参数=org.apache.catalina.connector.RequestFacade@41cdbbf
+2026-09-03 23:26:30.855 [http-nio-8080-exec-2] INFO  c.t.T.common.utils.TimeCostAspect - Result com.tmt.TMLibrary.controller.UserController.logout(HttpServletRequest) executed in 7ms
+2026-09-03 23:27:37.132 [SpringApplicationShutdownHook] INFO  o.s.boot.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-09-03 23:27:37.136 [tomcat-shutdown] INFO  o.s.boot.tomcat.GracefulShutdown - Graceful shutdown complete
+2026-09-03 23:27:37.166 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown initiated...
+2026-09-03 23:27:37.170 [SpringApplicationShutdownHook] INFO  com.zaxxer.hikari.HikariDataSource - HikariPool-1 - Shutdown completed.
+2026-09-03 23:28:55.874 [restartedMain] INFO  c.tmt.TMLibrary.TmLibraryApplication - Starting TmLibraryApplication using Java 25.0.4 with PID 1515 (/home/tmt/JavaPractice/Maven/my-admin-project/TMLibrary/target/classes started by tmt in /home/tmt/JavaPractice/Maven/my-admin-project/TMLibrary)
+2026-09-03 23:28:55.876 [restartedMain] INFO  c.tmt.TMLibrary.TmLibraryApplication - The following 1 profile is active: "dev"
+2026-09-03 23:28:55.911 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - Devtools property defaults active! Set 'spring.devtools.add-properties' to 'false' to disable
+2026-09-03 23:28:55.911 [restartedMain] INFO  o.s.b.d.e.DevToolsPropertyDefaultsPostProcessor - For additional web related logging consider setting the 'logging.level.web' property to 'DEBUG'
+2026-09-03 23:28:56.027 [background-preinit] INFO  o.h.validator.internal.util.Version - HV000001: Hibernate Validator 9.1.0.Final
+2026-09-03 23:28:56.438 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Multiple Spring Data modules found, entering strict repository configuration mode
+2026-09-03 23:28:56.440 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Bootstrapping Spring Data Redis repositories in DEFAULT mode.
+2026-09-03 23:28:56.463 [restartedMain] INFO  o.s.d.r.c.RepositoryConfigurationDelegate - Finished Spring Data repository scanning in 10 ms. Found 0 Redis repository interfaces.
+2026-09-03 23:28:56.974 [restartedMain] INFO  o.s.boot.tomcat.TomcatWebServer - Tomcat initialized with port 8080 (http)
+2026-09-03 23:28:56.982 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Initializing ProtocolHandler ["http-nio-8080"]
+2026-09-03 23:28:56.987 [restartedMain] INFO  o.a.catalina.core.StandardService - Starting service [Tomcat]
+2026-09-03 23:28:56.987 [restartedMain] INFO  o.a.catalina.core.StandardEngine - Starting Servlet engine: [Apache Tomcat/11.0.22]
+2026-09-03 23:28:57.009 [restartedMain] INFO  o.s.b.w.c.s.WebApplicationContextInitializer - Root WebApplicationContext: initialization completed in 1098 ms
+2026-09-03 23:28:58.107 [restartedMain] INFO  o.a.coyote.http11.Http11NioProtocol - Starting ProtocolHandler ["http-nio-8080"]
+2026-09-03 23:28:58.116 [restartedMain] INFO  o.s.boot.tomcat.TomcatWebServer - Tomcat started on port 8080 (http) with context path '/'
+2026-09-03 23:28:58.122 [restartedMain] INFO  c.tmt.TMLibrary.TmLibraryApplication - Started TmLibraryApplication in 2.695 seconds (process running for 3.046)
+2026-09-03 23:29:45.950 [http-nio-8080-exec-1] INFO  o.a.c.c.C.[Tomcat].[localhost].[/] - Initializing Spring DispatcherServlet 'dispatcherServlet'
+2026-09-03 23:29:45.950 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Initializing Servlet 'dispatcherServlet'
+2026-09-03 23:29:45.952 [http-nio-8080-exec-1] INFO  o.s.web.servlet.DispatcherServlet - Completed initialization in 2 ms
+2026-09-03 23:29:46.123 [http-nio-8080-exec-1] INFO  c.t.T.controller.UserController - 前端发送/api/users/logout, 参数=org.apache.catalina.connector.RequestFacade@4b878cb9
+2026-09-03 23:29:46.446 [http-nio-8080-exec-1] INFO  c.t.T.common.utils.TimeCostAspect - Result com.tmt.TMLibrary.controller.UserController.logout(HttpServletRequest) executed in 322ms
+2026-09-03 23:30:11.064 [SpringApplicationShutdownHook] INFO  o.s.boot.tomcat.GracefulShutdown - Commencing graceful shutdown. Waiting for active requests to complete
+2026-09-03 23:30:11.068 [tomcat-shutdown] INFO  o.s.boot.tomcat.GracefulShutdown - Graceful shutdown complete
