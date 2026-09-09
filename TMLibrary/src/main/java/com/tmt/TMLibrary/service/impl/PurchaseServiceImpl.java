@@ -16,6 +16,7 @@ import com.tmt.TMLibrary.service.BookInventoryService;
 import com.tmt.TMLibrary.service.PurchaseService;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import com.tmt.TMLibrary.dto.request.PurchaseItemRequest;
 import com.tmt.TMLibrary.dto.request.PurchaseRequest;
@@ -76,6 +77,7 @@ import tools.jackson.databind.ObjectMapper;
  */
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class PurchaseServiceImpl implements PurchaseService {
     private final OrderMapper orderMapper;
     private final BookMapper bookMapper;
@@ -84,7 +86,6 @@ public class PurchaseServiceImpl implements PurchaseService {
 
     private final StringRedisTemplate stringRedisTemplate;
 
-    // ==================== BEGIN CLAUDE CODE: Redis Key 重构 ====================
     // 旧：tmlibrary:user:users:status:{id}（多余的 users）
     // 新：tmlibrary:user:{id}:status（标准两段式）
     private static final String REDIS_USER_STATUS_PATH_TPL        = "tmlibrary:user:%s:status";
@@ -100,20 +101,15 @@ public class PurchaseServiceImpl implements PurchaseService {
     private static String historyIdx(Integer userId)          { return String.format(REDIS_USER_HISTORY_ORDER_IDX_TPL, userId); }
     private static String pendingExpireIdx(Integer userId)     { return String.format(REDIS_USER_PENDING_EXPIRE_IDX_TPL, userId); }
     private static String orderData(Long orderNumber)         { return REDIS_ORDER_DATA_PREFIX + orderNumber; }
-    // ==================== END CLAUDE CODE: Redis Key 重构 ====================
 
     private static final ZoneId zoneId = ZoneId.of("Asia/Shanghai");
 
     private final ObjectMapper objectMapper;
 
-    // ==================== BEGIN CLAUDE CODE: 注入 BookInventoryService ====================
     private final BookInventoryService bookInventoryService;
-    // ==================== END CLAUDE CODE: 注入 BookInventoryService ====================
 
     private boolean checkUser(Integer userId) {
-        // ==================== BEGIN CLAUDE CODE: 改用新 key 模板 ====================
         String jsonString = stringRedisTemplate.opsForValue().get(userStatusPath(userId));
-        // ==================== END CLAUDE CODE: 改用新 key 模板 ====================
         UserStatusRedis status;
         if (jsonString == null || jsonString.trim().isEmpty()) {
             User user = userMapper.selectUserById(userId);
@@ -157,13 +153,11 @@ public class PurchaseServiceImpl implements PurchaseService {
             throw new BusinessException(ResultCode.UNAUTHORIZED, "User is not authorized to create order");
         }
 
-        // ==================== BEGIN CLAUDE CODE: 库存预占用 tryReserve + 失败回滚 ====================
         // 先做 DB 读取拿价格（轻量非锁读），再走 Redis Lua 预占
         // 顺序保证：DB 失败时 Redis 没碰过；Redis 失败时 DB 已读但未改，回滚靠 @Transactional
         // 中途抛异常的 Redis 残留：用 reservedBookIds 列表在 catch 里反向 release
         List<Integer> reservedBookIds = new ArrayList<>();
         List<Integer> reservedQtys    = new ArrayList<>();
-        // ==================== END CLAUDE CODE: 库存预占用 tryReserve + 失败回滚 ====================
 
         List<OrderItem> orderItems = new ArrayList<>();
         Order order = new Order();
@@ -180,7 +174,6 @@ public class PurchaseServiceImpl implements PurchaseService {
                     throw new BusinessException(ResultCode.BAD_REQUEST, "BookId cannot be null");
                 }
 
-                // ==================== BEGIN CLAUDE CODE: 替换 selectByIdForUpdate + atomicDecrementStock ====================
                 // 1) 非锁读 book 拿 price（写 OrderItem 需要）
                 Book book = bookMapper.selectById(item.getBookId());
                 if (book == null) {
@@ -192,7 +185,6 @@ public class PurchaseServiceImpl implements PurchaseService {
                 }
                 reservedBookIds.add(item.getBookId());
                 reservedQtys.add(item.getQuantity());
-                // ==================== END CLAUDE CODE: 替换 selectByIdForUpdate + atomicDecrementStock ====================
 
                 OrderItem orderItem = new OrderItem();
                 try {
@@ -208,27 +200,23 @@ public class PurchaseServiceImpl implements PurchaseService {
                 }
             }
         } catch (RuntimeException e) {
-            // ==================== BEGIN CLAUDE CODE: 失败回滚已预占的 Redis 库存 ====================
             for (int i = 0; i < reservedBookIds.size(); i++) {
                 try {
                     bookInventoryService.release(reservedBookIds.get(i), reservedQtys.get(i));
                 } catch (Exception ex) {
                     // release 失败只能记日志（兜底兜不住，需要人工对账）
-                    System.err.println("[CLAUDE] failed to release redis reservation: bookId="
-                        + reservedBookIds.get(i) + ", qty=" + reservedQtys.get(i) + ", err=" + ex.getMessage());
+                    log.error("failed to release redis reservation: bookId={}, qty={}, err={}",
+                        reservedBookIds.get(i), reservedQtys.get(i), ex.getMessage());
                 }
             }
-            // ==================== END CLAUDE CODE: 失败回滚已预占的 Redis 库存 ====================
             throw e;
         }
 
         order.setTotalAmount(totalAmount);
         order.setOrderStatus(OrderStatus.PENDING.getCode());
 
-        // ==================== BEGIN CLAUDE CODE: set expireTime 到实体 + 用于 Redis score ====================
         LocalDateTime expireTime = LocalDateTime.now().plusMinutes(30);
         order.setExpireTime(expireTime);
-        // ==================== END CLAUDE CODE: set expireTime 到实体 + 用于 Redis score ====================
 
         orderMapper.insertOrder(order);
 
@@ -237,7 +225,6 @@ public class PurchaseServiceImpl implements PurchaseService {
             orderMapper.insertOrderItem(orderItem);
         }
 
-        // ==================== BEGIN CLAUDE CODE: 写 Redis 双 key + 待支付超时索引 ====================
         // 1. Hash 存订单数据（字段独立，后续改状态只动 status 字段，不重读 DB）
         String orderKey = orderData(order.getOrderNumber());
         stringRedisTemplate.opsForHash().put(orderKey, "id",          String.valueOf(order.getId()));
@@ -256,7 +243,6 @@ public class PurchaseServiceImpl implements PurchaseService {
         String expireKey = pendingExpireIdx(currentUserId);
         long expireMillis = expireTime.atZone(zoneId).toInstant().toEpochMilli();
         stringRedisTemplate.opsForZSet().add(expireKey, String.valueOf(order.getOrderNumber()), expireMillis);
-        // ==================== END CLAUDE CODE: 写 Redis 双 key + 待支付超时索引 ====================
 
         return 1;
     }
@@ -293,13 +279,11 @@ public class PurchaseServiceImpl implements PurchaseService {
             throw new BusinessException(ResultCode.INTERNAL_ERROR, "Order items not found for OrderNumber: " + orderNumber);
         }
 
-        // ==================== BEGIN CLAUDE CODE: 释放 Redis 预占 + 更新订单状态字段 ====================
         for (OrderItem orderItem : orderItems) {
             bookInventoryService.release(orderItem.getBookId(), orderItem.getQuantity());
         }
         // 只动 status 字段，不重写整个订单（Hash 的好处）
         stringRedisTemplate.opsForHash().put(orderData(orderNumber), "status", String.valueOf(OrderStatus.CANCELLED.getCode()));
-        // ==================== END CLAUDE CODE: 释放 Redis 预占 + 更新订单状态字段 ====================
 
         return 1;
     }
@@ -318,7 +302,6 @@ public class PurchaseServiceImpl implements PurchaseService {
         order.setOrderStatus(OrderStatus.PAID.getCode());
         orderMapper.updateStatusByOrderNumber(orderNumber, OrderStatus.PAID.getCode());
 
-        // ==================== BEGIN CLAUDE CODE: confirm Redis 预占 + 更新订单状态 ====================
         // paymentMethod 仍未接支付网关，这里只翻状态
         // 真支付网关回调时再扩展：验签 → 调用 payOrder
         List<OrderItem> orderItems = orderMapper.selectOrderItemsByOrderNumber(orderNumber);
@@ -328,12 +311,10 @@ public class PurchaseServiceImpl implements PurchaseService {
             }
         }
         stringRedisTemplate.opsForHash().put(orderData(orderNumber), "status", String.valueOf(OrderStatus.PAID.getCode()));
-        // ==================== END CLAUDE CODE: confirm Redis 预占 + 更新订单状态 ====================
 
         return 1;
     }
 
-    // ==================== BEGIN CLAUDE CODE: 系统主动关单 ====================
     /**
      * 系统主动关单（定时任务调用）— 不校验用户状态，按订单号直接关。
      * <br>幂等：状态非 PENDING 时直接清理 expire idx 不报错。
@@ -384,5 +365,4 @@ public class PurchaseServiceImpl implements PurchaseService {
             String.valueOf(orderNumber)
         );
     }
-    // ==================== END CLAUDE CODE: 系统主动关单 ====================
 }

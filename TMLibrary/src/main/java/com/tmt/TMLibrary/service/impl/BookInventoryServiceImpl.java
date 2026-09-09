@@ -58,7 +58,6 @@ public class BookInventoryServiceImpl implements BookInventoryService {
         this.confirmScript   = loadScript("scripts/redis/confirm_stock.lua");
     }
 
-    // ==================== BEGIN CLAUDE CODE: tryReserve ====================
     @Override
     public boolean tryReserve(Integer bookId, Integer quantity) {
         if (bookId == null || quantity == null || quantity <= 0) {
@@ -106,9 +105,7 @@ public class BookInventoryServiceImpl implements BookInventoryService {
             log.warn("confirm stock failed: bookId={}, qty={}, result={}", bookId, quantity, result);
         }
     }
-    // ==================== END CLAUDE CODE: tryReserve ====================
 
-    // ==================== BEGIN CLAUDE CODE: warmUp + helpers ====================
     /**
      * 从 DB 读取 book 写入 Redis。
      * <br>用 HSETNX 逐字段写入，并发预热时不会被覆盖（reserved 不会被错误清零）。
@@ -143,5 +140,4 @@ public class BookInventoryServiceImpl implements BookInventoryService {
         script.setResultType(Long.class);
         return script;
     }
-    // ==================== END CLAUDE CODE: warmUp + helpers ====================
 }

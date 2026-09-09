@@ -56,7 +56,6 @@ public class OrderExpireScheduler {
     private static final long LOCK_TTL_SECONDS = 50;  // 必须 &lt; @Scheduled fixedRate
     private static final String PENDING_EXPIRE_IDX_PATTERN = "tmlibrary:user:*:orders:pending:expire:idx";
 
-    // ==================== BEGIN CLAUDE CODE: 锁释放 Lua ====================
     // 经典 Redis 分布式锁释放模式：check-then-del，原子
     private static final String UNLOCK_LUA =
         "if redis.call('get', KEYS[1]) == ARGV[1] then " +
@@ -64,7 +63,6 @@ public class OrderExpireScheduler {
         "else " +
         "  return 0 " +
         "end";
-    // ==================== END CLAUDE CODE: 锁释放 Lua ====================
 
     private final StringRedisTemplate stringRedisTemplate;
     private final PurchaseService purchaseService;
@@ -77,7 +75,6 @@ public class OrderExpireScheduler {
         this.unlockScript = new DefaultRedisScript<>(UNLOCK_LUA, Long.class);
     }
 
-    // ==================== BEGIN CLAUDE CODE: 调度主入口 ====================
     @Scheduled(fixedRate = 60_000, initialDelay = 30_000)
     public void scanExpiredOrders() {
         String lockValue = UUID.randomUUID().toString();
@@ -131,5 +128,4 @@ public class OrderExpireScheduler {
             }
         }
     }
-    // ==================== END CLAUDE CODE: 调度主入口 ====================
 }
