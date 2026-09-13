@@ -60,6 +60,11 @@ public class UserManagementServiceImpl implements UserManagementService {
         user.setStatus(UserStatus.ACTIVE.getCode()); // 默认状态为激活
 
         userMapper.insertUser(user);
+
+        // 清掉可能存在的负缓存(注册前若有人用该用户名尝试登录,会留下 3 分钟的
+        // NEGATIVE_SENTINEL,不清掉会导致新用户注册后立刻登录失败)
+        stringRedisTemplate.delete(RedisKeys.userByUsername(user.getUsername()));
+
         return user.getId();
     }
 

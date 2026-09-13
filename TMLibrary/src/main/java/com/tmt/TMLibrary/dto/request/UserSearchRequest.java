@@ -23,7 +23,7 @@ public class UserSearchRequest {
     private LocalDateTime lastLoginTimeEnd; // 区间查询
 
     private String lastLoginIp; // 精确 （IP 地址）
-    private int failedLoginAttempts; // 精确
+    private Integer failedLoginAttempts; // 精确(null = 不参与筛选)
 
     private LocalDateTime accountLockedUntilStart; // 区间查询
     private LocalDateTime accountLockedUntilEnd; // 区间查询
@@ -82,8 +82,8 @@ public class UserSearchRequest {
             deletedAtEnd = null;
         }
 
-        if (failedLoginAttempts < 0)
-            failedLoginAttempts = 0;
+        if (failedLoginAttempts != null && failedLoginAttempts < 0)
+            failedLoginAttempts = null;
 
         if (role == null)
             role = UserRole.USER.getCode(); // 默认查询普通用户

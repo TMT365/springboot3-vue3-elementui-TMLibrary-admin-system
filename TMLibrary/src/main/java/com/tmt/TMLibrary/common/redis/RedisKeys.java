@@ -79,11 +79,21 @@ public final class RedisKeys {
     /** 图书详情缓存(isbn 维度,修复自原 user:books:{isbn} 错配域)。占位符 = isbn */
     public static final String BOOK_INFO_BY_ISBN = "tmlibrary:book:byIsbn:%s:info";
 
+    /** 库存 Hash 的 SCAN 匹配模式 — 供对账任务遍历 */
+    public static final String BOOK_INVENTORY_PATTERN = "tmlibrary:book:byId:*:inventory";
+
+    /** 从库存 key 里提取 bookId 的正则(与 BOOK_INVENTORY 模板保持一致) */
+    public static final java.util.regex.Pattern BOOK_INVENTORY_ID_EXTRACTOR =
+            java.util.regex.Pattern.compile("^tmlibrary:book:byId:(\\d+):inventory$");
+
     // ============================================================
     // 6. Scheduler — 分布式锁
     // ============================================================
     /** 订单超时关单调度锁(SETNX 抢锁) — 固定 key,无占位符 */
     public static final String SCHED_LOCK_ORDER_EXPIRE = "tmlibrary:scheduler:lock:order-expire";
+
+    /** 库存对账任务调度锁 */
+    public static final String SCHED_LOCK_INVENTORY_RECONCILE = "tmlibrary:scheduler:lock:inventory-reconcile";
 
     // ============================================================
     // 构建方法 — 唯一推荐调用方式

@@ -49,6 +49,7 @@ public class BookInventoryServiceImpl implements BookInventoryService {
     private final DefaultRedisScript<Long> releaseScript;
     private final DefaultRedisScript<Long> confirmScript;
     private final DefaultRedisScript<Long> warmUpScript;
+    private final DefaultRedisScript<Long> syncStockScript;
 
     public BookInventoryServiceImpl(StringRedisTemplate stringRedisTemplate,
                                     BookMapper bookMapper) {
@@ -59,6 +60,7 @@ public class BookInventoryServiceImpl implements BookInventoryService {
         this.releaseScript   = loadScript("scripts/redis/release_stock.lua");
         this.confirmScript   = loadScript("scripts/redis/confirm_stock.lua");
         this.warmUpScript    = loadScript("scripts/redis/warmup_book.lua");
+        this.syncStockScript = loadScript("scripts/redis/sync_book_stock.lua");
     }
 
     @Override
@@ -93,7 +95,11 @@ public class BookInventoryServiceImpl implements BookInventoryService {
         String bookKey = RedisKeys.bookInventory(bookId);
         Long result = runScript(releaseScript, bookKey, quantity);
         if (result != null && result < 0) {
-            log.warn("release stock failed: bookId={}, qty={}, result={}", bookId, quantity, result);
+            // -1 = hash 不存在; -2 = reserved 不足(数据错位)
+            // 这两种情况都会让 Redis 库存永久偏离 DB,属于需要人工/对账任务介入的异常
+            log.error("INVENTORY DRIFT: release failed bookId={}, qty={}, result={} "
+                + "(-1=hash missing, -2=reserved insufficient), reconcile will repair",
+                bookId, quantity, result);
         }
     }
 
@@ -105,7 +111,9 @@ public class BookInventoryServiceImpl implements BookInventoryService {
         String bookKey = RedisKeys.bookInventory(bookId);
         Long result = runScript(confirmScript, bookKey, quantity);
         if (result != null && result < 0) {
-            log.warn("confirm stock failed: bookId={}, qty={}, result={}", bookId, quantity, result);
+            log.error("INVENTORY DRIFT: confirm failed bookId={}, qty={}, result={} "
+                + "(-1=hash missing, -2=reserved insufficient), reconcile will repair",
+                bookId, quantity, result);
         }
     }
 
@@ -142,5 +150,68 @@ public class BookInventoryServiceImpl implements BookInventoryService {
         script.setLocation(new ClassPathResource(classpathPath));
         script.setResultType(Long.class);
         return script;
+    }
+
+    @Override
+    public void syncStockFromDb(Integer bookId) {
+        if (bookId == null) {
+            return;
+        }
+        Book book = bookMapper.selectById(bookId);
+        if (book == null || book.getStockQuantity() == null) {
+            return;
+        }
+        // 保留 reserved,反推 stock;hash 不存在时脚本直接返回 0(下次预热会读 DB)
+        stringRedisTemplate.execute(
+            syncStockScript,
+            List.of(RedisKeys.bookInventory(bookId)),
+            String.valueOf(book.getStockQuantity())
+        );
+    }
+
+    @Override
+    public boolean reconcile(Integer bookId) {
+        if (bookId == null) {
+            return false;
+        }
+        String bookKey = RedisKeys.bookInventory(bookId);
+
+        List<Object> values = stringRedisTemplate.opsForHash().multiGet(bookKey, List.of("stock", "reserved"));
+        if (values == null || values.isEmpty() || values.get(0) == null) {
+            // hash 不存在 或 没有 stock 字段 — 交给 warmUpBook 处理
+            return false;
+        }
+
+        long redisStock = parseLong(values.get(0), 0L);
+        long redisReserved = values.size() > 1 ? parseLong(values.get(1), 0L) : 0L;
+
+        Book book = bookMapper.selectById(bookId);
+        if (book == null || book.getStockQuantity() == null) {
+            return false;
+        }
+        long dbStock = book.getStockQuantity();
+
+        if (redisStock + redisReserved == dbStock) {
+            return false;   // 不变式成立,无需处理
+        }
+
+        log.error("INVENTORY DRIFT detected: bookId={}, redis stock={}, redis reserved={}, "
+                + "sum={}, db stock={} — repairing (stock := db - reserved)",
+            bookId, redisStock, redisReserved, redisStock + redisReserved, dbStock);
+
+        stringRedisTemplate.execute(
+            syncStockScript,
+            List.of(bookKey),
+            String.valueOf(dbStock)
+        );
+        return true;
+    }
+
+    private static long parseLong(Object v, long fallback) {
+        try {
+            return Long.parseLong(String.valueOf(v));
+        } catch (NumberFormatException e) {
+            return fallback;
+        }
     }
 }

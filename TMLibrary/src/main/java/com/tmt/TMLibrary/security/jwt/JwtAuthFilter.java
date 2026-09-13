@@ -22,9 +22,13 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 // 不要加 @Component!由 SecurityConfig 的 FilterRegistrationBean 显式注册,避免被默认 servlet 注册一次 + 这里再注册一次。
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    private static final List<String> WHITELIST = List.of(
+    /** 精确匹配 — 避免 "/api/users/login-xxx" 这类路径被误放行 */
+    private static final List<String> WHITELIST_EXACT = List.of(
             "/api/users/login",
-            "/api/users/register",
+            "/api/users/register");
+
+    /** 前缀匹配 — 仅用于有子路径的模块 */
+    private static final List<String> WHITELIST_PREFIX = List.of(
             "/api/captcha/");
 
     private final JwtService jwtService;
@@ -106,6 +110,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
      */
 
     private boolean isWhitelisted(String path) {
-        return WHITELIST.stream().anyMatch(path::startsWith);
+        return WHITELIST_EXACT.contains(path)
+                || WHITELIST_PREFIX.stream().anyMatch(path::startsWith);
     }
 }

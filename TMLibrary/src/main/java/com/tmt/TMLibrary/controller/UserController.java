@@ -113,13 +113,21 @@ public class UserController {
             @CurrentUser UserView me) {
         requireLogin(me);
         log.info("前端请求/api/users/{}", id);
-        // 非自己 / 非管理角色 → 403
-        if (me.getId() != id
-                && !me.getRole().equals(UserRole.ADMIN.getCode())
-                && !me.getRole().equals(UserRole.BOSS.getCode())) {
-            throw new BusinessException(ResultCode.FORBIDDEN, "无权查看其他用户详情");
+
+        UserVo target = userManagementService.getUserById(id);
+
+        // 权限与「列表查询」保持同一套规则:
+        //   自己 → 可看
+        //   BOSS → 可看任意
+        //   ADMIN → 只能看普通用户(不能看 BOSS / 其他 ADMIN)
+        if (me.getId() == id || me.getRole().equals(UserRole.BOSS.getCode())) {
+            return Result.success(target);
         }
-        return Result.success(userManagementService.getUserById(id));
+        if (me.getRole().equals(UserRole.ADMIN.getCode())
+                && UserRole.USER.getCode().equals(target.getRole())) {
+            return Result.success(target);
+        }
+        throw new BusinessException(ResultCode.FORBIDDEN, "无权查看该用户详情");
     }
 
     /** 更新 — PATCH /api/users/{id} */

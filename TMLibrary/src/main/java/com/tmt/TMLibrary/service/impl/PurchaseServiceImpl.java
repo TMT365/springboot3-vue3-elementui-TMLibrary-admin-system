@@ -27,6 +27,7 @@ import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
 import com.tmt.TMLibrary.exception.AuthException;
+import com.tmt.TMLibrary.exception.OrderAutoCancelledException;
 
 import java.math.BigDecimal;
 import com.tmt.TMLibrary.exception.BusinessException;
@@ -190,38 +191,57 @@ public class PurchaseServiceImpl implements PurchaseService {
 
             BigDecimal totalAmount = BigDecimal.ZERO;
 
-            // Phase 1: 预占库存(Redis Lua)
+            // Phase 0: 校验 + 合并重复 bookId
+            // 同一本书出现多次([{id:1,qty:2},{id:1,qty:3}])会合并成一条 id:1 qty:5,
+            // 避免生成多条相同 order_item、以及重复预占同一本书
+            LinkedHashMap<Integer, Integer> mergedItems = new LinkedHashMap<>();
             for (PurchaseItemRequest item : purchaseRequest.getItems()) {
-                if (item.getQuantity() <= 0) {
-                    throw new BusinessException(ResultCode.BAD_REQUEST, "Quantity must be greater than 0 for bookId: " + item.getBookId());
-                }
                 if (item.getBookId() == null || item.getBookId() <= 0) {
-                    throw new BusinessException(ResultCode.BAD_REQUEST, "BookId cannot be null");
+                    throw new BusinessException(ResultCode.BAD_REQUEST, "BookId cannot be null or non-positive");
                 }
+                if (item.getQuantity() == null || item.getQuantity() <= 0) {
+                    throw new BusinessException(ResultCode.BAD_REQUEST,
+                        "Quantity must be greater than 0 for bookId: " + item.getBookId());
+                }
+                final int currentBookId = item.getBookId();
+                mergedItems.merge(currentBookId, item.getQuantity(), (a, b) -> {
+                    try {
+                        return Math.addExact(a, b);
+                    } catch (ArithmeticException overflow) {
+                        throw new BusinessException(ResultCode.BAD_REQUEST,
+                            "Quantity overflow for bookId: " + currentBookId);
+                    }
+                });
+            }
+
+            // Phase 1: 预占库存(Redis Lua)
+            for (Map.Entry<Integer, Integer> entry : mergedItems.entrySet()) {
+                int bookId = entry.getKey();
+                int quantity = entry.getValue();
 
                 // 1) 非锁读 book 拿 price（写 OrderItem 需要）
-                Book book = bookMapper.selectById(item.getBookId());
+                Book book = bookMapper.selectById(bookId);
                 if (book == null) {
-                    throw new BusinessException(ResultCode.NOT_FOUND, "Book not found: " + item.getBookId());
+                    throw new BusinessException(ResultCode.NOT_FOUND, "Book not found: " + bookId);
                 }
                 // 2) Redis Lua 原子预占 — 替代原 DB 悲观锁路径
-                if (!bookInventoryService.tryReserve(item.getBookId(), item.getQuantity())) {
-                    throw new BusinessException(ResultCode.CONFLICT, "Insufficient stock for bookId: " + item.getBookId());
+                if (!bookInventoryService.tryReserve(bookId, quantity)) {
+                    throw new BusinessException(ResultCode.CONFLICT, "Insufficient stock for bookId: " + bookId);
                 }
-                reservedBookIds.add(item.getBookId());
-                reservedQtys.add(item.getQuantity());
+                reservedBookIds.add(bookId);
+                reservedQtys.add(quantity);
 
                 OrderItem orderItem = new OrderItem();
                 try {
                     orderItem.setPrice(book.getPrice());
-                    orderItem.setBookId(item.getBookId());
-                    orderItem.setQuantity(item.getQuantity());
+                    orderItem.setBookId(bookId);
+                    orderItem.setQuantity(quantity);
                     orderItems.add(orderItem);
-                    totalAmount = totalAmount.add(book.getPrice().multiply(BigDecimal.valueOf(item.getQuantity())));
+                    totalAmount = totalAmount.add(book.getPrice().multiply(BigDecimal.valueOf(quantity)));
                 } catch (ArithmeticException e) {
                     throw new BusinessException(ResultCode.INTERNAL_ERROR, "Error calculating total amount: " + e.getMessage());
                 } catch (NullPointerException e) {
-                    throw new BusinessException(ResultCode.INTERNAL_ERROR, "Book price is null for bookId: " + item.getBookId());
+                    throw new BusinessException(ResultCode.INTERNAL_ERROR, "Book price is null for bookId: " + bookId);
                 }
             }
 
@@ -257,7 +277,12 @@ public class PurchaseServiceImpl implements PurchaseService {
             long expireMillis = expireTime.atZone(zoneId).toInstant().toEpochMilli();
             stringRedisTemplate.opsForZSet().add(expireKey, String.valueOf(order.getOrderNumber()), expireMillis);
 
-            return order.getId() != null ? order.getId() : 1;
+            if (order.getId() == null) {
+                // useGeneratedKeys 未回填主键 — 返回假的订单号会让前端拿到错误数据
+                throw new BusinessException(ResultCode.INTERNAL_ERROR,
+                    "订单创建失败:数据库未回填主键");
+            }
+            return order.getId();
 
         } catch (RuntimeException e) {
             // 统一补偿:对所有已成功 Lua 预占的 bookId 释放库存
@@ -336,8 +361,17 @@ public class PurchaseServiceImpl implements PurchaseService {
         return order.getId() != null ? order.getId() : 1;
     }
 
+    /**
+     * 支付订单。
+     *
+     * <h2>noRollbackFor 的意义(I-4)</h2>
+     * <p>付款时若库存不足,本方法会在同一事务内把订单置为 CANCELLED 并释放预占,
+     * 然后抛 {@link OrderAutoCancelledException}。<b>该异常必须让事务提交</b>——
+     * 否则刚写入的"已取消"会被回滚,订单回到 PENDING,用户既付不了款也取消不掉。
+     * Spring 的规则匹配取"最具体"的一条,本类比 Exception 更具体,故优先生效。</p>
+     */
     @Override
-    @Transactional(rollbackFor = Exception.class)
+    @Transactional(rollbackFor = Exception.class, noRollbackFor = OrderAutoCancelledException.class)
     public int payOrder(Long orderNumber, Integer currentUserId, String paymentMethod) {
 
         // 支付方式还未做(预留字段,接网关时验签后再调本方法)
@@ -353,15 +387,31 @@ public class PurchaseServiceImpl implements PurchaseService {
         // Redis 仅作预占缓存 + 热点加速,真实库存以 DB 为准
         List<OrderItem> orderItems = orderMapper.selectOrderItemsByOrderNumber(orderNumber);
         if (orderItems != null && !orderItems.isEmpty()) {
+
+            // ---- 步骤 1:预检(非锁读,用于判断是否走"自动关单"路径)----
+            // 此时尚未做任何库存变更,所以后续提交事务(不回滚)是安全的
+            for (OrderItem orderItem : orderItems) {
+                Book book = bookMapper.selectById(orderItem.getBookId());
+                if (book == null
+                        || book.getStockQuantity() == null
+                        || book.getStockQuantity() < orderItem.getQuantity()) {
+                    // 库存已不足 → 在同一事务内关单 + 释放预占,再以"不回滚"的异常结束
+                    autoCancelBecauseOutOfStock(order, orderItems, currentUserId);
+                    throw new OrderAutoCancelledException(
+                        "库存不足,订单已自动取消:bookId=" + orderItem.getBookId()
+                            + ",需要=" + orderItem.getQuantity()
+                            + ",库存=" + (book == null ? "图书不存在" : book.getStockQuantity()));
+                }
+            }
+
+            // ---- 步骤 2:权威扣减(条件更新,兜住预检与扣减之间的并发竞态)----
             for (OrderItem orderItem : orderItems) {
                 int rows = bookMapper.decrementStockIfEnough(orderItem.getBookId(), orderItem.getQuantity());
                 if (rows == 0) {
-                    // 库存不足 — DB 拒绝扣减,抛错让 @Transactional 回滚整个付款
-                    // 订单保持 PENDING,调用方(支付网关回调)决定是否取消订单 + 退款
+                    // 预检通过但扣减失败 = 极小概率的并发售罄
+                    // 这里回滚(库存已部分变更,交回滚处理最安全),订单保持 PENDING 由用户/超时处理
                     throw new BusinessException(ResultCode.CONFLICT,
-                        "库存不足,bookId=" + orderItem.getBookId()
-                            + ",qty=" + orderItem.getQuantity()
-                            + "(并发售罄或管理员未及时补货)");
+                        "库存不足(并发售罄),请稍后重试或取消订单: bookId=" + orderItem.getBookId());
                 }
             }
         }
@@ -391,6 +441,38 @@ public class PurchaseServiceImpl implements PurchaseService {
         });
 
         return order.getId() != null ? order.getId() : 1;
+    }
+
+    /**
+     * 付款时库存不足 → 在<b>当前事务内</b>关单并释放预占(I-4)。
+     *
+     * <p>调用方必须紧接着抛 {@link OrderAutoCancelledException}(标注了 noRollbackFor),
+     * 让这些写入真正提交,否则订单会回到 PENDING。</p>
+     */
+    private void autoCancelBecauseOutOfStock(Order order, List<OrderItem> orderItems, Integer currentUserId) {
+        int rows = orderMapper.updateStatusByOrderNumberGuard(
+            order.getOrderNumber(), OrderStatus.PENDING.getCode(), OrderStatus.CANCELLED.getCode());
+        if (rows == 0) {
+            log.warn("auto-cancel skipped, order {} status changed concurrently", order.getOrderNumber());
+            return;
+        }
+        for (OrderItem orderItem : orderItems) {
+            try {
+                bookInventoryService.release(orderItem.getBookId(), orderItem.getQuantity());
+            } catch (Exception e) {
+                log.error("auto-cancel: release failed bookId={}, qty={}",
+                    orderItem.getBookId(), orderItem.getQuantity(), e);
+            }
+        }
+        registerRedisWriteAfterCommit(() -> {
+            stringRedisTemplate.opsForHash().put(
+                RedisKeys.orderData(order.getOrderNumber()),
+                "status", String.valueOf(OrderStatus.CANCELLED.getCode()));
+            stringRedisTemplate.opsForZSet().remove(
+                RedisKeys.userPendingExpireIdx(currentUserId),
+                String.valueOf(order.getOrderNumber()));
+        });
+        log.warn("order {} auto-cancelled at payment due to insufficient stock", order.getOrderNumber());
     }
 
     /**

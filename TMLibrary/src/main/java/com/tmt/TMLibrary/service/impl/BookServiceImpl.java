@@ -7,6 +7,7 @@ import com.tmt.TMLibrary.dto.request.BookDateTimeByRequest;
 import com.tmt.TMLibrary.dto.request.BookUpdateRequest;
 import com.tmt.TMLibrary.dto.request.BookSaveRequest;
 import com.tmt.TMLibrary.service.BookService;
+import com.tmt.TMLibrary.service.BookInventoryService;
 
 import com.tmt.TMLibrary.entity.Book;
 import com.tmt.TMLibrary.exception.BusinessException;
@@ -39,6 +40,7 @@ public class BookServiceImpl implements BookService {
     private final BookMapper bookMapper;
     private final ObjectMapper objectMapper;
     private final StringRedisTemplate stringRedisTemplate;
+    private final BookInventoryService bookInventoryService;
 
     // Redis key 由 RedisKeys 统一管理
     // 旧常量(已删除,域名错配):
@@ -55,10 +57,22 @@ public class BookServiceImpl implements BookService {
     /** 负缓存占位 JSON — 用 sentinel 而不是空串,避免 readValue("") 抛异常 */
     private static final String NEGATIVE_SENTINEL = "{\"__sentinel__\":true}";
 
-    public BookServiceImpl(BookMapper bookMapper, StringRedisTemplate stringRedisTemplate, ObjectMapper objectMapper) {
+    /**
+     * SingleFlight 中 follower 等待 leader 的最长时间(毫秒)。
+     * <p>超过则放弃复用结果并返回错误,避免请求线程被长时间挂住。</p>
+     * <p>通过 {@code app.book.singleflight-timeout-ms} 配置,默认 5000。</p>
+     */
+    @org.springframework.beans.factory.annotation.Value("${app.book.singleflight-timeout-ms:5000}")
+    private long singleflightTimeoutMs;
+
+    public BookServiceImpl(BookMapper bookMapper,
+                           StringRedisTemplate stringRedisTemplate,
+                           ObjectMapper objectMapper,
+                           BookInventoryService bookInventoryService) {
         this.bookMapper = bookMapper;
         this.stringRedisTemplate = stringRedisTemplate;
         this.objectMapper = objectMapper;
+        this.bookInventoryService = bookInventoryService;
     }
 
     @Override
@@ -92,7 +106,7 @@ public class BookServiceImpl implements BookService {
         }
         int rowsAffected = bookMapper.deleteBookByISBN(isbn);
         if (rowsAffected > 0) {
-            // 失效图书详情缓存 + 库存 Hash(同一 isbn 的 bookId 需要回查)
+            // 图书已删除 → 详情缓存和库存 Hash 都应清掉(此时 reserved 已无意义)
             stringRedisTemplate.delete(RedisKeys.bookInfoByIsbn(isbn));
             stringRedisTemplate.delete(RedisKeys.bookInventory(book.getId()));
         }
@@ -110,11 +124,11 @@ public class BookServiceImpl implements BookService {
         book.setUpdatedTime(LocalDateTime.now());
         int rowsAffected = bookMapper.updateBookByISBN(book);
         if (rowsAffected > 0) {
-            // 失效两条缓存路径:
-            // 1) book:isbn:{isbn} — BookService 自己的详情缓存
-            // 2) book:byId:{id}:inventory — BookInventoryService 的库存 Hash(含 stock 字段)
+            // 1) 详情缓存直接失效
             stringRedisTemplate.delete(RedisKeys.bookInfoByIsbn(isbn));
-            stringRedisTemplate.delete(RedisKeys.bookInventory(book.getId()));
+            // 2) 库存 Hash 不能删!里面存着在途订单的 reserved,删掉会让这些预占消失,
+            //    客户付款时被 DB 守卫拒绝。改为"保留 reserved,按 DB 重算 stock"
+            bookInventoryService.syncStockFromDb(book.getId());
         }
         return rowsAffected;
     }
@@ -178,7 +192,7 @@ public class BookServiceImpl implements BookService {
         } else {
             // 我是 follower — 等 leader 的结果
             try {
-                book = existing.get(5, TimeUnit.SECONDS);
+                book = existing.get(singleflightTimeoutMs, TimeUnit.MILLISECONDS);
             } catch (TimeoutException e) {
                 throw new BusinessException(ResultCode.INTERNAL_ERROR, "DB query timeout for isbn=" + isbn, e);
             } catch (InterruptedException e) {

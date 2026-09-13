@@ -83,9 +83,13 @@
         <where>
             <if test="userSearchRequest.username != null and userSearchRequest.username != '' ">AND username LIKE CONCAT('%', #{userSearchRequest.username}, '%')</if>
             <if test="userSearchRequest.phoneNumber != null and userSearchRequest.phoneNumber != '' ">AND phone_number LIKE CONCAT('%', #{userSearchRequest.phoneNumber}, '%')</if>
-            <!-- ADMIN 只看 USER; BOSS 看全 -->
+            <!-- 操作者角色约束:ADMIN 只能看 USER(role=0);BOSS 可看全量 -->
             <if test="role == 1">AND role = 0</if>
-            <if test="role == 2">AND 1=1</if>
+            <!-- 查询条件里的 role 仅对 BOSS 生效(ADMIN 已被上一行钉死为 0) -->
+            <if test="role == 2">
+                <if test="userSearchRequest.role != null">AND role = #{userSearchRequest.role}</if>
+            </if>
+            <if test="userSearchRequest.failedLoginAttempts != null">AND failed_login_attempts = #{userSearchRequest.failedLoginAttempts}</if>
             <if test="userSearchRequest.status != null">AND status = #{userSearchRequest.status}</if>
             <if test="userSearchRequest.deletedAtStart != null">AND deleted_at &gt;= #{userSearchRequest.deletedAtStart}</if>
             <if test="userSearchRequest.deletedAtEnd != null">AND deleted_at &lt;= #{userSearchRequest.deletedAtEnd}</if>
@@ -107,9 +111,13 @@
         <where>
             <if test="userSearchRequest.username != null and userSearchRequest.username != '' ">AND username LIKE CONCAT('%', #{userSearchRequest.username}, '%')</if>
             <if test="userSearchRequest.phoneNumber != null and userSearchRequest.phoneNumber != '' ">AND phone_number LIKE CONCAT('%', #{userSearchRequest.phoneNumber}, '%')</if>
-            <!-- ADMIN 只看 USER; BOSS 看全 -->
+            <!-- 操作者角色约束:ADMIN 只能看 USER(role=0);BOSS 可看全量 -->
             <if test="role == 1">AND role = 0</if>
-            <if test="role == 2">AND 1=1</if>
+            <!-- 查询条件里的 role 仅对 BOSS 生效(ADMIN 已被上一行钉死为 0) -->
+            <if test="role == 2">
+                <if test="userSearchRequest.role != null">AND role = #{userSearchRequest.role}</if>
+            </if>
+            <if test="userSearchRequest.failedLoginAttempts != null">AND failed_login_attempts = #{userSearchRequest.failedLoginAttempts}</if>
             <if test="userSearchRequest.status != null">AND status = #{userSearchRequest.status}</if>
             <if test="userSearchRequest.deletedAtStart != null">AND deleted_at &gt;= #{userSearchRequest.deletedAtStart}</if>
             <if test="userSearchRequest.deletedAtEnd != null">AND deleted_at &lt;= #{userSearchRequest.deletedAtEnd}</if>

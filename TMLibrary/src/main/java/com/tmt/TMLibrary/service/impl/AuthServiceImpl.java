@@ -137,7 +137,8 @@ public class AuthServiceImpl implements AuthService {
             throw new AuthException(ResultCode.UNAUTHORIZED, "用户名或密码错误");
         }
         // 判断用户状态是否为ACTIVE 或是 账户是否被锁定
-        if (!user.getStatus().equals(UserStatus.ACTIVE.getCode())) {
+        // 常量前置:status 为 NULL(历史数据/手工插入)时不会 NPE
+        if (!UserStatus.ACTIVE.getCode().equals(user.getStatus())) {
             throw new AuthException(ResultCode.FORBIDDEN, "用户账户未激活");
         }
 
