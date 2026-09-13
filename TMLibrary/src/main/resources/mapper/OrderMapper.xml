@@ -52,8 +52,9 @@
     </resultMap>
 
 
+    <!-- expire_time 一并查出:实体持有该字段,缺列会让 Order.expireTime 恒为 null -->
     <sql id="Order_Base_Column_List">
-        id, order_number, user_id, total_amount, order_status, created_time, updated_time
+        id, order_number, user_id, total_amount, order_status, expire_time, created_time, updated_time
     </sql>
 
     <sql id="OrderItem_Base_Column_List">

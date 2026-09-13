@@ -29,7 +29,7 @@
 | **B-1** | Snowflake `(1,1)` 硬编码,多实例部署会撞号 | 改为 `app.snowflake.worker-id` / `datacenter-id` 可配置,启动时打印生效值 |
 | **O-2** | 库存存在两个写入口,语义含糊无法审计 | 新增 `PATCH /api/books/{isbn}/stock` 盘点接口;`BookUpdateRequest` 移除 `stockQuantity` |
 | **O-4** | 无指标,库存漂移不可观测 | 引入 Actuator + Micrometer,新增 3 个业务指标并接入服务层 |
-| **O-5** | 列表/搜索缺索引,存在全表扫描 | 新增 `scripts/db-indexes.sql`,含 users/books/orders 的索引清单与注意事项 |
+| **O-5** | 列表/搜索缺索引,存在全表扫描 | 新增 `scripts/db-indexes.sql`(后续并入 `scripts/schema.sql`) |
 | **安全** | Redis 密码与 JWT secret 明文提交进 git | 全部改为环境变量注入;`.env.example` 补全模板与生成指引;`dev.sh` 校验 JWT_SECRET |
 
 ### 第二轮
@@ -124,7 +124,7 @@
    - ⚠️ 已签发的 token 在密钥更换后全部失效,需配合发布窗口
 2. **必须设置 Redis 凭据环境变量**(如启用密码):`REDIS_USERNAME` / `REDIS_PASSWORD`
 3. **多实例部署**必须为每个实例分配不同的 `SNOWFLAKE_WORKER_ID`(0-31)
-4. **索引脚本需手动执行**:`scripts/db-indexes.sql`(建议先在低峰期 EXPLAIN 验证)
+4. **建表脚本需手动执行**:`scripts/schema.sql`(含建表 + 索引;已有库补索引见文末注释段)
 5. **`stockQuantity` 已从 `PATCH /api/books/{isbn}` 移除**,前端需改用
    `PATCH /api/books/{isbn}/stock`(当前前端图书编辑页为 P4 占位,尚未接线,不影响)
 

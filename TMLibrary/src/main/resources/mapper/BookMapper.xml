@@ -24,8 +24,10 @@
     <!-- 如果设置了map-underscore-to-camel-case: true，那么下划线命名的列名会自动转换为驼峰命名的属性名，
     只有在字段名和属性名不一致时才会自定义<resultMap> -->
 
+    <!-- id 必须包含:Book.id 是 int,不查出来就是 0,
+         导致按主键操作(盘点调整 / 库存 Hash 失效)全部打到 id=0 -->
     <sql id="Base_Column_List">
-         title, author, isbn, price, published_date, created_time, updated_time, stock_quantity
+         id, title, author, isbn, price, published_date, created_time, updated_time, stock_quantity
     </sql>
     <!-- sql 标签用于定义可重用的SQL片段，定义后用 <include refid="Base_Column_List"/> 引用，避免每次 SELECT 都把列名抄一遍。 -->
 
