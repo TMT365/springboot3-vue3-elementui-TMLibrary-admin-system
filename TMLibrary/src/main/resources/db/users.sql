@@ -1,0 +1,66 @@
+-- ============================================================================
+-- users — 用户
+--
+-- 单表建表脚本(从 scripts/schema.sql 拆出,内容与之一致)
+--
+-- 执行:
+--   mysql -u root -p tmlibrary < src/main/resources/db/users.sql
+--
+-- 约定(与 schema.sql 相同):
+--   - 不使用物理外键,跨表引用只建索引,引用完整性由应用层保证
+--   - 引擎 InnoDB(FOR UPDATE 行锁依赖)
+--   - 时间字段用 DATETIME(避开 2038 上限与时区转换)
+--
+-- 完整版(含库创建、初始数据说明、已有库补索引)见:scripts/schema.sql
+-- ============================================================================
+
+USE `tmlibrary`;
+
+CREATE TABLE IF NOT EXISTS `users` (
+    `id`                              INT           NOT NULL AUTO_INCREMENT COMMENT '主键',
+
+    -- ---------- 身份 ----------
+    `username`                        VARCHAR(50)   NOT NULL                COMMENT '登录名,唯一',
+    `password_hash`                   VARCHAR(100)  NOT NULL                COMMENT 'BCrypt 哈希(固定 60 字符,留余量便于换算法)',
+    `email`                           VARCHAR(100)  NOT NULL                COMMENT '邮箱',
+    `phone_number`                    VARCHAR(20)   NOT NULL                COMMENT '手机号(注册校验长度 11)',
+    `real_name`                       VARCHAR(50)   NULL                    COMMENT '真实姓名;对外返回时脱敏',
+    `avatar_url`                      VARCHAR(255)  NULL                    COMMENT '头像地址',
+
+    -- ---------- 权限与状态 ----------
+    `role`                            TINYINT       NOT NULL DEFAULT 0      COMMENT '0=USER 1=ADMIN 2=BOSS;注册强制 0,仅 BOSS 可提升',
+    `status`                          TINYINT       NOT NULL DEFAULT 0      COMMENT '0=ACTIVE 1=INACTIVE 2=SUSPENDED',
+
+    -- ---------- 登录与安全 ----------
+    `failed_login_attempts`           INT           NOT NULL DEFAULT 0      COMMENT '连续登录失败次数;达阈值锁定',
+    `account_locked_until`            DATETIME      NULL                    COMMENT '锁定截止时间;过期后计数自动重置',
+    `last_login_time`                 DATETIME      NULL                    COMMENT '最后登录时间',
+    `last_login_ip`                   VARCHAR(45)   NULL                    COMMENT '最后登录 IP(IPv6 最长 45 字符)',
+
+    -- ---------- 密码重置(预留,当前无重置流程) ----------
+    `password_reset_token`            VARCHAR(64)   NULL                    COMMENT '重置令牌',
+    `password_reset_token_expiration` DATETIME      NULL                    COMMENT '重置令牌过期时间',
+
+    -- ---------- 审计 ----------
+    `created_time`                    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
+    `updated_time`                    DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间(DB 自动维护)',
+    `deleted_at`                      DATETIME      NULL                    COMMENT '软删时间;NULL=未删除',
+
+    PRIMARY KEY (`id`),
+    UNIQUE KEY `uk_users_username` (`username`),
+
+    -- 列表查询默认按 role + status 过滤,并按 created_time 排序
+    KEY `idx_users_role_status_created` (`role`, `status`, `created_time`),
+    KEY `idx_users_created_time`        (`created_time`),
+    KEY `idx_users_locked_until`        (`account_locked_until`),
+    KEY `idx_users_failed_attempts`     (`failed_login_attempts`),
+    KEY `idx_users_deleted_at`          (`deleted_at`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='用户';
+
+-- 可选:若业务要求邮箱/手机号唯一,再放开下面两个约束
+-- (当前注册流程未做重复预检,直接加约束会让重复注册报 409 而非友好提示)
+-- ALTER TABLE `users` ADD UNIQUE KEY `uk_users_email` (`email`);
+-- ALTER TABLE `users` ADD UNIQUE KEY `uk_users_phone` (`phone_number`);
+
+-- ⚠️ username / phone_number 的模糊查询用的是 LIKE '%x%'(前后模糊),
+--    无法走索引。username 的等值查询(登录)已走唯一键,不受影响。

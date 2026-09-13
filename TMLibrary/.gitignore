@@ -47,4 +47,7 @@ docs/
 
 ### src/main/java/com/tmt/TMLibrary/*/function.md 不上传 ####
 src/main/java/com/tmt/TMLibrary/*/function.md
-src/main/resources/db/
+
+### DDL 建表脚本入库(src/main/resources/db/*.sql)
+### 不再忽略该目录 —— 建表脚本属于代码资产,曾因未入库而丢失
+
