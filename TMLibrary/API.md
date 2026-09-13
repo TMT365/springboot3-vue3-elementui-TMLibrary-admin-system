@@ -156,9 +156,12 @@
 - **失败码**:
   - `404 NOT_FOUND` — 未找到请求验证码(uuid 不存在或已过期)
   - `400 BAD_REQUEST` — 验证码错误 / 验证码与账号不匹配
-  - `401 UNAUTHORIZED` — 用户不存在 / 密码错误
-  - `403 FORBIDDEN` — 账户未激活 / 软删除 / 连续失败锁定(15 分钟)
+  - `401 UNAUTHORIZED` — 用户名或密码错误(统一文案,**不区分**用户是否存在,防账号枚举)
+  - `403 FORBIDDEN` — 账户未激活 / 已软删 / 连续失败锁定
   - `500 INTERNAL_ERROR` — Redis 验证码 JSON 解析异常
+
+- **失败锁定策略**:连续失败 3 次锁定 15 分钟;计数据与锁定在同一条原子 SQL 内完成
+  (无读改写竞态)。锁定到期后失败计数自动重置。
 
 ### 2.4 登出
 
@@ -202,11 +205,11 @@
   | 字段 | 类型 | 说明 |
   |---|---|---|
   | `username` | string | 模糊查询 |
-  | `role` | int | 精确(`0` USER / `1` ADMIN / `2` BOSS),默认 `0` |
+  | `role` | int | 精确筛选目标用户的角色(`0` USER / `1` ADMIN / `2` BOSS)。**仅 `BOSS` 生效**;`ADMIN` 恒被限制为只看 `role=0` |
   | `status` | int | 精确(`0` ACTIVE / `1` INACTIVE / `2` SUSPENDED),默认 `0` |
   | `phoneNumber` | string | 模糊查询 |
   | `lastLoginIp` | string | 精确 |
-  | `failedLoginAttempts` | int | 精确 |
+  | `failedLoginAttempts` | int | 精确(用于排查异常账号) |
   | `createdTimeStart` / `createdTimeEnd` | datetime | 区间,start > end 时整段置空 |
   | `updatedTimeStart` / `updatedTimeEnd` | datetime | 同上 |
   | `lastLoginTimeStart` / `lastLoginTimeEnd` | datetime | 同上 |
@@ -282,7 +285,7 @@
 `GET /api/users/{id}/purchases`
 
 - **权限**:自己看自己的;`BOSS` 看任意人;其他情况 `403 FORBIDDEN`。
-- **响应 data**:`List<PurchaseResponse>`,见 [§ 4.5](#45-订单响应-purchaseresponse)。
+- **响应 data**:`List<PurchaseResponse>`,见 [§ 5.5](#55-订单响应-purchaseresponse)。
 
 ---
 
@@ -354,17 +357,38 @@
     "title": "深入理解 Java 虚拟机 (第三版)",
     "author": "周志明",
     "price": 109.00,
-    "stockQuantity": 150,
     "createdDate": "2024-01-15",
     "publishedDate": "2024-01-15"
   }
   ```
 
-### 4.5 按 ISBN 删除
+  > **库存字段已移出本接口**,改用 § 4.5 独立调整。原因:交易链路(下单/取消/付款)
+  > 会持续改动可用库存,管理端直接覆盖会与在途预占冲突,且无法审计。
+  >
+  > 修改图书后服务端会同步刷新 Redis 库存 —— **保留在途预占**,
+  > 按 `可用库存 = DB库存 − 在途预占` 重算,不会让未支付订单的预占消失。
+
+### 4.5 调整库存(盘点语义)
+
+`PATCH /api/books/{isbn}/stock`
+
+- **请求体** `BookStockAdjustRequest`:
+  ```json
+  { "stockQuantity": 150 }
+  ```
+  | 字段 | 类型 | 必填 | 校验 |
+  |---|---|:---:|---|
+  | `stockQuantity` | Integer | ✅ | ≥ 0(绝对值,非增量) |
+
+- **机制**:把 DB `books.stock_quantity` 覆盖为该值(库存真值),随后同步 Redis
+  `stock = 新库存 − reserved`。若在途预占超过新库存,可用库存按 0 计(不出现负数)。
+- **语义**:盘盈入库 / 盘亏修正。与交易链路的增量扣减相互独立,便于单独授权与审计。
+
+### 4.6 按 ISBN 删除
 
 `DELETE /api/books/deleted/isbn/{isbn}`
 
-### 4.6 多条件组合搜索
+### 4.7 多条件组合搜索
 
 `GET /api/books?title=&author=&minPrice=&maxPrice=&minStock=&maxStock=&publishedDate=&page=1&size=10`
 
@@ -381,21 +405,21 @@
 
 - **响应 data**:`PageResult<Book>`
 
-### 4.7 按出版日期粒度查询
+### 4.8 按出版日期粒度查询
 
 `GET /api/books/search/publishedDate/by?year=2024&month=6&day=15&page=1&size=10`
 
 - **粒度**:3 级 — `year` / `year+month` / `year+month+day`
 - **校验**:`year` 必填(1900-2100);`month` / `day` 可选但必须**从大到小连续**(`month=6&day=15` 合法,`day=15&hour=10` 跳级 → 400)。
 
-### 4.8 按创建时间粒度查询
+### 4.9 按创建时间粒度查询
 
 `GET /api/books/search/CreatedTime/by?year=2024&month=6&day=15&hour=10&minute=30&page=1&size=10`
 
 - **粒度**:5 级 — `year` / `year+month` / `year+month+day` / `year+month+day+hour` / `year+month+day+hour+minute`
 - 校验同上。
 
-### 4.9 按更新时间粒度查询
+### 4.10 按更新时间粒度查询
 
 `GET /api/books/search/UpdatedTime/by?year=...&...`
 
@@ -558,6 +582,7 @@
 | POST | `/api/books/created` | ✅ | 新建 |
 | GET | `/api/books/{isbn}` | ❌ | 详情 |
 | PATCH | `/api/books/{isbn}` | ✅ | 修改 |
+| PATCH | `/api/books/{isbn}/stock` | ✅ | 调整库存(盘点) |
 | DELETE | `/api/books/deleted/isbn/{isbn}` | ✅ | 删除 |
 | GET | `/api/books` | ❌ | 多条件搜索 |
 | GET | `/api/books/search/publishedDate/by` | ❌ | 按出版日期粒度 |
@@ -609,17 +634,39 @@
         ├─ 成功 → reservedBookIds 记录,继续下一个 item
         └─ 失败 → throw → catch 中对已预占的 book 反向 release
      → 全部成功 → @Transactional 插 orders + order_items
-     → 写 Redis 双 key:
-        ├─ Hash: tmlibrary:order:byNumber:{orderNumber}:data      ← 订单数据
-        ├─ ZSet: tmlibrary:user:byId:{userId}:orders:history:idx  ← 时间索引
+     → 写 Redis(仅超时索引,5 次往返 → 1 次):
         └─ ZSet: tmlibrary:user:byId:{userId}:orders:pending:expire:idx ← 超时索引
      ⚠️ 以上任何一步失败(含 Redis 写)→ 统一反向 release 所有已预占库存
+
+     ℹ️ 订单详情/历史不再写 Redis 缓存 —— 此前那两类 key 只写不读,
+        既浪费每次下单 7 次 Redis 往返,又制造"DB 与 Redis 可能漂移却无人发现"的隐患。
+        订单一律以 DB 为准。
 ```
 
 30 分钟未支付 → `OrderExpireScheduler`(每 60s 扫描,Redis SETNX 分布式锁)→ 调 `cancelExpiredOrder`
 → 先 release 库存 → 状态守卫 UPDATE(`WHERE order_status='PENDING'`)→ 提交 → afterCommit 更新 Redis。
 
-### 8.3 关键设计
+### 8.3 运维端点(Actuator)
+
+| 端点 | 说明 |
+|---|---|
+| `GET /actuator/health` | 健康检查 |
+| `GET /actuator/metrics` | 可用指标列表 |
+| `GET /actuator/metrics/{name}` | 单项指标详情 |
+
+业务指标:
+
+| 指标名 | 含义 | 处置建议 |
+|---|---|---|
+| `tmlibrary_inventory_drift_total` | Lua 返回负值,Redis 库存已偏离真值 | 查 `INVENTORY DRIFT` 日志定位根因;对账任务会修复数值 |
+| `tmlibrary_inventory_reconcile_repaired_total` | 对账任务发现并修复了不一致 | 持续增长说明漂移在反复发生,需定位来源 |
+| `tmlibrary_order_compensate_failed_total` | 下单失败后回滚预占也失败 | **任何非零值都应告警**,需人工对账 |
+
+> ⚠️ **安全提示**:`JwtAuthFilter` 只注册在 `/api/*` 上,`/actuator/**` **不走 JWT 鉴权**。
+> 当前仅暴露 `health` 与 `metrics`;生产环境建议改用独立 management 端口,
+> 或在网关/反向代理层限制访问来源。
+
+### 8.4 关键设计
 
 - **JWT 黑名单**:登出时按 token 剩余 TTL 写入 `tmlibrary:auth:byJti:{jti}:blackList`,过期自动清。
 - **库存双轨**:

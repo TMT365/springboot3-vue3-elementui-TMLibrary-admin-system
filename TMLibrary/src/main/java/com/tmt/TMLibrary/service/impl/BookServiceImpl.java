@@ -295,6 +295,27 @@ public class BookServiceImpl implements BookService {
 
     // SLF4J — lombok @Slf4j 没启用,手动声明
     private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(BookServiceImpl.class);
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public void adjustStock(String isbn, Integer stock) {
+        if (stock == null || stock < 0) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "库存不能为负数");
+        }
+        Book book = bookMapper.selectBookByISBN(isbn);
+        if (book == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "图书不存在, isbn=" + isbn);
+        }
+
+        int rows = bookMapper.updateStockById(book.getId(), stock);
+        if (rows == 0) {
+            throw new BusinessException(ResultCode.INTERNAL_ERROR, "库存调整失败, isbn=" + isbn);
+        }
+
+        // 保留在途预占,按新的 DB 库存重算可用库存
+        bookInventoryService.syncStockFromDb(book.getId());
+        log.info("库存已调整 isbn={}, {} -> {}", isbn, book.getStockQuantity(), stock);
+    }
 }
 
 /**

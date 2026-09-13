@@ -7,6 +7,7 @@ import com.tmt.TMLibrary.dto.request.BookPublishedDateByRequest;
 import com.tmt.TMLibrary.dto.request.BookDateTimeByRequest;
 import com.tmt.TMLibrary.dto.request.BookUpdateRequest;
 import com.tmt.TMLibrary.dto.request.BookSaveRequest;
+import com.tmt.TMLibrary.dto.request.BookStockAdjustRequest;
 import com.tmt.TMLibrary.entity.Book;
 import com.tmt.TMLibrary.service.BookService;
 import jakarta.validation.Valid;
@@ -87,6 +88,19 @@ public class BookController {
     public Result<Void> updateByISBN(@PathVariable(name = "isbn", required = true) String isbn, @RequestBody @Valid BookUpdateRequest req) {
         log.info("前端请求/api/books/{}, 参数={}", isbn, req);
         bookService.updateByISBN(isbn, req);
+        return Result.success();
+    }
+
+    /**
+     * 调整库存(盘点语义,绝对值) — PATCH /api/books/978-3-16-148410-0/stock
+     * <p>与「更新图书信息」分离:交易链路会持续改动可用库存,
+     * 管理端盘点需要独立的语义、权限与审计。</p>
+     */
+    @PatchMapping("/{isbn}/stock")
+    public Result<Void> adjustStock(@PathVariable(name = "isbn", required = true) String isbn,
+                                    @RequestBody @Valid BookStockAdjustRequest req) {
+        log.info("前端请求/api/books/{}/stock, 库存调整为 {}", isbn, req.getStockQuantity());
+        bookService.adjustStock(isbn, req.getStockQuantity());
         return Result.success();
     }
 

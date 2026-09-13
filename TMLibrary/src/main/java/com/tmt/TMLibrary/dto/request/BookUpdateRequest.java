@@ -1,7 +1,6 @@
 package com.tmt.TMLibrary.dto.request;
 
 import jakarta.validation.constraints.Size;
-import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.DecimalMin;
 
 import java.math.BigDecimal;
@@ -25,8 +24,8 @@ public class BookUpdateRequest {
     private BigDecimal price;
 
 
-    @Min(value = 0, message = "库存不能小于 0")
-    private Integer stockQuantity;
+    // 库存不在此接口调整 —— 交易链路(下单/取消/付款)会持续改动可用库存,
+    // 管理端直接 SET 会与在途预占打架。调整库存请用 PATCH /api/books/{isbn}/stock
 
     private LocalDate createdDate;
 

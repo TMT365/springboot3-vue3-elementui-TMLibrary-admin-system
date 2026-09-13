@@ -35,8 +35,17 @@ public class JwtService {
     @PostConstruct
     public void init() {
         // 可以考虑使用Base64做secret,然后进行解码校验长度
-        if (this.jwtProperties.getSecret().getBytes().length < 32) {
-            throw new IllegalStateException("JWT secret 必须 ≥ 32 字节");
+        String secret = this.jwtProperties.getSecret();
+        if (secret == null || secret.isBlank()) {
+            throw new IllegalStateException(
+                "JWT secret 未配置 — 请设置环境变量 JWT_SECRET(至少 32 字节)。"
+                + "生成方式:openssl rand -base64 48");
+        }
+        int len = secret.getBytes(java.nio.charset.StandardCharsets.UTF_8).length;
+        if (len < 32) {
+            throw new IllegalStateException(
+                "JWT secret 必须 ≥ 32 字节(当前 " + len + " 字节)。"
+                + "生成方式:openssl rand -base64 48");
         }
 
 

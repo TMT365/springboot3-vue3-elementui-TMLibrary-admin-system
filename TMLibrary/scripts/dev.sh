@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 #
 # 一键启动 TMLibrary 后端 (dev profile)：
-#   1. 从 .env 加载 DB_URL / DB_USERNAME / DB_PASSWORD 等敏感环境变量
+#   1. 从 .env 加载 DB_URL / DB_USERNAME / DB_PASSWORD / JWT_SECRET 等敏感环境变量
 #   2. 校验必须项非空
 #   3. 透传参数给 ./mvnw spring-boot:run
 #
@@ -32,7 +32,7 @@ set +a
 
 # ---------- 3. 校验必须项 ----------
 missing_vars=()
-for v in DB_URL DB_USERNAME DB_PASSWORD; do
+for v in DB_URL DB_USERNAME DB_PASSWORD JWT_SECRET; do
     if [ -z "${!v:-}" ]; then
         missing_vars+=("$v")
     fi
@@ -49,6 +49,7 @@ echo "✅ 已加载 $ENV_FILE"
 echo "   DB_URL      = $DB_URL"
 echo "   DB_USERNAME = $DB_USERNAME"
 echo "   DB_PASSWORD = *** (${#DB_PASSWORD} chars)"
+echo "   JWT_SECRET  = *** (${#JWT_SECRET} chars)"
 echo "   LOG_FILE     = ${LOG_FILE:-(/opt/logs/tmlibrary.log)}"
 echo 
 

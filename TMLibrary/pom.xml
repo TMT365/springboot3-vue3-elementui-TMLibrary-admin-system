@@ -103,6 +103,12 @@
 			<!-- <version>4.1.0</version> -->
 			
 		</dependency>
+		<!-- Actuator + Micrometer:暴露健康检查与业务指标(库存漂移/补偿失败计数) -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-actuator</artifactId>
+		</dependency>
+
 		<!--spring-boot 的redis 依赖-->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>

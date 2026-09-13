@@ -1,94 +1,24 @@
 # TMLibrary 遗留问题清单
 
-> 更新时间:2026-09-13(第二轮修复后)
-> 状态:本文件记录**尚未修复**的问题。已完成项见文末「附:已修复清单」。
-
----
-
-## 一、待决策项(需要业务/架构判断,非纯技术修复)
-
-### 🔵 C-3 订单 Hash / 历史 ZSet 只写不读
-
-**实测引用统计**
-
-```
-orderData              4 处引用 — 全是 opsForHash().put,零读取
-userHistoryIdx         1 处引用 — 只有 ZSet.add,零读取
-userPendingExpireIdx   6 处引用 — 被调度器读取 ✓ 有效
-```
-
-每笔订单白白多 **7 次 Redis 往返**,并引入「DB 与 Redis 订单数据可能漂移但无人发现」的隐患。
-
-**两个方向,需选一个**
-
-| 方案 | 做法 | 代价 |
-|---|---|---|
-| **用法化** | `getOrderByOrderNumber` / `listOrdersByUserId` 改为缓存优先 + 回填 | 增加一层缓存一致性维护成本;订单详情有 JOIN(含 items),缓存结构需要重新设计 |
-| **删除** | 移除 `orderData` 与 `userHistoryIdx` 的全部写入 | 若将来要做"订单历史快速分页"需重新引入 |
-
-> 当前未动:两种方案都会改变可观测行为,需先确认是否有后续功能规划依赖这两个 key。
-
----
-
-### 🔵 B-1 多实例部署 Snowflake 会撞号
-
-**位置**:`PurchaseServiceImpl`
-
-```java
-private final Snowflake snowflake = new Snowflake(1, 1);   // workerId / datacenterId 硬编码
-```
-
-两个实例并行时,同一毫秒 + 同一序列 → 相同 `orderNumber`。有唯一索引则插入失败,无则数据错乱。
-
-**可选方案**
-1. 从配置 / 环境变量读取(`app.snowflake.worker-id`),部署时每实例分配不同值
-2. 按 Pod 序号 / IP 末段派生
-3. 引入发号器(数据库号段 / Redis INCR)替代本地 Snowflake
-
-> 当前未动:单实例部署下无影响,选哪种取决于部署形态。
-
----
-
-### 🔵 O-2 库存变更收敛为单一入口
-
-当前库存有两个写入口:
-1. **交易链路** — 下单预占 / 取消释放 / 付款扣减(走 Lua + 条件 UPDATE)
-2. **管理链路** — `PATCH /api/books/{isbn}` 直接设置 `stockQuantity`
-
-虽然已通过 `syncStockFromDb`(保留 reserved 重算 stock)让两者不冲突,但语义上仍存在歧义:
-管理员把库存改成 5,而当时有 10 本在途预占 → 可用库存被截断为 0,在途订单付款时会失败。
-
-**建议**:拆一个专用接口 `PATCH /api/books/{isbn}/stock`,语义为"盘盈/盘亏调整",
-与普通字段更新分离,便于审计与权限收紧。
-
----
-
-### 🔵 O-4 可观测性(部分完成)
-
-已做:`release` / `confirm` 失败、对账发现漂移,均以 **ERROR** 级别输出并带 `INVENTORY DRIFT` 前缀。
-
-**仍缺**:未接入 Micrometer counter,无法做告警规则与趋势看板。建议引入 `spring-boot-starter-actuator` 并注册:
-- `inventory_drift_total` — 漂移次数
-- `inventory_reconcile_repaired_total` — 对账修复次数
-- `order_compensate_failed_total` — 下单补偿失败次数
-
----
-
-### 🔵 O-5 列表接口缺索引
-
-`users` 表按 `username LIKE '%x%'`、`created_time` / `status` / `role` 组合查询,
-`books` 表按 `published_date` / `stock_quantity` 区间查询。
-
-未见到对应的索引定义(DDL 不在本仓库),数据量上升后大概率全表扫描。
-
-**建议**:对高频筛选列建组合索引,`LIKE '%x%'` 这类前后模糊无法走索引,
-如需支持建议改为前缀匹配或引入全文索引 / ES。
+> 更新时间:2026-09-13(第三轮修复后)
+> 状态:前两轮发现的逻辑问题**已全部修复**。本文件保留完整的修复记录供追溯。
 
 ---
 
 ## 附:已修复清单
 
-### 第二轮(本次)
+### 第三轮(本次)
+
+| 编号 | 问题 | 修复方式 |
+|---|---|---|
+| **C-3** | 订单 Hash / 历史 ZSet 只写不读,每单白耗 7 次 Redis 往返 + 漂移隐患 | 移除两类 key 的全部写入与常量定义,订阅单一 DB 真值源;下单 Redis 往返 7 → 1 |
+| **B-1** | Snowflake `(1,1)` 硬编码,多实例部署会撞号 | 改为 `app.snowflake.worker-id` / `datacenter-id` 可配置,启动时打印生效值 |
+| **O-2** | 库存存在两个写入口,语义含糊无法审计 | 新增 `PATCH /api/books/{isbn}/stock` 盘点接口;`BookUpdateRequest` 移除 `stockQuantity` |
+| **O-4** | 无指标,库存漂移不可观测 | 引入 Actuator + Micrometer,新增 3 个业务指标并接入服务层 |
+| **O-5** | 列表/搜索缺索引,存在全表扫描 | 新增 `scripts/db-indexes.sql`,含 users/books/orders 的索引清单与注意事项 |
+| **安全** | Redis 密码与 JWT secret 明文提交进 git | 全部改为环境变量注入;`.env.example` 补全模板与生成指引;`dev.sh` 校验 JWT_SECRET |
+
+### 第二轮
 
 | 编号 | 问题 | 修复方式 |
 |---|---|---|
@@ -164,12 +94,33 @@ private final Snowflake snowflake = new Snowflake(1, 1);   // workerId / datacen
 
 ## 验证状态说明
 
-- ✅ **静态验证**:`mvn clean compile` 通过(80 个源文件)
-- ✅ **Lua 脚本验证**:`warmup_book.lua`、`sync_book_stock.lua` 已针对运行中的 Redis 实测(idempotency、reserved 保留、负库存截断)
-- ⚠️ **运行时验证**:集成测试未执行 —— 本地 MySQL 需要密码且仓库无 `.env`;logback 默认日志路径 `/opt/logs` 不存在(可用 `LOG_FILE` 环境变量覆盖)
+- ✅ **静态验证**:`mvn clean compile` 通过(82 个源文件)
+- ✅ **Lua 脚本验证**:`warmup_book.lua`、`sync_book_stock.lua` 已针对运行中的 Redis 实测
+  (idempotency、reserved 保留、负库存截断)
+- ⚠️ **运行时验证**:集成测试未执行 —— 本地 MySQL 需要密码且仓库无 `.env`;
+  logback 默认日志路径 `/opt/logs` 不存在(可用 `LOG_FILE` 环境变量覆盖)
 
-## 已知安全事项(未在代码中修复)
+---
 
-`application-dev.yml` 中 Redis 密码与 JWT secret 为明文提交进 git,而本地 Redis 实际未启用密码。
-JWT secret 泄露意味着任何拿到仓库的人都能伪造任意用户的令牌。
-**建议**:迁移到环境变量并轮换密钥。
+## 部署注意事项(本轮改动引入)
+
+1. **必须设置 `JWT_SECRET`**,否则应用启动即失败(≥ 32 字节,`openssl rand -base64 48`)
+   - ⚠️ 已签发的 token 在密钥更换后全部失效,需配合发布窗口
+2. **必须设置 Redis 凭据环境变量**(如启用密码):`REDIS_USERNAME` / `REDIS_PASSWORD`
+3. **多实例部署**必须为每个实例分配不同的 `SNOWFLAKE_WORKER_ID`(0-31)
+4. **索引脚本需手动执行**:`scripts/db-indexes.sql`(建议先在低峰期 EXPLAIN 验证)
+5. **`stockQuantity` 已从 `PATCH /api/books/{isbn}` 移除**,前端需改用
+   `PATCH /api/books/{isbn}/stock`(当前前端图书编辑页为 P4 占位,尚未接线,不影响)
+
+---
+
+## 待观察项
+
+以下问题已修复,但**依赖运行时验证**才能确认效果,建议上线后重点观察:
+
+| 观察点 | 指标 / 日志 | 说明 |
+|---|---|---|
+| 库存是否仍有漂移 | `tmlibrary_inventory_drift_total` | 持续 > 0 说明有未覆盖的异常路径,需查 `INVENTORY DRIFT` 日志定位 |
+| 对账任务修复频率 | `tmlibrary_inventory_reconcile_repaired_total` | 偶发正常;持续增长代表漂移在反复发生 |
+| 下单补偿是否失效 | `tmlibrary_order_compensate_failed_total` | 任何非零值都需人工对账 |
+| 付款时自动关单频率 | `order {} auto-cancelled at payment` | 频繁出现说明 Redis 预占与 DB 库存长期不一致 |

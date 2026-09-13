@@ -1,5 +1,6 @@
 package com.tmt.TMLibrary.service.impl;
 
+import com.tmt.TMLibrary.common.metrics.InventoryMetrics;
 import com.tmt.TMLibrary.common.redis.RedisKeys;
 import com.tmt.TMLibrary.entity.Book;
 import com.tmt.TMLibrary.mapper.BookMapper;
@@ -44,6 +45,7 @@ public class BookInventoryServiceImpl implements BookInventoryService {
 
     private final StringRedisTemplate stringRedisTemplate;
     private final BookMapper bookMapper;
+    private final InventoryMetrics metrics;
 
     private final DefaultRedisScript<Long> preDeductScript;
     private final DefaultRedisScript<Long> releaseScript;
@@ -52,9 +54,11 @@ public class BookInventoryServiceImpl implements BookInventoryService {
     private final DefaultRedisScript<Long> syncStockScript;
 
     public BookInventoryServiceImpl(StringRedisTemplate stringRedisTemplate,
-                                    BookMapper bookMapper) {
+                                    BookMapper bookMapper,
+                                    InventoryMetrics metrics) {
         this.stringRedisTemplate = stringRedisTemplate;
         this.bookMapper = bookMapper;
+        this.metrics = metrics;
 
         this.preDeductScript = loadScript("scripts/redis/pre_deduct_stock.lua");
         this.releaseScript   = loadScript("scripts/redis/release_stock.lua");
@@ -100,6 +104,7 @@ public class BookInventoryServiceImpl implements BookInventoryService {
             log.error("INVENTORY DRIFT: release failed bookId={}, qty={}, result={} "
                 + "(-1=hash missing, -2=reserved insufficient), reconcile will repair",
                 bookId, quantity, result);
+            metrics.driftDetected("release", bookId);
         }
     }
 
@@ -114,6 +119,7 @@ public class BookInventoryServiceImpl implements BookInventoryService {
             log.error("INVENTORY DRIFT: confirm failed bookId={}, qty={}, result={} "
                 + "(-1=hash missing, -2=reserved insufficient), reconcile will repair",
                 bookId, quantity, result);
+            metrics.driftDetected("confirm", bookId);
         }
     }
 
@@ -204,6 +210,7 @@ public class BookInventoryServiceImpl implements BookInventoryService {
             List.of(bookKey),
             String.valueOf(dbStock)
         );
+        metrics.reconcileRepaired(bookId);
         return true;
     }
 

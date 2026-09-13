@@ -117,4 +117,12 @@ public interface BookMapper {
          * @return 1=扣减成功,0=库存不足
          */
         int decrementStockIfEnough(@Param("bookId") int bookId, @Param("qty") int qty);
+
+        /**
+         * 盘点调整库存(绝对值覆盖)—— 管理端专用。
+         * <p>与交易链路的增量扣减 {@link #decrementStockIfEnough} 分离,便于授权与审计。</p>
+         *
+         * @return 1=成功,0=图书不存在
+         */
+        int updateStockById(@Param("bookId") int bookId, @Param("stock") int stock);
 }

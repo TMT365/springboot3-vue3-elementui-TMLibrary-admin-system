@@ -33,6 +33,7 @@ import java.math.BigDecimal;
 import com.tmt.TMLibrary.exception.BusinessException;
 import com.tmt.TMLibrary.common.Order.OrderStatus;
 import com.tmt.TMLibrary.common.Result.ResultCode;
+import com.tmt.TMLibrary.common.metrics.InventoryMetrics;
 import com.tmt.TMLibrary.common.redis.RedisKeys;
 
 import java.util.concurrent.TimeUnit;
@@ -87,7 +88,26 @@ public class PurchaseServiceImpl implements PurchaseService {
     private final OrderMapper orderMapper;
     private final BookMapper bookMapper;
     private final UserMapper userMapper;
-    private final Snowflake snowflake = new Snowflake(1, 1);
+    /**
+     * 订单号发号器。
+     * <p>workerId / datacenterId 从配置读取 — <b>多实例部署时必须为每个实例分配不同的值</b>,
+     * 否则同一毫秒内的相同序列会生成重复的 orderNumber(有唯一索引则插入失败,无则数据错乱)。</p>
+     * <p>配置项:{@code app.snowflake.worker-id}(0-31)、{@code app.snowflake.datacenter-id}(0-31)。</p>
+     */
+    private Snowflake snowflake;
+
+    @org.springframework.beans.factory.annotation.Value("${app.snowflake.worker-id:1}")
+    private long snowflakeWorkerId;
+
+    @org.springframework.beans.factory.annotation.Value("${app.snowflake.datacenter-id:1}")
+    private long snowflakeDatacenterId;
+
+    @jakarta.annotation.PostConstruct
+    void initSnowflake() {
+        this.snowflake = new Snowflake(snowflakeWorkerId, snowflakeDatacenterId);
+        log.info("Snowflake 初始化完成 workerId={}, datacenterId={} — "
+            + "多实例部署请确保各实例取值不同", snowflakeWorkerId, snowflakeDatacenterId);
+    }
 
     private final StringRedisTemplate stringRedisTemplate;
 
@@ -106,6 +126,7 @@ public class PurchaseServiceImpl implements PurchaseService {
     private static final int ORDER_EXPIRE_MINUTES = 30;
 
     private final BookInventoryService bookInventoryService;
+    private final InventoryMetrics metrics;
 
     /**
      * 检查用户是否可以下单/取消/支付。
@@ -261,18 +282,9 @@ public class PurchaseServiceImpl implements PurchaseService {
                 orderMapper.insertOrderItem(oi);
             }
 
-            // Phase 3: Redis 写入(Hash + 2 ZSet) — 任何异常 → 下方 catch 反向 release
-            String orderKey = RedisKeys.orderData(order.getOrderNumber());
-            stringRedisTemplate.opsForHash().put(orderKey, "id",          String.valueOf(order.getId()));
-            stringRedisTemplate.opsForHash().put(orderKey, "userId",      String.valueOf(order.getUserId()));
-            stringRedisTemplate.opsForHash().put(orderKey, "totalAmount", totalAmount.toPlainString());
-            stringRedisTemplate.opsForHash().put(orderKey, "status",      String.valueOf(OrderStatus.PENDING.getCode()));
-            stringRedisTemplate.opsForHash().put(orderKey, "expireTime",  expireTime.toString());
-
-            String historyKey = RedisKeys.userHistoryIdx(currentUserId);
-            long createdMillis = LocalDateTime.now().atZone(zoneId).toInstant().toEpochMilli();
-            stringRedisTemplate.opsForZSet().add(historyKey, String.valueOf(order.getOrderNumber()), createdMillis);
-
+            // Phase 3: Redis 写入(仅超时索引) — 任何异常 → 下方 catch 反向 release
+            // 只写 scheduler 真正会读的 pending:expire 索引;
+            // 订单详情/历史一律以 DB 为准,不再维护只写不读的缓存副本
             String expireKey = RedisKeys.userPendingExpireIdx(currentUserId);
             long expireMillis = expireTime.atZone(zoneId).toInstant().toEpochMilli();
             stringRedisTemplate.opsForZSet().add(expireKey, String.valueOf(order.getOrderNumber()), expireMillis);
@@ -295,6 +307,7 @@ public class PurchaseServiceImpl implements PurchaseService {
                     // 关键告警:补偿失败 → Redis stock 已多扣,无更上层兜底,必须人工对账
                     log.error("CRITICAL: failed to compensate reservation bookId={}, qty={}, originalErr={}, releaseErr={}",
                         reservedBookIds.get(i), reservedQtys.get(i), e.getMessage(), releaseEx.getMessage());
+                    metrics.orderCompensateFailed(reservedBookIds.get(i));
                 }
             }
             throw e;
@@ -350,13 +363,10 @@ public class PurchaseServiceImpl implements PurchaseService {
         }
 
         // afterCommit 钩子:Hash 状态翻转 + 主动 ZREM expire idx(scheduler 不必再扫)
-        registerRedisWriteAfterCommit(() -> {
-            stringRedisTemplate.opsForHash().put(RedisKeys.orderData(orderNumber),
-                "status", String.valueOf(OrderStatus.CANCELLED.getCode()));
+        registerRedisWriteAfterCommit(() ->
             stringRedisTemplate.opsForZSet().remove(
                 RedisKeys.userPendingExpireIdx(currentUserId),
-                String.valueOf(orderNumber));
-        });
+                String.valueOf(orderNumber)));
 
         return order.getId() != null ? order.getId() : 1;
     }
@@ -431,14 +441,11 @@ public class PurchaseServiceImpl implements PurchaseService {
             }
         }
         // Hash 状态翻转(afterCommit 钩子避免 DB 回滚但 Redis 已写)
-        registerRedisWriteAfterCommit(() -> {
-            stringRedisTemplate.opsForHash().put(RedisKeys.orderData(orderNumber),
-                "status", String.valueOf(OrderStatus.PAID.getCode()));
+        registerRedisWriteAfterCommit(() ->
             // 主动从 pending expire idx 移除,scheduler 不必再扫
             stringRedisTemplate.opsForZSet().remove(
                 RedisKeys.userPendingExpireIdx(currentUserId),
-                String.valueOf(orderNumber));
-        });
+                String.valueOf(orderNumber)));
 
         return order.getId() != null ? order.getId() : 1;
     }
@@ -464,14 +471,10 @@ public class PurchaseServiceImpl implements PurchaseService {
                     orderItem.getBookId(), orderItem.getQuantity(), e);
             }
         }
-        registerRedisWriteAfterCommit(() -> {
-            stringRedisTemplate.opsForHash().put(
-                RedisKeys.orderData(order.getOrderNumber()),
-                "status", String.valueOf(OrderStatus.CANCELLED.getCode()));
+        registerRedisWriteAfterCommit(() ->
             stringRedisTemplate.opsForZSet().remove(
                 RedisKeys.userPendingExpireIdx(currentUserId),
-                String.valueOf(order.getOrderNumber()));
-        });
+                String.valueOf(order.getOrderNumber())));
         log.warn("order {} auto-cancelled at payment due to insufficient stock", order.getOrderNumber());
     }
 
@@ -534,18 +537,11 @@ public class PurchaseServiceImpl implements PurchaseService {
             return;
         }
 
-        // 步骤 6:afterCommit 钩子 — Hash.put + ZREM
-        registerRedisWriteAfterCommit(() -> {
-            stringRedisTemplate.opsForHash().put(
-                RedisKeys.orderData(orderNumber),
-                "status",
-                String.valueOf(OrderStatus.CANCELLED.getCode())
-            );
+        // 步骤 6:afterCommit 钩子 — 从超时索引移除
+        registerRedisWriteAfterCommit(() ->
             stringRedisTemplate.opsForZSet().remove(
                 RedisKeys.userPendingExpireIdx(order.getUserId()),
-                String.valueOf(orderNumber)
-            );
-        });
+                String.valueOf(orderNumber)));
     }
 
     /**

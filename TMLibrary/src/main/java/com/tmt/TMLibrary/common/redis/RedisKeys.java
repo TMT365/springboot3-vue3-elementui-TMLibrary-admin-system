@@ -26,6 +26,12 @@ package com.tmt.TMLibrary.common.redis;
  *   <li>图书信息曾放在 {@code user:books:{isbn}}(域错配) — 现在统一为 {@link #bookInfoByIsbn(String)}</li>
  * </ul>
  *
+ * <h2>关于订单缓存</h2>
+ * <p>订单详情与历史<b>不设 Redis 缓存</b>:此前的 {@code order:byNumber:*:data} Hash 与
+ * {@code user:byId:*:orders:history:idx} ZSet 只写不读(所有查询走 DB),既浪费每次下单
+ * 7 次 Redis 往返,又制造了"DB 与 Redis 可能漂移却无人发现"的隐患。
+ * 订单一律以 DB 为准;Redis 只保留 scheduler 真正消费的 {@link #userPendingExpireIdx(int)}。</p>
+ *
  * @author tmt
  */
 public final class RedisKeys {
@@ -58,12 +64,6 @@ public final class RedisKeys {
     // ============================================================
     // 4. Order — 订单数据 + 索引
     // ============================================================
-    /** 订单 Hash 数据。占位符 = orderNumber(Long) */
-    public static final String ORDER_DATA = "tmlibrary:order:byNumber:%s:data";
-
-    /** 用户订单历史 ZSet 索引(score = createdTimeMillis)。占位符 = userId */
-    public static final String USER_HISTORY_IDX = "tmlibrary:user:byId:%d:orders:history:idx";
-
     /** 用户待支付超时 ZSet 索引(score = expireTimeMillis)。占位符 = userId */
     public static final String USER_PENDING_EXPIRE_IDX = "tmlibrary:user:byId:%d:orders:pending:expire:idx";
 
@@ -113,14 +113,6 @@ public final class RedisKeys {
 
     public static String userStatus(int userId) {
         return String.format(USER_STATUS_BY_ID, userId);
-    }
-
-    public static String orderData(long orderNumber) {
-        return String.format(ORDER_DATA, orderNumber);
-    }
-
-    public static String userHistoryIdx(int userId) {
-        return String.format(USER_HISTORY_IDX, userId);
     }
 
     public static String userPendingExpireIdx(int userId) {

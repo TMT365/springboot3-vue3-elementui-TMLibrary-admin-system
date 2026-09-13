@@ -24,6 +24,29 @@ app:
   cors:
     origins: http://localhost:5173,http://172.21.224.134:5173
 
+  # Snowflake 发号器标识 —— 多实例部署时每个实例必须不同,否则订单号会撞
+  # (单实例可保持默认)
+  snowflake:
+    worker-id: ${SNOWFLAKE_WORKER_ID:1}          # 0-31
+    datacenter-id: ${SNOWFLAKE_DATACENTER_ID:1}  # 0-31
+
+  book:
+    # SingleFlight 中 follower 等待 leader 查库的最长时间(毫秒)
+    singleflight-timeout-ms: 5000
+
+# Actuator / 指标
+# ⚠️ 注意:JwtAuthFilter 只注册在 /api/* 上,actuator 端点不走鉴权。
+#    这里仅暴露 health 与 metrics;生产环境建议用独立 management 端口,
+#    或在网关层限制访问来源。
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,metrics
+  endpoint:
+    health:
+      show-details: when-authorized
+
 mybatis:
   # XML mapper location — hand-written SQL goes here, one XML per mapper interface
   # mapper-locations: classpath:mapper/*.xml 是 MyBatis 扫描的 XML 映射文件路径，多个路径用逗号分隔

@@ -66,4 +66,15 @@ public interface BookService {
      * 按 updatedTime 粒度查询(粒度同 createdTime)
      */
     public abstract PageResult<Book> searchByUpdatedTimeBy(BookDateTimeByRequest req);
+
+    /**
+     * 调整库存(盘点语义,绝对值)。
+     *
+     * <p>把 DB 的 {@code stock_quantity} 设为给定值,并同步 Redis —— 保留在途预占,
+     * 即 {@code Redis.stock = 新库存 - reserved}。</p>
+     *
+     * @param isbn  图书 ISBN
+     * @param stock 调整后的库存绝对值(≥ 0)
+     */
+    void adjustStock(String isbn, Integer stock);
 }
