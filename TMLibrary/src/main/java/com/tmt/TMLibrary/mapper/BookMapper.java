@@ -108,4 +108,13 @@ public interface BookMapper {
 
         // 非锁的按主键查询 — 用于 Redis 预热，避免在事务中触发 FOR UPDATE
         Book selectById(@Param("id") int id);
+
+        /**
+         * 原子扣减 DB 库存 — 用户付款时调用(单一权威,Redis 仅作预占缓存)。
+         * <p>条件更新:只有 {@code stock_quantity >= qty} 才扣减,否则返回 0 表示"库存已售罄"。</p>
+         * <p>无读改写窗口 — MySQL 单条 UPDATE 本身原子,行锁保证并发安全。</p>
+         *
+         * @return 1=扣减成功,0=库存不足
+         */
+        int decrementStockIfEnough(@Param("bookId") int bookId, @Param("qty") int qty);
 }

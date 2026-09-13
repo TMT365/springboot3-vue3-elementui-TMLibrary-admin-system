@@ -35,6 +35,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.ModelAttribute;
+import com.tmt.TMLibrary.dto.response.LogoutResponse;
 import com.tmt.TMLibrary.dto.response.LoginResponse;
 import com.tmt.TMLibrary.service.AuthService;
 import com.tmt.TMLibrary.dto.request.LoginRequest;
@@ -88,12 +89,12 @@ public class UserController {
         return Result.success(response);
     }
 
-    /** 登出 - POST /api/users/logout */
+    /** 登出 - POST /api/users/logout
+     * 返回 LogoutResponse,前端据 loggedOut=true 跳转到 /login(已登出) */
     @PostMapping("/logout")
-    public Result<Void> logout(HttpServletRequest request) {
+    public Result<LogoutResponse> logout(HttpServletRequest request) {
         log.info("前端发送/api/users/logout");
-        authService.logout(request);
-        return Result.success();
+        return Result.success(authService.logout(request));
     }
 
     /** 列表查询 — GET /api/users/list?username=&amp;role=&amp;page=1&amp;size=10 */
@@ -105,10 +106,19 @@ public class UserController {
         return Result.success(userManagementService.selectUsersByCriteria(query, me.getRole()));
     }
 
-    /** 详情 — GET /api/users/{id} */
+    /** 详情 — GET /api/users/{id}
+     * 仅自己 / ADMIN / BOSS 可看 */
     @GetMapping("/{id}")
-    public Result<UserVo> getById(@PathVariable(value = "id") int id) {
+    public Result<UserVo> getById(@PathVariable(value = "id") int id,
+            @CurrentUser UserView me) {
+        requireLogin(me);
         log.info("前端请求/api/users/{}", id);
+        // 非自己 / 非管理角色 → 403
+        if (me.getId() != id
+                && !me.getRole().equals(UserRole.ADMIN.getCode())
+                && !me.getRole().equals(UserRole.BOSS.getCode())) {
+            throw new BusinessException(ResultCode.FORBIDDEN, "无权查看其他用户详情");
+        }
         return Result.success(userManagementService.getUserById(id));
     }
 

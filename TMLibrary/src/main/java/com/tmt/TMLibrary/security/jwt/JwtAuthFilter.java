@@ -2,6 +2,7 @@ package com.tmt.TMLibrary.security.jwt;
 
 import java.util.List;
 
+import com.tmt.TMLibrary.common.redis.RedisKeys;
 import com.tmt.TMLibrary.security.AuthErrorWriter;
 import com.tmt.TMLibrary.security.context.CurrentUserContext;
 import com.tmt.TMLibrary.security.context.UserView;
@@ -29,9 +30,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     private final JwtService jwtService;
     private final AuthErrorWriter errorWriter;
     private final StringRedisTemplate stringRedisTemplate;
-    // 命名风格：tmlibrary:{domain}:{feature}:{keyId}
-    // 与 PurchaseService 的 tmlibrary:user:{userId}:xxx 区分（domain 段不同）
-    private static final String REDIS_JWT_BLACK_PATH = "tmlibrary:auth:jwt:blackList:";
+    // 黑名单 key 由 RedisKeys 统一管理
 
     public JwtAuthFilter(JwtService jwtService, AuthErrorWriter errorWriter, StringRedisTemplate stringRedisTemplate) {
         this.jwtService = jwtService;
@@ -71,7 +70,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             // 判断当前用户的 JWT token 的 jti 是否在缓存里面
             String jti = claims.getId();
-            String blackKey = REDIS_JWT_BLACK_PATH + jti;
+            String blackKey = RedisKeys.jwtBlacklist(jti);
             if(Boolean.TRUE.equals(stringRedisTemplate.hasKey(blackKey))){
                 //jti在黑名单，token已经登出作废，直接拦截
                 errorWriter.writeAuthError(resp,"Token已登出作废，请重新登录");

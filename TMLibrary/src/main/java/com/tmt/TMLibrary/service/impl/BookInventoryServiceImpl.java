@@ -1,5 +1,6 @@
 package com.tmt.TMLibrary.service.impl;
 
+import com.tmt.TMLibrary.common.redis.RedisKeys;
 import com.tmt.TMLibrary.entity.Book;
 import com.tmt.TMLibrary.mapper.BookMapper;
 import com.tmt.TMLibrary.service.BookInventoryService;
@@ -39,7 +40,7 @@ import java.util.List;
 @Service
 public class BookInventoryServiceImpl implements BookInventoryService {
 
-    private static final String REDIS_BOOK_KEY_PREFIX = "tmlibrary:book:";
+    // Redis key 由 RedisKeys 统一管理
 
     private final StringRedisTemplate stringRedisTemplate;
     private final BookMapper bookMapper;
@@ -47,6 +48,7 @@ public class BookInventoryServiceImpl implements BookInventoryService {
     private final DefaultRedisScript<Long> preDeductScript;
     private final DefaultRedisScript<Long> releaseScript;
     private final DefaultRedisScript<Long> confirmScript;
+    private final DefaultRedisScript<Long> warmUpScript;
 
     public BookInventoryServiceImpl(StringRedisTemplate stringRedisTemplate,
                                     BookMapper bookMapper) {
@@ -56,6 +58,7 @@ public class BookInventoryServiceImpl implements BookInventoryService {
         this.preDeductScript = loadScript("scripts/redis/pre_deduct_stock.lua");
         this.releaseScript   = loadScript("scripts/redis/release_stock.lua");
         this.confirmScript   = loadScript("scripts/redis/confirm_stock.lua");
+        this.warmUpScript    = loadScript("scripts/redis/warmup_book.lua");
     }
 
     @Override
@@ -63,7 +66,7 @@ public class BookInventoryServiceImpl implements BookInventoryService {
         if (bookId == null || quantity == null || quantity <= 0) {
             throw new IllegalArgumentException("bookId/quantity must be non-null and positive");
         }
-        String bookKey = bookKey(bookId);
+        String bookKey = RedisKeys.bookInventory(bookId);
         Long result = runScript(preDeductScript, bookKey, quantity);
 
         if (result == null) {
@@ -87,7 +90,7 @@ public class BookInventoryServiceImpl implements BookInventoryService {
         if (bookId == null || quantity == null || quantity <= 0) {
             throw new IllegalArgumentException("bookId/quantity must be non-null and positive");
         }
-        String bookKey = bookKey(bookId);
+        String bookKey = RedisKeys.bookInventory(bookId);
         Long result = runScript(releaseScript, bookKey, quantity);
         if (result != null && result < 0) {
             log.warn("release stock failed: bookId={}, qty={}, result={}", bookId, quantity, result);
@@ -99,7 +102,7 @@ public class BookInventoryServiceImpl implements BookInventoryService {
         if (bookId == null || quantity == null || quantity <= 0) {
             throw new IllegalArgumentException("bookId/quantity must be non-null and positive");
         }
-        String bookKey = bookKey(bookId);
+        String bookKey = RedisKeys.bookInventory(bookId);
         Long result = runScript(confirmScript, bookKey, quantity);
         if (result != null && result < 0) {
             log.warn("confirm stock failed: bookId={}, qty={}, result={}", bookId, quantity, result);
@@ -117,21 +120,21 @@ public class BookInventoryServiceImpl implements BookInventoryService {
         if (book == null) {
             return false;
         }
-        String bookKey = bookKey(bookId);
-        stringRedisTemplate.opsForHash().putIfAbsent(bookKey, "id",       String.valueOf(book.getId()));
-        stringRedisTemplate.opsForHash().putIfAbsent(bookKey, "title",    book.getTitle() != null ? book.getTitle() : "");
-        stringRedisTemplate.opsForHash().putIfAbsent(bookKey, "price",    book.getPrice() != null ? book.getPrice().toPlainString() : "0");
-        stringRedisTemplate.opsForHash().putIfAbsent(bookKey, "stock",    String.valueOf(book.getStockQuantity()));
-        stringRedisTemplate.opsForHash().putIfAbsent(bookKey, "reserved", "0");
+        // 单次 Lua 调用完成 5 个字段的 HSETNX — 原子,不会被并发写入插入
+        String bookKey = RedisKeys.bookInventory(bookId);
+        stringRedisTemplate.execute(
+            warmUpScript,
+            List.of(bookKey),
+            String.valueOf(book.getId()),
+            book.getTitle() != null ? book.getTitle() : "",
+            book.getPrice() != null ? book.getPrice().toPlainString() : "0",
+            String.valueOf(book.getStockQuantity())
+        );
         return true;
     }
 
     private Long runScript(DefaultRedisScript<Long> script, String key, Integer qty) {
         return stringRedisTemplate.execute(script, List.of(key), String.valueOf(qty));
-    }
-
-    private static String bookKey(Integer bookId) {
-        return REDIS_BOOK_KEY_PREFIX + bookId;
     }
 
     private static DefaultRedisScript<Long> loadScript(String classpathPath) {

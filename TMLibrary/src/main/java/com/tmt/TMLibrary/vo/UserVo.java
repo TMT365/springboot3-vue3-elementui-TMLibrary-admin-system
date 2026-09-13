@@ -33,7 +33,7 @@ public class UserVo {
         vo.id = user.getId();
         vo.username = user.getUsername();
         vo.realName = vo.encryptInformation(user.getRealName(), 1);
-        vo.email = user.getEmail();
+        vo.email = vo.maskEmail(user.getEmail());
         vo.avatarUrl = user.getAvatarUrl();
         vo.role = user.getRole();
         vo.status = user.getStatus();
@@ -53,6 +53,35 @@ public class UserVo {
         if (ifo == null) {
             return "";
         }
+        // 防止 keepIndex > 长度时 substring 越界
+        if (ifo.length() <= keepIndex) {
+            return ifo;
+        }
         return ifo.substring(0, keepIndex) + "*".repeat(ifo.length() - keepIndex);
+    }
+
+    /**
+     * 邮箱脱敏 — 本地部分保留首字符,域名完整保留。
+     * <pre>
+     *   alice@example.com   → a****@example.com
+     *   ab@example.com      → a*@example.com
+     *   a@example.com       → a@example.com(单字符无法再脱敏)
+     * </pre>
+     */
+    private String maskEmail(String email) {
+        if (email == null || email.isBlank()) {
+            return "";
+        }
+        int at = email.indexOf('@');
+        if (at <= 0) {
+            // 非法邮箱(无 @)— 整体按普通敏感字段处理
+            return encryptInformation(email, 1);
+        }
+        String local = email.substring(0, at);
+        String domain = email.substring(at);
+        if (local.length() == 1) {
+            return email; // 单字符本地部分保留原样
+        }
+        return local.charAt(0) + "*".repeat(local.length() - 1) + domain;
     }
 }

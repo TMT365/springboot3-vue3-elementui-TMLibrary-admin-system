@@ -74,6 +74,7 @@
             <if test="user.role != null ">role = #{user.role},</if>
         </set>
         WHERE id = #{id}
+          AND deleted_at IS NULL
     </update>
 
     <select id="selectUsersByCriteria" resultMap="userResultMap" timeout="3">
@@ -82,7 +83,8 @@
         <where>
             <if test="userSearchRequest.username != null and userSearchRequest.username != '' ">AND username LIKE CONCAT('%', #{userSearchRequest.username}, '%')</if>
             <if test="userSearchRequest.phoneNumber != null and userSearchRequest.phoneNumber != '' ">AND phone_number LIKE CONCAT('%', #{userSearchRequest.phoneNumber}, '%')</if>
-            <if test="role == 1">AND role = #{role}</if>
+            <!-- ADMIN 只看 USER; BOSS 看全 -->
+            <if test="role == 1">AND role = 0</if>
             <if test="role == 2">AND 1=1</if>
             <if test="userSearchRequest.status != null">AND status = #{userSearchRequest.status}</if>
             <if test="userSearchRequest.deletedAtStart != null">AND deleted_at &gt;= #{userSearchRequest.deletedAtStart}</if>
@@ -105,7 +107,8 @@
         <where>
             <if test="userSearchRequest.username != null and userSearchRequest.username != '' ">AND username LIKE CONCAT('%', #{userSearchRequest.username}, '%')</if>
             <if test="userSearchRequest.phoneNumber != null and userSearchRequest.phoneNumber != '' ">AND phone_number LIKE CONCAT('%', #{userSearchRequest.phoneNumber}, '%')</if>
-            <if test="role == 1">AND role = #{role}</if>
+            <!-- ADMIN 只看 USER; BOSS 看全 -->
+            <if test="role == 1">AND role = 0</if>
             <if test="role == 2">AND 1=1</if>
             <if test="userSearchRequest.status != null">AND status = #{userSearchRequest.status}</if>
             <if test="userSearchRequest.deletedAtStart != null">AND deleted_at &gt;= #{userSearchRequest.deletedAtStart}</if>
@@ -122,9 +125,19 @@
         </where>
     </select>
 
-    <update id="incrementFailedLoginAttemptsById" timeout="3">
+    <!--
+        原子:失败次数 + 1,达到阈值时同时锁定账户(单条 SQL)
+        - threshold:触发锁定的失败次数
+        - lockMinutes:锁定时长(分钟)
+        - 用 DATE_ADD(NOW(), INTERVAL #{lockMinutes} MINUTE) 设置过期时间
+        - IF 表达式在 UPDATE 内部求值,无 SELECT-UPDATE 窗口
+    -->
+    <update id="incrementAndMaybeLock" timeout="3">
         UPDATE users
-        SET failed_login_attempts = failed_login_attempts + 1
+        SET failed_login_attempts = failed_login_attempts + 1,
+            account_locked_until  = IF(failed_login_attempts + 1 >= #{threshold},
+                                       DATE_ADD(NOW(), INTERVAL #{lockMinutes} MINUTE),
+                                       account_locked_until)
         WHERE id = #{id}
     </update>
 
@@ -133,12 +146,6 @@
         FROM users
         WHERE id = #{id}
     </select>
-
-    <update id="lockUserAccountById" timeout="3">
-        UPDATE users
-        SET account_locked_until = #{lockUntil}
-        WHERE id = #{id}
-    </update>
 
     <update id="resetFailedLoginAttemptsById" timeout="3">
         UPDATE users
@@ -158,9 +165,4 @@
         WHERE id = #{id}
     </update>
 
-    <select id="AcquiredFailedLoginAttempts" timeout="3" resultType="Integer">
-        SELECT failed_login_attempts
-        FROM users
-        WHERE id = #{id}
-    </select>
 </mapper>

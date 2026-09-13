@@ -66,7 +66,7 @@
 | 401 | `UNAUTHORIZED` | 未登录 / 登录失败 |
 | 403 | `FORBIDDEN` | 权限不足 / 账号被锁 |
 | 404 | `NOT_FOUND` | 资源不存在 |
-| 409 | `CONFLICT` | 状态冲突(如重复取消) |
+| 409 | `CONFLICT` | 状态冲突 / 并发冲突(重复取消、已支付再取消、付款时库存不足) |
 | 422 | `UNPROCESSABLE_ENTITY` | 业务校验失败 |
 | 500 | `INTERNAL_ERROR` | 服务器内部错误 |
 
@@ -166,8 +166,26 @@
 
 - **请求头**:`Authorization: Bearer <token>`
 - **请求体**:无
-- **响应 data**:`null`
+- **响应 data** `LogoutResponse`:
+  ```json
+  {
+    "loggedOut": true,
+    "message": "登出成功,请重新登录",
+    "redirectUrl": "/login",
+    "logoutAt": "2026-09-13T13:20:00Z"
+  }
+  ```
+
+  | 字段 | 类型 | 说明 |
+  |---|---|---|
+  | `loggedOut` | boolean | 固定 `true`,前端据此清 localStorage 并跳转 |
+  | `message` | string | 提示文案,可直接展示 |
+  | `redirectUrl` | string | 建议前端跳转的路径 |
+  | `logoutAt` | Instant | 服务端登出时间(ISO-8601) |
+
 - **机制**:解析 token,提取 `jti`,按剩余 TTL 写入 Redis 黑名单(同 token 不能再用)。
+- **前端约定**:收到 `loggedOut=true` 后必须清除本地 token 并跳转 `redirectUrl`;
+  否则用户停留在受保护页面,后续请求会被 401 拦截。
 
 ---
 
@@ -204,7 +222,11 @@
 `GET /api/users/{id}`
 
 - **路径**:`id` int
-- **响应 data**:`UserVo`(含敏感字段脱敏:`realName` / `phoneNumber` 仅保留前 N 位,余下 `*`)
+- **权限**:自己 / `ADMIN` / `BOSS` 可看,其他角色 `403 FORBIDDEN`。
+- **响应 data**:`UserVo`,敏感字段已脱敏:
+  - `realName` — 保留首字符,余下 `*`(`张三丰` → `张**`)
+  - `phoneNumber` — 保留前 7 位,余下 `*`(`13800001234` → `1380000****`)
+  - `email` — 本地部分保留首字符,域名完整(`alice@example.com` → `a****@example.com`)
 
 ### 3.3 更新用户信息
 
@@ -408,17 +430,23 @@
 
 - **机制**:
   1. 校验用户状态(Redis 缓存)
-  2. 对每个 item:DB 读价格 + Redis Lua 预占库存(失败时反向释放已预占的)
+  2. 对每个 item:DB 读价格 + Redis Lua 预占库存(任一环节失败 → 反向释放**已预占的全部** bookId)
   3. 插 `orders` + `order_items`(DB 事务)
   4. 写 Redis 双 key:Hash 订单数据 + ZSet 历史/超时索引
+     (Redis 写失败同样触发第 2 步的反向释放,不留库存泄漏)
   5. 订单 30 分钟未支付 → 定时任务自动关单(CANCELLED + 释放库存)
 
 - **响应 data**:`int`(新订单 ID)
 
 - **失败码**:
   - `401 UNAUTHORIZED` — 用户已被禁
-  - `400 BAD_REQUEST` — quantity ≤ 0 / bookId 非法
-  - `404 NOT_FOUND` — 图书不存在 / 库存不足
+  - `400 BAD_REQUEST` — quantity ≤ 0 / bookId 非法 / items 为空
+  - `404 NOT_FOUND` — 图书不存在
+  - `409 CONFLICT` — 库存不足(下单预占阶段)
+
+  > **库存真值说明**:Redis 只做"预占";真实库存以 DB `books.stock_quantity` 为准,
+  > **付款成功时才扣减**。极端情况(Redis 淘汰/重启导致预占丢失)下,
+  > 可能多个用户同时下单成功,但**只有库存足够的那个能支付成功**,其余在 [§ 5.4](#54-支付订单) 收到 `409 CONFLICT` 并保持订单 `PENDING`。
 
 ### 5.2 订单详情
 
@@ -444,7 +472,19 @@
   |---|---|---|---|
   | `paymentMethod` | string | `DEFAULT` | 预留字段(ALIPAY / WECHAT / ...) |
 
-- **机制**:状态 → `PAID`,Redis 确认库存(`reserved` 减,`stock` 不变 — 在下单时已减过)。
+- **机制**(付款是**唯一**扣减 DB 库存的时机):
+  1. `SELECT ... FOR UPDATE` 锁订单行,校验所有权 + 状态为 `PENDING`
+  2. 逐 item 原子扣减 DB 库存:
+     `UPDATE books SET stock_quantity = stock_quantity - N WHERE id = ? AND stock_quantity >= N`
+     — 任一项返回 0 行 → `409 CONFLICT`,**整个付款回滚**,订单保持 `PENDING`
+  3. 状态守卫更新订单:`UPDATE ... SET order_status = 'PAID' WHERE order_number = ? AND order_status = 'PENDING'`
+  4. Redis 确认预占(`reserved` 减,`stock` 不变 — 预占时已减过)
+  5. 事务提交后再更新 Redis Hash 状态 + 清理超时索引(`afterCommit` 钩子)
+
+- **失败码**:
+  - `403 FORBIDDEN` — 不是订单所有者
+  - `409 CONFLICT` — 订单已取消/已支付,或**库存不足**(并发售罄)
+
 - **当前未接支付网关**,仅翻状态 + 确认库存。真实接入时需先调网关,等回调验签后调本接口。
 
 ### 5.5 订单响应 `PurchaseResponse`
@@ -570,17 +610,32 @@
         └─ 失败 → throw → catch 中对已预占的 book 反向 release
      → 全部成功 → @Transactional 插 orders + order_items
      → 写 Redis 双 key:
-        ├─ Hash: tmlibrary:order:{orderNumber}      ← 订单数据
-        ├─ ZSet: tmlibrary:user:{userId}:history    ← 时间索引
-        └─ ZSet: tmlibrary:user:{userId}:expire     ← 超时索引
+        ├─ Hash: tmlibrary:order:byNumber:{orderNumber}:data      ← 订单数据
+        ├─ ZSet: tmlibrary:user:byId:{userId}:orders:history:idx  ← 时间索引
+        └─ ZSet: tmlibrary:user:byId:{userId}:orders:pending:expire:idx ← 超时索引
+     ⚠️ 以上任何一步失败(含 Redis 写)→ 统一反向 release 所有已预占库存
 ```
 
-30 分钟未支付 → `OrderExpireScheduler`(每 60s 扫描,Redis SETNX 分布式锁)→ 调 `cancelExpiredOrder` → 状态置 CANCELLED + release 库存。
+30 分钟未支付 → `OrderExpireScheduler`(每 60s 扫描,Redis SETNX 分布式锁)→ 调 `cancelExpiredOrder`
+→ 先 release 库存 → 状态守卫 UPDATE(`WHERE order_status='PENDING'`)→ 提交 → afterCommit 更新 Redis。
 
 ### 8.3 关键设计
 
-- **JWT 黑名单**:登出时按 token 剩余 TTL 写入 `tmlibrary:auth:jwt:blackList:{jti}`,过期自动清。
-- **库存**:`available_stock` (stock) + `reserved_stock` (reserved) 在 Redis Hash 同一 book 下;下单 → `stock -= N, reserved += N`;支付 → `reserved -= N`;取消/超时 → `stock += N, reserved -= N`。
+- **JWT 黑名单**:登出时按 token 剩余 TTL 写入 `tmlibrary:auth:byJti:{jti}:blackList`,过期自动清。
+- **库存双轨**:
+  - **DB `books.stock_quantity` = 真值(物理未售库存)** — 只在**付款成功**时原子扣减
+    (`WHERE stock_quantity >= N`,不足则拒绝,返回 409)
+  - **Redis Hash `stock` / `reserved` = 预占缓存** — 下单 `stock -= N, reserved += N`;
+    支付 `reserved -= N`;取消/超时 `stock += N, reserved -= N`
+  - 好处:Redis 淘汰/重启不会造成真实超卖(付款时由 DB 条件更新兜底)
+- **Redis Key 统一规范**:`tmlibrary:{domain}:by{Id|Username|Isbn|Jti|Uuid|Number}:{keyId}:{feature}`,
+  全部集中在 `common/redis/RedisKeys.java`,禁止业务代码拼接字符串。
+- **缓存失效**:所有 Redis 写操作注册在 `afterCommit` 钩子中(DB 回滚不会写脏缓存);
+  修改用户/图书时同步失效「详情缓存 + 状态缓存 + 库存 Hash」三类 key。
 - **订单数据** 走 Redis Hash(字段独立更新,改状态只动 `status` 字段)。
 - **历史/超时索引** 走 Redis ZSet(score = 时间戳),方便范围查询。
+- **状态流转**统一走带守卫的 UPDATE(`WHERE order_status = 期望前置状态`),
+  防止「已支付订单被超时任务取消」这类并发越权流转。
 - **密码哈希**:BCrypt cost=10,后端唯一处理,前端永远传明文。
+- **登录失败锁定**:单条原子 SQL 完成「计数 +1」与「达阈值时加锁」,
+  锁定到期后自动重置计数;登录失败响应统一文案,防账号枚举。

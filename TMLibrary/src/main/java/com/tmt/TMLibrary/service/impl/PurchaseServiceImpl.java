@@ -24,11 +24,15 @@ import com.tmt.TMLibrary.dto.request.PurchaseRequest;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
+import com.tmt.TMLibrary.exception.AuthException;
 
 import java.math.BigDecimal;
 import com.tmt.TMLibrary.exception.BusinessException;
 import com.tmt.TMLibrary.common.Order.OrderStatus;
 import com.tmt.TMLibrary.common.Result.ResultCode;
+import com.tmt.TMLibrary.common.redis.RedisKeys;
 
 import java.util.concurrent.TimeUnit;
 
@@ -88,40 +92,57 @@ public class PurchaseServiceImpl implements PurchaseService {
 
     // 旧：tmlibrary:user:users:status:{id}（多余的 users）
     // 新：tmlibrary:user:{id}:status（标准两段式）
-    private static final String REDIS_USER_STATUS_PATH_TPL        = "tmlibrary:user:%s:status";
-    // 历史订单索引 — ZSet member=orderNumber, score=createdTimeMillis
-    private static final String REDIS_USER_HISTORY_ORDER_IDX_TPL  = "tmlibrary:user:%s:orders:history:idx";
-    // 待支付超时索引 — ZSet member=orderNumber, score=expireTimeMillis
-    // 配 @Scheduled 或 Redis keyspace notification 做超时关单
-    private static final String REDIS_USER_PENDING_EXPIRE_IDX_TPL = "tmlibrary:user:%s:orders:pending:expire:idx";
-    // 订单数据 — Hash per orderNumber，字段可独立更新（状态变更只改 status 字段）
-    private static final String REDIS_ORDER_DATA_PREFIX           = "tmlibrary:order:";
-
-    private static String userStatusPath(Integer userId)      { return String.format(REDIS_USER_STATUS_PATH_TPL, userId); }
-    private static String historyIdx(Integer userId)          { return String.format(REDIS_USER_HISTORY_ORDER_IDX_TPL, userId); }
-    private static String pendingExpireIdx(Integer userId)     { return String.format(REDIS_USER_PENDING_EXPIRE_IDX_TPL, userId); }
-    private static String orderData(Long orderNumber)         { return REDIS_ORDER_DATA_PREFIX + orderNumber; }
+    // Redis key 由 RedisKeys 统一管理,本类不再硬编码
 
     private static final ZoneId zoneId = ZoneId.of("Asia/Shanghai");
 
     private final ObjectMapper objectMapper;
 
+    /** 负缓存哨兵 — 防止空串写入导致 readValue("") 抛异常 */
+    private static final String NEGATIVE_SENTINEL = "{\"__negative__\":true}";
+
+    /** 订单未支付超时时长(分钟)— 与 OrderExpireScheduler 的扫描周期配合 */
+    private static final int ORDER_EXPIRE_MINUTES = 30;
+
     private final BookInventoryService bookInventoryService;
 
+    /**
+     * 检查用户是否可以下单/取消/支付。
+     *
+     * @return true = 用户不可用(应拒绝),false = 用户可用
+     */
     private boolean checkUser(Integer userId) {
-        String jsonString = stringRedisTemplate.opsForValue().get(userStatusPath(userId));
+        String jsonString = stringRedisTemplate.opsForValue().get(RedisKeys.userStatus(userId));
+
+        // 负缓存命中 — 该 userId 在 TTL 内确认不存在,直接判不可用(不再打 DB,防穿透)
+        if (NEGATIVE_SENTINEL.equals(jsonString)) {
+            return true;
+        }
+
         UserStatusRedis status;
         if (jsonString == null || jsonString.trim().isEmpty()) {
             User user = userMapper.selectUserById(userId);
             if (user == null) {
-                stringRedisTemplate.opsForValue().set(userStatusPath(userId), "", RandomExpirationTimeWithOffset.get(3L, TimeUnit.MINUTES));
+                // 用户不存在 → 写负 sentinel(非空串,避免下次 readValue("") 抛异常)
+                stringRedisTemplate.opsForValue().set(
+                    RedisKeys.userStatus(userId), NEGATIVE_SENTINEL,
+                    RandomExpirationTimeWithOffset.get(3L, TimeUnit.MINUTES));
                 return true;
             }
             status = UserStatusRedis.fromUser(user);
             String json = objectMapper.writeValueAsString(status);
-            stringRedisTemplate.opsForValue().set(userStatusPath(userId), json, RandomExpirationTimeWithOffset.get(15L, TimeUnit.MINUTES));
+            stringRedisTemplate.opsForValue().set(
+                RedisKeys.userStatus(userId), json,
+                RandomExpirationTimeWithOffset.get(15L, TimeUnit.MINUTES));
         } else {
-            status = objectMapper.readValue(jsonString, UserStatusRedis.class);
+            try {
+                status = objectMapper.readValue(jsonString, UserStatusRedis.class);
+            } catch (Exception e) {
+                // 缓存内容损坏 — 清除后按"不可用"处理,下次请求重新回填
+                log.warn("corrupt UserStatusRedis cache for userId={}, evicting", userId, e);
+                stringRedisTemplate.delete(RedisKeys.userStatus(userId));
+                return true;
+            }
         }
 
         if (status == null)               return true;
@@ -149,23 +170,27 @@ public class PurchaseServiceImpl implements PurchaseService {
     @Transactional(rollbackFor = Exception.class)
     public int createOrder(PurchaseRequest purchaseRequest, Integer currentUserId) {
 
-        if (checkUser(currentUserId)) {
-            throw new BusinessException(ResultCode.UNAUTHORIZED, "User is not authorized to create order");
-        }
-
-        // 先做 DB 读取拿价格（轻量非锁读），再走 Redis Lua 预占
-        // 顺序保证：DB 失败时 Redis 没碰过；Redis 失败时 DB 已读但未改，回滚靠 @Transactional
-        // 中途抛异常的 Redis 残留：用 reservedBookIds 列表在 catch 里反向 release
+        // reservedBookIds/reservedQtys 在 try 外声明 — catch 块需要访问
+        // @Transactional 只能回滚 DB,Redis 写不在事务里 — 必须显式补偿
         List<Integer> reservedBookIds = new ArrayList<>();
         List<Integer> reservedQtys    = new ArrayList<>();
 
-        List<OrderItem> orderItems = new ArrayList<>();
-        Order order = new Order();
-        order.setUserId(currentUserId);
-        order.setOrderNumber(snowflake.nextId());
-
-        BigDecimal totalAmount = BigDecimal.ZERO;
         try {
+            if (checkUser(currentUserId)) {
+                throw new BusinessException(ResultCode.UNAUTHORIZED, "User is not authorized to create order");
+            }
+            if (purchaseRequest.getItems() == null || purchaseRequest.getItems().isEmpty()) {
+                throw new BusinessException(ResultCode.BAD_REQUEST, "items cannot be empty");
+            }
+
+            List<OrderItem> orderItems = new ArrayList<>();
+            Order order = new Order();
+            order.setUserId(currentUserId);
+            order.setOrderNumber(snowflake.nextId());
+
+            BigDecimal totalAmount = BigDecimal.ZERO;
+
+            // Phase 1: 预占库存(Redis Lua)
             for (PurchaseItemRequest item : purchaseRequest.getItems()) {
                 if (item.getQuantity() <= 0) {
                     throw new BusinessException(ResultCode.BAD_REQUEST, "Quantity must be greater than 0 for bookId: " + item.getBookId());
@@ -181,7 +206,7 @@ public class PurchaseServiceImpl implements PurchaseService {
                 }
                 // 2) Redis Lua 原子预占 — 替代原 DB 悲观锁路径
                 if (!bookInventoryService.tryReserve(item.getBookId(), item.getQuantity())) {
-                    throw new BusinessException(ResultCode.NOT_FOUND, "Insufficient stock for bookId: " + item.getBookId());
+                    throw new BusinessException(ResultCode.CONFLICT, "Insufficient stock for bookId: " + item.getBookId());
                 }
                 reservedBookIds.add(item.getBookId());
                 reservedQtys.add(item.getQuantity());
@@ -199,52 +224,56 @@ public class PurchaseServiceImpl implements PurchaseService {
                     throw new BusinessException(ResultCode.INTERNAL_ERROR, "Book price is null for bookId: " + item.getBookId());
                 }
             }
+
+            // Phase 2: DB 写入(事务内,@Transactional 失败回滚)
+            order.setTotalAmount(totalAmount);
+            order.setOrderStatus(OrderStatus.PENDING.getCode());
+            LocalDateTime now = LocalDateTime.now();
+            LocalDateTime expireTime = now.plusMinutes(ORDER_EXPIRE_MINUTES);
+            order.setExpireTime(expireTime);
+            // 显式写时间字段,不依赖 DB DEFAULT CURRENT_TIMESTAMP
+            order.setCreatedTime(now);
+            order.setUpdatedTime(now);
+            orderMapper.insertOrder(order);
+            for (OrderItem oi : orderItems) {
+                oi.setOrderId(order.getId());
+                oi.setCreatedTime(now);
+                orderMapper.insertOrderItem(oi);
+            }
+
+            // Phase 3: Redis 写入(Hash + 2 ZSet) — 任何异常 → 下方 catch 反向 release
+            String orderKey = RedisKeys.orderData(order.getOrderNumber());
+            stringRedisTemplate.opsForHash().put(orderKey, "id",          String.valueOf(order.getId()));
+            stringRedisTemplate.opsForHash().put(orderKey, "userId",      String.valueOf(order.getUserId()));
+            stringRedisTemplate.opsForHash().put(orderKey, "totalAmount", totalAmount.toPlainString());
+            stringRedisTemplate.opsForHash().put(orderKey, "status",      String.valueOf(OrderStatus.PENDING.getCode()));
+            stringRedisTemplate.opsForHash().put(orderKey, "expireTime",  expireTime.toString());
+
+            String historyKey = RedisKeys.userHistoryIdx(currentUserId);
+            long createdMillis = LocalDateTime.now().atZone(zoneId).toInstant().toEpochMilli();
+            stringRedisTemplate.opsForZSet().add(historyKey, String.valueOf(order.getOrderNumber()), createdMillis);
+
+            String expireKey = RedisKeys.userPendingExpireIdx(currentUserId);
+            long expireMillis = expireTime.atZone(zoneId).toInstant().toEpochMilli();
+            stringRedisTemplate.opsForZSet().add(expireKey, String.valueOf(order.getOrderNumber()), expireMillis);
+
+            return order.getId() != null ? order.getId() : 1;
+
         } catch (RuntimeException e) {
+            // 统一补偿:对所有已成功 Lua 预占的 bookId 释放库存
             for (int i = 0; i < reservedBookIds.size(); i++) {
                 try {
                     bookInventoryService.release(reservedBookIds.get(i), reservedQtys.get(i));
-                } catch (Exception ex) {
-                    // release 失败只能记日志（兜底兜不住，需要人工对账）
-                    log.error("failed to release redis reservation: bookId={}, qty={}, err={}",
-                        reservedBookIds.get(i), reservedQtys.get(i), ex.getMessage());
+                    log.info("compensated reservation: bookId={}, qty={}",
+                        reservedBookIds.get(i), reservedQtys.get(i));
+                } catch (Exception releaseEx) {
+                    // 关键告警:补偿失败 → Redis stock 已多扣,无更上层兜底,必须人工对账
+                    log.error("CRITICAL: failed to compensate reservation bookId={}, qty={}, originalErr={}, releaseErr={}",
+                        reservedBookIds.get(i), reservedQtys.get(i), e.getMessage(), releaseEx.getMessage());
                 }
             }
             throw e;
         }
-
-        order.setTotalAmount(totalAmount);
-        order.setOrderStatus(OrderStatus.PENDING.getCode());
-
-        LocalDateTime expireTime = LocalDateTime.now().plusMinutes(30);
-        order.setExpireTime(expireTime);
-
-        orderMapper.insertOrder(order);
-
-        for (OrderItem orderItem : orderItems) {
-            orderItem.setOrderId(order.getId());
-            orderMapper.insertOrderItem(orderItem);
-        }
-
-        // 1. Hash 存订单数据（字段独立，后续改状态只动 status 字段，不重读 DB）
-        String orderKey = orderData(order.getOrderNumber());
-        stringRedisTemplate.opsForHash().put(orderKey, "id",          String.valueOf(order.getId()));
-        stringRedisTemplate.opsForHash().put(orderKey, "userId",      String.valueOf(order.getUserId()));
-        stringRedisTemplate.opsForHash().put(orderKey, "totalAmount", totalAmount.toPlainString());
-        stringRedisTemplate.opsForHash().put(orderKey, "status",      String.valueOf(OrderStatus.PENDING.getCode()));
-        stringRedisTemplate.opsForHash().put(orderKey, "expireTime",  expireTime.toString());
-
-        // 2. 历史订单索引（ZSet — 时间倒序排）
-        String historyKey = historyIdx(currentUserId);
-        long createdMillis = LocalDateTime.now().atZone(zoneId).toInstant().toEpochMilli();
-        stringRedisTemplate.opsForZSet().add(historyKey, String.valueOf(order.getOrderNumber()), createdMillis);
-
-        // 3. 待支付超时索引（ZSet — 按 expireTime 排，配定时任务或 keyspace notification 关单）
-        //    修原 179 行 bug：旧代码 key 为 per-orderNumber，每笔订单一个 ZSet 无意义；改为 per-user
-        String expireKey = pendingExpireIdx(currentUserId);
-        long expireMillis = expireTime.atZone(zoneId).toInstant().toEpochMilli();
-        stringRedisTemplate.opsForZSet().add(expireKey, String.valueOf(order.getOrderNumber()), expireMillis);
-
-        return 1;
     }
 
     @Override
@@ -267,86 +296,142 @@ public class PurchaseServiceImpl implements PurchaseService {
     public int cancelOrder(Long orderNumber, Integer currentUserId) {
 
         if (checkUser(currentUserId)) {
-            throw new BusinessException(ResultCode.UNAUTHORIZED, "User is not authorized to cancel order");
+            throw new AuthException(ResultCode.UNAUTHORIZED, "User is not authorized to cancel order");
         }
         Order order = orderMapper.selectOrderByOrderNumberForUpdate(orderNumber);
         checkOrder(order, orderNumber, currentUserId);
-        order.setOrderStatus(OrderStatus.CANCELLED.getCode());
-        orderMapper.updateStatusByOrderNumber(orderNumber, OrderStatus.CANCELLED.getCode());
 
+        // 状态守卫 UPDATE — 只有 PENDING 才能被用户主动取消
+        int rows = orderMapper.updateStatusByOrderNumberGuard(
+            orderNumber, OrderStatus.PENDING.getCode(), OrderStatus.CANCELLED.getCode());
+        if (rows == 0) {
+            // 已经被 cancel/expire/pay 抢先 — checkOrder 已挡住 PAID/CANCELLED,这里防御性兜底
+            throw new BusinessException(ResultCode.CONFLICT, "Order already processed: " + orderNumber);
+        }
+
+        // 释放 Redis 预占 — 任一 item 失败 → 整笔失败,让用户重试(避免部分释放)
         List<OrderItem> orderItems = orderMapper.selectOrderItemsByOrderNumber(orderNumber);
         if (orderItems == null || orderItems.isEmpty()) {
             throw new BusinessException(ResultCode.INTERNAL_ERROR, "Order items not found for OrderNumber: " + orderNumber);
         }
 
         for (OrderItem orderItem : orderItems) {
-            bookInventoryService.release(orderItem.getBookId(), orderItem.getQuantity());
+            try {
+                bookInventoryService.release(orderItem.getBookId(), orderItem.getQuantity());
+            } catch (Exception releaseEx) {
+                throw new BusinessException(ResultCode.INTERNAL_ERROR,
+                    "释放库存失败:bookId=" + orderItem.getBookId() + ",err=" + releaseEx.getMessage(), releaseEx);
+            }
         }
-        // 只动 status 字段，不重写整个订单（Hash 的好处）
-        stringRedisTemplate.opsForHash().put(orderData(orderNumber), "status", String.valueOf(OrderStatus.CANCELLED.getCode()));
 
-        return 1;
+        // afterCommit 钩子:Hash 状态翻转 + 主动 ZREM expire idx(scheduler 不必再扫)
+        registerRedisWriteAfterCommit(() -> {
+            stringRedisTemplate.opsForHash().put(RedisKeys.orderData(orderNumber),
+                "status", String.valueOf(OrderStatus.CANCELLED.getCode()));
+            stringRedisTemplate.opsForZSet().remove(
+                RedisKeys.userPendingExpireIdx(currentUserId),
+                String.valueOf(orderNumber));
+        });
+
+        return order.getId() != null ? order.getId() : 1;
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int payOrder(Long orderNumber, Integer currentUserId, String paymentMethod) {
 
-        // 支付方式还未做
+        // 支付方式还未做(预留字段,接网关时验签后再调本方法)
 
         if (checkUser(currentUserId)) {
-            throw new BusinessException(ResultCode.UNAUTHORIZED, "User is not authorized to pay order");
+            throw new AuthException(ResultCode.UNAUTHORIZED, "User is not authorized to pay order");
         }
         Order order = orderMapper.selectOrderByOrderNumberForUpdate(orderNumber);
         checkOrder(order, orderNumber, currentUserId);
-        order.setOrderStatus(OrderStatus.PAID.getCode());
-        orderMapper.updateStatusByOrderNumber(orderNumber, OrderStatus.PAID.getCode());
 
-        // paymentMethod 仍未接支付网关，这里只翻状态
-        // 真支付网关回调时再扩展：验签 → 调用 payOrder
+        // ===== 单一权威字段:DB books.stock_quantity = 未售出的物理库存 =====
+        // 在用户付款时才原子扣减 DB(下单阶段 Redis 预占就够了,DB 不动)
+        // Redis 仅作预占缓存 + 热点加速,真实库存以 DB 为准
         List<OrderItem> orderItems = orderMapper.selectOrderItemsByOrderNumber(orderNumber);
+        if (orderItems != null && !orderItems.isEmpty()) {
+            for (OrderItem orderItem : orderItems) {
+                int rows = bookMapper.decrementStockIfEnough(orderItem.getBookId(), orderItem.getQuantity());
+                if (rows == 0) {
+                    // 库存不足 — DB 拒绝扣减,抛错让 @Transactional 回滚整个付款
+                    // 订单保持 PENDING,调用方(支付网关回调)决定是否取消订单 + 退款
+                    throw new BusinessException(ResultCode.CONFLICT,
+                        "库存不足,bookId=" + orderItem.getBookId()
+                            + ",qty=" + orderItem.getQuantity()
+                            + "(并发售罄或管理员未及时补货)");
+                }
+            }
+        }
+
+        // DB 扣减成功 → 翻状态(状态守卫:只有 PENDING 才能转 PAID)
+        int paidRows = orderMapper.updateStatusByOrderNumberGuard(
+            orderNumber, OrderStatus.PENDING.getCode(), OrderStatus.PAID.getCode());
+        if (paidRows == 0) {
+            throw new BusinessException(ResultCode.CONFLICT,
+                "Order status changed concurrently: " + orderNumber);
+        }
+        order.setOrderStatus(OrderStatus.PAID.getCode());
+
         if (orderItems != null && !orderItems.isEmpty()) {
             for (OrderItem orderItem : orderItems) {
                 bookInventoryService.confirm(orderItem.getBookId(), orderItem.getQuantity());
             }
         }
-        stringRedisTemplate.opsForHash().put(orderData(orderNumber), "status", String.valueOf(OrderStatus.PAID.getCode()));
+        // Hash 状态翻转(afterCommit 钩子避免 DB 回滚但 Redis 已写)
+        registerRedisWriteAfterCommit(() -> {
+            stringRedisTemplate.opsForHash().put(RedisKeys.orderData(orderNumber),
+                "status", String.valueOf(OrderStatus.PAID.getCode()));
+            // 主动从 pending expire idx 移除,scheduler 不必再扫
+            stringRedisTemplate.opsForZSet().remove(
+                RedisKeys.userPendingExpireIdx(currentUserId),
+                String.valueOf(orderNumber));
+        });
 
-        return 1;
+        return order.getId() != null ? order.getId() : 1;
     }
 
     /**
-     * 系统主动关单（定时任务调用）— 不校验用户状态，按订单号直接关。
-     * <br>幂等：状态非 PENDING 时直接清理 expire idx 不报错。
+     * 系统主动关单(定时任务调用)— 不校验用户状态,按订单号直接关。
+     * <br>幂等:状态非 PENDING 时直接清理 expire idx 不报错。
+     *
+     * <h2>修复后的顺序(R-3)</h2>
+     * <pre>
+     *   1. SELECT FOR UPDATE 拿行锁
+     *   2. 状态守卫:非 PENDING → 直接 ZREM expire idx 兜底,返回
+     *   3. Lua release(库存归还)   ← 先于 DB UPDATE
+     *      - 若失败:DB 保持 PENDING,scheduler 下次重试
+     *   4. UPDATE orders SET status=CANCELLED WHERE order_number=? AND order_status='PENDING'
+     *      ← 状态守卫的原子 SQL,即使 FOR UPDATE 被优化掉也安全
+     *   5. @Transactional commit
+     *   6. afterCommit 钩子:Hash.put + ZREM
+     * </pre>
+     * 崩溃窗口分析:3 与 4 之间崩 → DB 仍 PENDING,Redis stock 已释放,
+     * scheduler 下次扫到该订单 → 重走 3-4-5-6 → release 二次释放(Lua -2 静默)→ UPDATE 0 行 → 早返回。
+     * 永远不会泄漏库存。
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void cancelExpiredOrder(Long orderNumber) {
         Order order = orderMapper.selectOrderByOrderNumberForUpdate(orderNumber);
         if (order == null) {
-            // 订单已不存在 — 无需处理
             return;
         }
 
         Integer currentStatus = order.getOrderStatus();
-        // 已支付或已取消 — 仅清理 expire idx，跳过
-        if (currentStatus.equals(OrderStatus.PAID.getCode())
-                || currentStatus.equals(OrderStatus.CANCELLED.getCode())) {
+
+        // 非 PENDING(已 PAID 或已 CANCELLED)— 仅清理 expire idx,跳过主流程
+        if (!currentStatus.equals(OrderStatus.PENDING.getCode())) {
             stringRedisTemplate.opsForZSet().remove(
-                pendingExpireIdx(order.getUserId()),
+                RedisKeys.userPendingExpireIdx(order.getUserId()),
                 String.valueOf(orderNumber)
             );
             return;
         }
-        // 非 PENDING 状态（理论上不该出现，但防御一下） — 直接返回
-        if (!currentStatus.equals(OrderStatus.PENDING.getCode())) {
-            return;
-        }
 
-        // 关单：DB 状态翻转
-        orderMapper.updateStatusByOrderNumber(orderNumber, OrderStatus.CANCELLED.getCode());
-
-        // 释放库存预占
+        // 步骤 3:先释放库存(Lua)— 若失败,DB 保持 PENDING,scheduler 下次重试
         List<OrderItem> orderItems = orderMapper.selectOrderItemsByOrderNumber(orderNumber);
         if (orderItems != null && !orderItems.isEmpty()) {
             for (OrderItem orderItem : orderItems) {
@@ -354,15 +439,51 @@ public class PurchaseServiceImpl implements PurchaseService {
             }
         }
 
-        // 更新 Redis Hash + 从 expire idx 移除（避免下次又被扫到）
-        stringRedisTemplate.opsForHash().put(
-            orderData(orderNumber),
-            "status",
-            String.valueOf(OrderStatus.CANCELLED.getCode())
-        );
-        stringRedisTemplate.opsForZSet().remove(
-            pendingExpireIdx(order.getUserId()),
-            String.valueOf(orderNumber)
-        );
+        // 步骤 4:状态守卫的 UPDATE — 只有 PENDING 才能转 CANCELLED
+        int rows = orderMapper.updateStatusByOrderNumberGuard(
+            orderNumber, OrderStatus.PENDING.getCode(), OrderStatus.CANCELLED.getCode());
+        if (rows == 0) {
+            // 别人抢先改了状态(Paid 或 Cancelled)— 我们的 release 多减一次,但 Lua -2 静默处理
+            log.warn("cancelExpiredOrder: order {} status changed concurrently, release may double-count", orderNumber);
+            stringRedisTemplate.opsForZSet().remove(
+                RedisKeys.userPendingExpireIdx(order.getUserId()),
+                String.valueOf(orderNumber)
+            );
+            return;
+        }
+
+        // 步骤 6:afterCommit 钩子 — Hash.put + ZREM
+        registerRedisWriteAfterCommit(() -> {
+            stringRedisTemplate.opsForHash().put(
+                RedisKeys.orderData(orderNumber),
+                "status",
+                String.valueOf(OrderStatus.CANCELLED.getCode())
+            );
+            stringRedisTemplate.opsForZSet().remove(
+                RedisKeys.userPendingExpireIdx(order.getUserId()),
+                String.valueOf(orderNumber)
+            );
+        });
+    }
+
+    /**
+     * 注册 Redis 写入到当前事务的 afterCommit 钩子 — 避免 DB 回滚但 Redis 已写脏。
+     * <p>如果当前没有事务(例如单元测试场景),则同步立即执行。</p>
+     */
+    private void registerRedisWriteAfterCommit(Runnable redisOp) {
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    try {
+                        redisOp.run();
+                    } catch (Exception e) {
+                        log.error("Redis write failed after DB commit, manual reconciliation needed", e);
+                    }
+                }
+            });
+        } else {
+            redisOp.run();
+        }
     }
 }

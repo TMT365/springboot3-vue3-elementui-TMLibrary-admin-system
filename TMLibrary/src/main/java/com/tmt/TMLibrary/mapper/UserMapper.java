@@ -55,13 +55,17 @@ public interface UserMapper {
     int updateUserById(@Param("id") int id, @Param("user") User user); 
 
     //=======================其他业务逻辑========================
-    int AcquiredFailedLoginAttempts(@Param("id") int id);
-
-    int incrementFailedLoginAttemptsById(@Param("id") int id);
+    /**
+     * 原子递增失败次数,达到阈值时一并锁定账户(单条 SQL,无读改写竞态)。
+     * <p>SQL 用 {@code failed_login_attempts + 1 >= #{threshold}} 作为判断条件,避免
+     * 先 SELECT 再 UPDATE 的两阶段提交窗口。</p>
+     * <p>返回 1 表示已锁定,0 表示未锁定(继续累积失败次数)。</p>
+     */
+    int incrementAndMaybeLock(@Param("id") int id,
+                              @Param("threshold") int threshold,
+                              @Param("lockMinutes") int lockMinutes);
 
     LocalDateTime getAccountLockedUntilById(@Param("id") int id);
-
-    int lockUserAccountById(@Param("id") int id, @Param("lockUntil") LocalDateTime lockUntil);
 
     int resetFailedLoginAttemptsById(@Param("id") int id);
 

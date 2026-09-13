@@ -186,4 +186,17 @@
         FROM books
         WHERE id = #{id}
     </select>
+
+    <!--
+        原子扣减 DB 库存(付款时调用)
+        - WHERE stock_quantity >= #{qty} :库存不足时直接拒绝,返回 0
+        - 单一权威字段:DB books.stock_quantity 表示"未售出的物理库存"
+        - Redis 仅作预占缓存;用户付款后才动 DB
+    -->
+    <update id="decrementStockIfEnough">
+        UPDATE books
+        SET stock_quantity = stock_quantity - #{qty}
+        WHERE id = #{bookId}
+          AND stock_quantity >= #{qty}
+    </update>
 </mapper>

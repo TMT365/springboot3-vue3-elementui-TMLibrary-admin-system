@@ -7,6 +7,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.tmt.TMLibrary.common.User.UserRole;
+import com.tmt.TMLibrary.common.redis.RedisKeys;
 import com.tmt.TMLibrary.dto.request.UserRegisterRequest;
 import com.tmt.TMLibrary.dto.request.UserSearchRequest;
 import com.tmt.TMLibrary.dto.request.UserUpdatedRequest;
@@ -36,8 +37,10 @@ public class UserManagementServiceImpl implements UserManagementService {
     private final BookMapper bookMapper;
     private final StringRedisTemplate stringRedisTemplate;
 
-    private static final String REDIS_USERS_INFO_BY_USERNAME_PATH = "tmlibrary:user:users:";
-    private static final String REDIS_USER_STATUS_BY_ID_PATH = "tmlibrary:user:users:status:";
+    // Redis key 由 RedisKeys 统一管理
+    // 旧常量(已删除,都是 namespace 错配的元凶):
+    //   REDIS_USERS_INFO_BY_USERNAME_PATH = "tmlibrary:user:users:"               ← 少 "username:" 段,AuthService 写的是 "user:users:username:" — 失效空操作
+    //   REDIS_USER_STATUS_BY_ID_PATH      = "tmlibrary:user:users:status:"        ← 多 "users" 段,PurchaseService 写的是 "user:{id}:status" — 失效空操作
     private final ObjectMapper objectMapper;
 
 
@@ -86,9 +89,9 @@ public class UserManagementServiceImpl implements UserManagementService {
         userMapper.updateUserById(targetUserId, target);
 
         // 4. 删除 Redis 缓存(按 username,和 login 路径保持同一 key)
-        stringRedisTemplate.delete(REDIS_USERS_INFO_BY_USERNAME_PATH + target.getUsername());
+        stringRedisTemplate.delete(RedisKeys.userByUsername(target.getUsername()));
         // 同时清掉 status 缓存(PurchaseServiceImpl.checkUser 用)
-        stringRedisTemplate.delete(REDIS_USER_STATUS_BY_ID_PATH + targetUserId);
+        stringRedisTemplate.delete(RedisKeys.userStatus(targetUserId));
 
         return 1;
     }
@@ -178,12 +181,12 @@ public class UserManagementServiceImpl implements UserManagementService {
         // updateTime 由 DB 的 ON UPDATE CURRENT_TIMESTAMP 自动刷,Service 不设
         userMapper.updateUserById(existing.getId(), existing);
         // 删除 Redis(用快照的旧 username;如果 username 改了,新 username 的 key 也要删)
-        stringRedisTemplate.delete(REDIS_USERS_INFO_BY_USERNAME_PATH + oldUsername);
+        stringRedisTemplate.delete(RedisKeys.userByUsername(oldUsername));
         if (userUpdateRequest.getUsername() != null && !userUpdateRequest.getUsername().equals(oldUsername)) {
-            stringRedisTemplate.delete(REDIS_USERS_INFO_BY_USERNAME_PATH + userUpdateRequest.getUsername());
+            stringRedisTemplate.delete(RedisKeys.userByUsername(userUpdateRequest.getUsername()));
         }
         // 清掉 status 缓存(可能改了 status / role)
-        stringRedisTemplate.delete(REDIS_USER_STATUS_BY_ID_PATH + existing.getId());
+        stringRedisTemplate.delete(RedisKeys.userStatus(existing.getId()));
         // 如果是在有MySql集群的环境下，使用MQ实现主从一致性
         return 1;
     }
@@ -207,7 +210,7 @@ public class UserManagementServiceImpl implements UserManagementService {
         user.setPasswordResetToken(null); // 清掉重置 token
         user.setPasswordResetTokenExpiration(null);
         // 先删除缓存
-        stringRedisTemplate.delete(REDIS_USERS_INFO_BY_USERNAME_PATH + user.getUsername());
+        stringRedisTemplate.delete(RedisKeys.userByUsername(user.getUsername()));
         userMapper.updateUserById(targetUserId, user);
         //
         return 1;

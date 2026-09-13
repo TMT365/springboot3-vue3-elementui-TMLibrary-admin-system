@@ -53,5 +53,14 @@ public interface OrderMapper {
      * @param status
      * @return
      */
-    int updateStatusByOrderNumber(@Param("orderNumber") Long orderNumber, @Param("status") Integer status);
+    /**
+     * 状态守卫的 UPDATE — 只有 {@code fromStatus} 才会被改成 {@code toStatus}。
+     * <p>防 PAID→CANCELLED 静默成功。即使有人未来优化去掉 {@code FOR UPDATE},
+     * 这条 SQL 仍然保证"只有 PENDING 能被关单/支付"。</p>
+     *
+     * @return 1=转换成功,0=状态不匹配(被别人抢先改了)
+     */
+    int updateStatusByOrderNumberGuard(@Param("orderNumber") Long orderNumber,
+                                       @Param("fromStatus") Integer fromStatus,
+                                       @Param("toStatus") Integer toStatus);
 }

@@ -1,5 +1,6 @@
 package com.tmt.TMLibrary.service.impl;
 
+import com.tmt.TMLibrary.common.redis.RedisKeys;
 import com.tmt.TMLibrary.common.utils.CaptchaUtil;
 import com.tmt.TMLibrary.dto.redis.LoginCaptchaRedis;
 import com.tmt.TMLibrary.dto.request.GetLoginCaptchaRequestByUsernameAndPassword;
@@ -22,8 +23,8 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class CaptchaServiceImpl implements CaptchaService {
 
-    private static final String REDIS_CAPTCHA_LOGIN_PATH = "tmlibrary:captcha:login:";
-    private static final String REDIS_CAPTCHA_REGISTER_PATH = "tmlibrary:captcha:register:";
+    // key 由 RedisKeys 统一管理
+    // 旧 REDIS_CAPTCHA_REGISTER_PATH = "tmlibrary:captcha:register:" 已删除(死代码,从未读写)
 
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
@@ -42,7 +43,7 @@ public class CaptchaServiceImpl implements CaptchaService {
         LoginCaptchaRedis loginCaptchaRedis = LoginCaptchaRedis.fromLoginRequest(captcha, loginRequest);
         String json = objectMapper.writeValueAsString(loginCaptchaRedis);
         // 将 captcha 元数据放入 Redis — 不再含 password
-        String redisKey = REDIS_CAPTCHA_LOGIN_PATH + uuid.trim();
+        String redisKey = RedisKeys.captchaLogin(uuid.trim());
         stringRedisTemplate.opsForValue().set(redisKey, json, Expiration.from(3L, TimeUnit.MINUTES));
     }
 

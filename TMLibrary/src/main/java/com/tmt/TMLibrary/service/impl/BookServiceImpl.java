@@ -1,5 +1,6 @@
 package com.tmt.TMLibrary.service.impl;
 
+import com.tmt.TMLibrary.common.redis.RedisKeys;
 import com.tmt.TMLibrary.dto.request.BookSearchRequest;
 import com.tmt.TMLibrary.dto.request.BookPublishedDateByRequest;
 import com.tmt.TMLibrary.dto.request.BookDateTimeByRequest;
@@ -13,6 +14,11 @@ import com.tmt.TMLibrary.common.Result.PageResult;
 import com.tmt.TMLibrary.common.Result.ResultCode;
 import com.tmt.TMLibrary.mapper.BookMapper;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ExecutionException;
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.TimeoutException;
 
 import java.time.LocalDateTime;
 import java.time.LocalDate;
@@ -23,35 +29,42 @@ import org.springframework.data.redis.core.types.Expiration;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import tools.jackson.databind.ObjectMapper;
-import java.util.concurrent.TimeUnit;
 import com.tmt.TMLibrary.common.utils.RandomExpirationTimeWithOffset;
 
 
 
 @Service
-// @RequiredArgsConstructor //lombok注解
 public class BookServiceImpl implements BookService {
-    // 这里实现了BookService接口中的方法，调用BookMapper进行数据库操作。
-    // 你可以在这里添加业务逻辑，例如验证输入数据、处理异常等。
 
     private final BookMapper bookMapper;
     private final ObjectMapper objectMapper;
     private final StringRedisTemplate stringRedisTemplate;
 
-    private static final String REDIS_BOOKS_INFO_PATH = "tmlibrary:user:books:";
+    // Redis key 由 RedisKeys 统一管理
+    // 旧常量(已删除,域名错配):
+    //   REDIS_BOOKS_INFO_PATH = "tmlibrary:user:books:"   ← 错放在 user 域,现改为 "book:isbn:" (RedisKeys.BOOK_INFO_BY_ISBN)
 
-    // 唯一构造器，Spring自动调用，把容器中的bookMapper传进来，不需要写@Autowired
+    /**
+     * SingleFlight 飞行中查询表 — 防止同一 isbn 的并发请求全部穿透到 DB。
+     * <p>key = isbn,value = 该 isbn 当前正在 DB 查询的 CompletableFuture。其他线程进入时 {@link #getByISBN(String)}
+     * 看到 inflight 里有自己这个 isbn,直接 {@code .get()} 复用结果,不重复打 DB。</p>
+     * <p>比分布式锁方案轻量 — 仅限单 JVM 进程内;多实例部署需换 Redis SETNX。</p>
+     */
+    private final ConcurrentHashMap<String, CompletableFuture<Book>> inflight = new ConcurrentHashMap<>();
+
+    /** 负缓存占位 JSON — 用 sentinel 而不是空串,避免 readValue("") 抛异常 */
+    private static final String NEGATIVE_SENTINEL = "{\"__sentinel__\":true}";
+
     public BookServiceImpl(BookMapper bookMapper, StringRedisTemplate stringRedisTemplate, ObjectMapper objectMapper) {
         this.bookMapper = bookMapper;
         this.stringRedisTemplate = stringRedisTemplate;
         this.objectMapper = objectMapper;
-        // Mybatis 已经帮我们实现了 BookMapper 接口的动态代理对象，并放在IOC中，Spring 会自动注入到这里。
     }
 
     @Override
     public PageResult<Book> page(int page, int size) {
         // 不走Redis，直接查询 MySql
-        int offset = (page -1) * size;
+        int offset = (page - 1) * size;
         int total = bookMapper.countBooks();
         List<Book> books = bookMapper.selectList(offset, size);
         return new PageResult<>(total, books);
@@ -61,30 +74,27 @@ public class BookServiceImpl implements BookService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public void create(BookSaveRequest request) {
-        // 这里实现创建图书信息的逻辑，例如调用BookMapper的插入方法。
         Book book = new Book();
-        // 在创建图书这里，有2个属性是无法从BookSaveRequest中获取的，分别是id和createTime。id是自增的，createTime是当前时间，所以我们不需要从请求中获取它们。
-        // 这里可以手动调用Book的Getter和Setter方法来设置属性值，或者使用BeanUtils.copyProperties()方法来复制属性值。
         BeanUtils.copyProperties(request, book);
-        // BeanUtils.copyProperties()方法会将request中的属性值复制到book中，如果request中有属性值为null，则不会覆盖book中已有的属性值。
         book.setCreatedTime(LocalDateTime.now());
-
         bookMapper.insertBook(book);
+
+        // 主动失效负缓存 — 之前如果有同 isbn 的负缓存,必须清掉,否则新书3 分钟内看不到
+        stringRedisTemplate.delete(RedisKeys.bookInfoByIsbn(request.getIsbn()));
     }
 
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int deleteByISBN(String isbn) {
-        // 先删除数据库
         Book book = bookMapper.selectBookByISBN(isbn);
         if (book == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND,"图书不存在, isbn=" + isbn);
+            throw new BusinessException(ResultCode.NOT_FOUND, "图书不存在, isbn=" + isbn);
         }
         int rowsAffected = bookMapper.deleteBookByISBN(isbn);
         if (rowsAffected > 0) {
-            // 执行删除 Redis
-            stringRedisTemplate.delete(REDIS_BOOKS_INFO_PATH + isbn);
-
+            // 失效图书详情缓存 + 库存 Hash(同一 isbn 的 bookId 需要回查)
+            stringRedisTemplate.delete(RedisKeys.bookInfoByIsbn(isbn));
+            stringRedisTemplate.delete(RedisKeys.bookInventory(book.getId()));
         }
         return rowsAffected;
     }
@@ -92,61 +102,106 @@ public class BookServiceImpl implements BookService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int updateByISBN(String isbn, BookUpdateRequest request) {
-        // 先更新 MySql
         Book book = bookMapper.selectBookByISBN(isbn);
         if (book == null) {
-            throw new BusinessException(ResultCode.NOT_FOUND,"图书不存在, isbn=" + isbn);
+            throw new BusinessException(ResultCode.NOT_FOUND, "图书不存在, isbn=" + isbn);
         }
         BeanUtils.copyProperties(request, book);
         book.setUpdatedTime(LocalDateTime.now());
         int rowsAffected = bookMapper.updateBookByISBN(book);
         if (rowsAffected > 0) {
-            // 在删除 Redis
-            stringRedisTemplate.delete(REDIS_BOOKS_INFO_PATH + isbn);
+            // 失效两条缓存路径:
+            // 1) book:isbn:{isbn} — BookService 自己的详情缓存
+            // 2) book:byId:{id}:inventory — BookInventoryService 的库存 Hash(含 stock 字段)
+            stringRedisTemplate.delete(RedisKeys.bookInfoByIsbn(isbn));
+            stringRedisTemplate.delete(RedisKeys.bookInventory(book.getId()));
         }
-        // 为什么要延迟双删？
         return rowsAffected;
     }
 
+    /**
+     * 按 ISBN 查询 — Cache-Aside + SingleFlight 防穿透/击穿/雪崩。
+     *
+     * <h2>防止的问题</h2>
+     * <ul>
+     *   <li><strong>缓存穿透</strong>:同一 isbn 大量请求 → 缓存命中负 sentinel → 跳过 DB,直到 sentinel 过期</li>
+     *   <li><strong>缓存击穿</strong>:同一 isbn 缓存同时过期 → 多个请求并发打 DB → SingleFlight 让 leader 独占 DB,follower wait</li>
+     *   <li><strong>缓存雪崩</strong>:用 {@code RandomExpirationTimeWithOffset} 给 TTL 加随机偏移,避免大量 key 同时过期</li>
+     * </ul>
+     *
+     * <h2>负缓存策略</h2>
+     * 写入 sentinel JSON(非空串),避免 {@code readValue("")} 抛异常;{@code create} 时主动 delete 失效。
+     */
     @Override
     public Book getByISBN(String isbn) {
-        // 先查询 Redis
-        String jsonString = stringRedisTemplate.opsForValue().get(REDIS_BOOKS_INFO_PATH + isbn);
+        String key = RedisKeys.bookInfoByIsbn(isbn);
 
-        Book book;
-        if (jsonString == null) {
-            // 查询数据库
-            book = bookMapper.selectBookByISBN(isbn);
-            if (book == null) {
-                // 如果数据库没有，防止缓存击穿，设置一个TTL时间短的空值
-                stringRedisTemplate.opsForValue().set(REDIS_BOOKS_INFO_PATH + isbn, "", Expiration.from(3L, TimeUnit.MINUTES));
+        // Step 1: 读缓存(命中 → 直接返回)
+        String cached = stringRedisTemplate.opsForValue().get(key);
+        if (cached != null) {
+            if (NEGATIVE_SENTINEL.equals(cached)) {
                 throw new BusinessException(ResultCode.NOT_FOUND, "图书不存在, isbn=" + isbn);
             }
-            String json = objectMapper.writeValueAsString(book);
-            // 同样写入带偏移量的TTL
-            stringRedisTemplate.opsForValue().set(REDIS_BOOKS_INFO_PATH + isbn, json, RandomExpirationTimeWithOffset.get(30L, TimeUnit.MINUTES));
+            try {
+                return objectMapper.readValue(cached, Book.class);
+            } catch (Exception e) {
+                // 损坏的 cache,清掉走 DB
+                log.warn("corrupt cache for isbn={}, refetching from DB", isbn, e);
+                stringRedisTemplate.delete(key);
+            }
+        }
 
+        // Step 2: SingleFlight — 同一 isbn 只有一个线程打 DB,其他 wait
+        CompletableFuture<Book> leader = new CompletableFuture<>();
+        CompletableFuture<Book> existing = inflight.putIfAbsent(isbn, leader);
+
+        Book book;
+        if (existing == null) {
+            // 我是 leader — 负责查 DB + 写缓存
+            try {
+                book = bookMapper.selectBookByISBN(isbn);
+                if (book == null) {
+                    // 写负 sentinel(3 分钟)
+                    stringRedisTemplate.opsForValue().set(key, NEGATIVE_SENTINEL, Expiration.from(3L, TimeUnit.MINUTES));
+                } else {
+                    String json = objectMapper.writeValueAsString(book);
+                    // TTL 加随机偏移,防雪崩
+                    stringRedisTemplate.opsForValue().set(key, json, RandomExpirationTimeWithOffset.get(30L, TimeUnit.MINUTES));
+                }
+                leader.complete(book);
+            } catch (Exception e) {
+                leader.completeExceptionally(e);
+                throw new BusinessException(ResultCode.INTERNAL_ERROR, "DB query failed: " + e.getMessage(), e);
+            } finally {
+                inflight.remove(isbn, leader);
+            }
         } else {
-            // 反序列化
-            book = objectMapper.readValue(jsonString, Book.class);
+            // 我是 follower — 等 leader 的结果
+            try {
+                book = existing.get(5, TimeUnit.SECONDS);
+            } catch (TimeoutException e) {
+                throw new BusinessException(ResultCode.INTERNAL_ERROR, "DB query timeout for isbn=" + isbn, e);
+            } catch (InterruptedException e) {
+                Thread.currentThread().interrupt();
+                throw new BusinessException(ResultCode.INTERNAL_ERROR, "Interrupted", e);
+            } catch (ExecutionException e) {
+                throw new BusinessException(ResultCode.INTERNAL_ERROR, "Leader failed: " + e.getMessage(), e);
+            }
         }
 
         if (book == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "图书不存在, isbn=" + isbn);
         }
-
         return book;
     }
-
-    // 这些区间查询无法走 Redis 查询，直接走数据库比 Redis 好
 
     // ============== P1 第一个子任务:多条件组合查询 ==============
 
     @Override
     public PageResult<Book> search(BookSearchRequest req) {
-        req.compact();                                   // 1. 归一化(空串→null、负数→null、page/size 兜底)
+        req.compact();
         int offset = (req.getPage() - 1) * req.getSize();
-        int total = bookMapper.countBySearch(req);       // 2. 走同一份动态 WHERE
+        int total = bookMapper.countBySearch(req);
         List<Book> books = bookMapper.selectListBySearch(req, offset, req.getSize());
         return new PageResult<>(total, books);
     }
@@ -155,7 +210,7 @@ public class BookServiceImpl implements BookService {
 
     @Override
     public PageResult<Book> searchByPublishedDateBy(BookPublishedDateByRequest req) {
-        req.compact();                                   // 1. 归一化 + 粒度连续性校验(失败抛 400)
+        req.compact();
         LocalDate[] range = computePublishedDateRange(req);
         int offset = (req.getPage() - 1) * req.getSize();
         int total = bookMapper.countByPublishedDateRange(range[0], range[1]);
@@ -185,36 +240,23 @@ public class BookServiceImpl implements BookService {
 
     // ============== 区间端点计算(私有工具) ==============
 
-    /**
-     * 根据 year/month/day 算半开区间 [start, end)
-     *        year 必填;month/day 由 compact() 保证连续性
-     * @return [start, end]
-     */
     private static LocalDate[] computePublishedDateRange(BookPublishedDateByRequest req) {
         int year = req.getYear();
         LocalDate start;
         LocalDate end;
         if (req.getMonth() == null) {
-            // year-only: [year-01-01, year+1-01-01)
             start = LocalDate.of(year, 1, 1);
             end = start.plusYears(1);
         } else if (req.getDay() == null) {
-            // year+month: [year-month-01, year-month+1-01) — LocalDate.plusMonths 处理 12 月跨年
             start = LocalDate.of(year, req.getMonth(), 1);
             end = start.plusMonths(1);
         } else {
-            // year+month+day: [year-month-day, year-month-day+1) — LocalDate.plusDays 处理月末/年末
             start = LocalDate.of(year, req.getMonth(), req.getDay());
             end = start.plusDays(1);
         }
         return new LocalDate[]{start, end};
     }
 
-    /**
-     * 根据 year/month/day/hour/minute 算半开区间 [start, end)
-     *        year 必填;其余由 compact() 保证连续性
-     * @return [start, end]
-     */
     private static LocalDateTime[] computeDateTimeRange(BookDateTimeByRequest req) {
         int year = req.getYear();
         int month = req.getMonth() == null ? 1 : req.getMonth();
@@ -236,7 +278,11 @@ public class BookServiceImpl implements BookService {
         }
         return new LocalDateTime[]{start, end};
     }
+
+    // SLF4J — lombok @Slf4j 没启用,手动声明
+    private static final org.slf4j.Logger log = org.slf4j.LoggerFactory.getLogger(BookServiceImpl.class);
 }
+
 /**
  * `@Transactional(rollbackFor = Exception.class)` 写在**写操作**上 — `rollbackFor = Exception.class` 表示**任何异常都回滚**(默认只回滚 RuntimeException)
  * `BeanUtils.copyProperties(req, existing)` **不复制 null 字段** → 部分更新只覆盖前端传来的字段

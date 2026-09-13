@@ -60,14 +60,18 @@
         id, order_id, book_id, quantity, price, created_time
     </sql>
 
+    <!--
+        时间字段显式写入,不依赖 DB 的 DEFAULT CURRENT_TIMESTAMP
+        (DDL 被误改 / 迁移到不支持的库时,NULL 时间戳会导致排序和审计失效)
+    -->
     <insert id="insertOrder" parameterType="com.tmt.TMLibrary.entity.Order" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO orders (order_number, user_id, total_amount, order_status, expire_time)
-        VALUES (#{orderNumber}, #{userId}, #{totalAmount}, #{orderStatus}, #{expireTime})
+        INSERT INTO orders (order_number, user_id, total_amount, order_status, expire_time, created_time, updated_time)
+        VALUES (#{orderNumber}, #{userId}, #{totalAmount}, #{orderStatus}, #{expireTime}, #{createdTime}, #{updatedTime})
     </insert>
 
     <insert id="insertOrderItem" parameterType="com.tmt.TMLibrary.entity.OrderItem" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO order_items (order_id, book_id, quantity, price)
-        VALUES (#{orderId}, #{bookId}, #{quantity}, #{price})
+        INSERT INTO order_items (order_id, book_id, quantity, price, created_time)
+        VALUES (#{orderId}, #{bookId}, #{quantity}, #{price}, #{createdTime})
     </insert>
 
     <select id="selectOrderByOrderNumberForUpdate" resultMap="OrderResultMap">
@@ -121,10 +125,15 @@
     <!-- 右连接: 包含所有订单项，即使没有对应的订单，格式：RIGHT JOIN -->
     <!-- union: 合并两个或多个 SELECT 语句的结果，格式：UNION -->
 
-    <update id="updateStatusByOrderNumber">
+    <!--
+        状态守卫 UPDATE — 只有 fromStatus 才能改成 toStatus
+        返回 0 = 状态不匹配(被人抢先改),rowsAffected = 0 时调用方应拒绝后续动作
+    -->
+    <update id="updateStatusByOrderNumberGuard">
         UPDATE orders
-        SET order_status = #{status}
+        SET order_status = #{toStatus}
         WHERE order_number = #{orderNumber}
+          AND order_status = #{fromStatus}
     </update>
 
     <select id="selectOrderWithItemsByUserId" resultMap="OrderWithItemsResultMap">

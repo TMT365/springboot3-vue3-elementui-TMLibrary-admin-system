@@ -32,6 +32,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RequiredArgsConstructor
 public class BookController {
 
+    /** 单页最大条数 — 与 BookSearchRequest/UserSearchRequest 的 compact() 上限保持一致 */
+    private static final int MAX_PAGE_SIZE = 100;
+
     private final BookService bookService;
 
     /**
@@ -44,8 +47,11 @@ public class BookController {
     public Result<PageResult<Book>> list(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int size) {
-        log.info("前端请求/api/books/list?page={}&size={}", page, size);
-        return Result.success(bookService.page(page, size));
+        // 归一化:page 至少 1,size 限制在 [1, 100] — 防止 size=99999999 打爆 DB
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
+        log.info("前端请求/api/books/list?page={}&size={}", safePage, safeSize);
+        return Result.success(bookService.page(safePage, safeSize));
     }
 
     /**
