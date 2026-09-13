@@ -1,6 +1,7 @@
 package com.tmt.TMLibrary.security.jwt;
 
 import java.util.List;
+import java.util.Set;
 
 import com.tmt.TMLibrary.common.redis.RedisKeys;
 import com.tmt.TMLibrary.security.AuthErrorWriter;
@@ -22,14 +23,35 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 // 不要加 @Component!由 SecurityConfig 的 FilterRegistrationBean 显式注册,避免被默认 servlet 注册一次 + 这里再注册一次。
 public class JwtAuthFilter extends OncePerRequestFilter {
 
-    /** 精确匹配 — 避免 "/api/users/login-xxx" 这类路径被误放行 */
-    private static final List<String> WHITELIST_EXACT = List.of(
-            "/api/users/login",
-            "/api/users/register");
+    /**
+     * 免鉴权规则。
+     *
+     * <p><b>为什么要带 HTTP 方法</b>:图书模块的读接口(商城/详情页,GET)必须对未登录
+     * 访客开放,而同一路径前缀下的写接口(新建/修改/删除图书、盘点调整库存)
+     * 必须要求 token。若只按路径前缀放行 {@code /api/books},写操作会被一起放行。</p>
+     *
+     * @param path   路径(精确匹配)或前缀
+     * @param methods 允许的方法;空集合表示不限方法
+     * @param exact  true=精确匹配,false=前缀匹配
+     */
+    private record WhitelistRule(String path, Set<String> methods, boolean exact) {
+        boolean matches(String requestPath, String requestMethod) {
+            if (!methods.isEmpty() && !methods.contains(requestMethod)) {
+                return false;
+            }
+            return exact ? path.equals(requestPath) : requestPath.startsWith(path);
+        }
+    }
 
-    /** 前缀匹配 — 仅用于有子路径的模块 */
-    private static final List<String> WHITELIST_PREFIX = List.of(
-            "/api/captcha/");
+    private static final List<WhitelistRule> WHITELIST = List.of(
+            // 认证入口:仅 POST
+            new WhitelistRule("/api/users/login", Set.of("POST"), true),
+            new WhitelistRule("/api/users/register", Set.of("POST"), true),
+            // 验证码:POST 取图,前缀匹配
+            new WhitelistRule("/api/captcha/", Set.of("POST"), false),
+            // 图书展示:所有 GET 放行(未登录可浏览商城/图书列表/详情/搜索),
+            // 同一前缀下的 POST/PATCH/DELETE(新建、修改、删书、盘点调库存)仍需 token
+            new WhitelistRule("/api/books", Set.of("GET"), false));
 
     private final JwtService jwtService;
     private final AuthErrorWriter errorWriter;
@@ -54,7 +76,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
         }
 
         // ② 白名单放行
-        if (isWhitelisted(path)) {
+        if (isWhitelisted(path, req.getMethod())) {
             chain.doFilter(req, resp);
             return;
         }
@@ -98,19 +120,12 @@ public class JwtAuthFilter extends OncePerRequestFilter {
     }
 
     /**
-     * 这里使用 .stream()是一种快速的处理数据的方式。等价于使用最基础的for循环
-     * <pre>
-     * for (int i = 0; i < WHITELIST.size(); i++) {
-     *     if (path.startsWith(WHITELIST.get(i))) {
-     *         return true;
-     *     }
-     * }
-     * return false;
-     * </pre>
+     * 判断请求是否免鉴权。
+     *
+     * @param path   请求路径(不含 query string)
+     * @param method HTTP 方法,如 GET / POST
      */
-
-    private boolean isWhitelisted(String path) {
-        return WHITELIST_EXACT.contains(path)
-                || WHITELIST_PREFIX.stream().anyMatch(path::startsWith);
+    private boolean isWhitelisted(String path, String method) {
+        return WHITELIST.stream().anyMatch(rule -> rule.matches(path, method));
     }
 }

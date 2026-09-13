@@ -50,7 +50,21 @@
 
 ### 1.3 鉴权(JWT)
 
-- 除白名单(`/api/users/login`、`/api/users/register`、`/api/captcha/**`)外,所有接口**必须**携带 `Authorization: Bearer <token>`。
+- **免鉴权白名单**(按「路径 + HTTP 方法」判定):
+
+  | 路径 | 方法 | 说明 |
+  |---|---|---|
+  | `/api/users/login` | `POST` | 登录 |
+  | `/api/users/register` | `POST` | 注册 |
+  | `/api/captcha/**` | `POST` | 验证码 |
+  | `/api/books**` | **`GET`** | 图书展示:商城、列表、详情、三种粒度搜索 |
+
+  > 图书模块**只有 GET 放行**。同一前缀下的 `POST /api/books/created`、
+  > `PATCH /api/books/{isbn}`、`PATCH /api/books/{isbn}/stock`、
+  > `DELETE /api/books/deleted/isbn/{isbn}` 仍**必须**携带 token。
+
+- 其余接口(含 `GET /api/users/**`、`GET /api/purchases/**`)一律要求
+  `Authorization: Bearer <token>`。
 - token 由 `POST /api/users/login` 返回,前端保存到 localStorage。
 - token 过期 / 被登出 / 缺失 → **HTTP 401**,`code=401`,`msg` 为 `缺少 Authorization 头` / `令牌无效` / `Token已登出作废，请重新登录` 之一。
 - 当前用户信息由 JwtAuthFilter 解析后写入 request attribute `CURRENT_USER`(内部机制,客户端无感)。
