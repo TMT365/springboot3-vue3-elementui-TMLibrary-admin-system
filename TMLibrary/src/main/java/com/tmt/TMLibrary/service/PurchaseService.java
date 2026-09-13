@@ -115,4 +115,15 @@ public interface PurchaseService {
      * @param orderNumber 订单号
      */
     void cancelExpiredOrder(Long orderNumber);
+
+    /**
+     * 查出已超时但未关闭的订单号 —— 供超时关单的 DB 兜底扫描使用。
+     *
+     * <p>Redis 的超时索引丢失时,这些订单不会被任何机制发现。调用方拿到订单号后
+     * 应逐个走 {@link #cancelExpiredOrder(Long)}(经过 Spring 代理以确保事务生效)。</p>
+     *
+     * @param limit 单轮最多取多少条
+     * @return 超时订单号,按 expire_time 升序
+     */
+    java.util.List<Long> findExpiredPendingOrderNumbers(int limit);
 }

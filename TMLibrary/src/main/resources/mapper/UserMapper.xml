@@ -103,6 +103,8 @@
             <if test="userSearchRequest.accountLockedUntilEnd != null">AND account_locked_until &lt;= #{userSearchRequest.accountLockedUntilEnd}</if>
             <if test="userSearchRequest.lastLoginIp != null and userSearchRequest.lastLoginIp != '' ">AND last_login_ip = #{userSearchRequest.lastLoginIp}</if>
         </where>
+        <!-- 必须有 ORDER BY:无排序的 LIMIT offset,n 分页在各页之间可能重复或漏记录 -->
+        ORDER BY id ASC
         LIMIT #{offset}, #{limit}
     </select>
 

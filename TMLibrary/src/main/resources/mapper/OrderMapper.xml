@@ -137,6 +137,21 @@
           AND order_status = #{fromStatus}
     </update>
 
+    <!--
+        超时关单的 DB 兜底:找出已过期但状态仍为 PENDING 的订单号。
+        - 走 idx_orders_status_expire (order_status, expire_time)
+        - ORDER BY expire_time 让最旧的先被处理
+        - LIMIT 防止单轮拉出过多
+    -->
+    <select id="selectExpiredPendingOrderNumbers" resultType="java.lang.Long">
+        SELECT order_number
+        FROM orders
+        WHERE order_status = #{status}
+          AND expire_time &lt; NOW()
+        ORDER BY expire_time ASC
+        LIMIT #{limit}
+    </select>
+
     <select id="selectOrderWithItemsByUserId" resultMap="OrderWithItemsResultMap">
         SELECT o.id AS o_id,
         o.order_number,

@@ -49,12 +49,14 @@ CREATE TABLE IF NOT EXISTS `users` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_users_username` (`username`),
 
-    -- 列表查询默认按 role + status 过滤,并按 created_time 排序
+    -- 只保留主查询真正用到的索引:
+    --   role + status 是列表的固定过滤条件,created_time 支持区间筛选与排序
+    -- 说明:列表还支持 account_locked_until / failed_login_attempts / deleted_at 等
+    --       可选筛选,但这些属于低频后台排查条件,为其各建一个索引会让写放大明显
+    --       而不划算 —— 未命中时走全表扫描,用户量级下可接受。
+    --       若日后这些筛选变高频,再按需补索引。
     KEY `idx_users_role_status_created` (`role`, `status`, `created_time`),
-    KEY `idx_users_created_time`        (`created_time`),
-    KEY `idx_users_locked_until`        (`account_locked_until`),
-    KEY `idx_users_failed_attempts`     (`failed_login_attempts`),
-    KEY `idx_users_deleted_at`          (`deleted_at`)
+    KEY `idx_users_created_time`        (`created_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='用户';
 
 -- 可选:若业务要求邮箱/手机号唯一,再放开下面两个约束

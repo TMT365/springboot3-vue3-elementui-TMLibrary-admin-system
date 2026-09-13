@@ -484,6 +484,9 @@ HTTP/1.1 401 Unauthorized
   4. 写 Redis 双 key:Hash 订单数据 + ZSet 历史/超时索引
      (Redis 写失败同样触发第 2 步的反向释放,不留库存泄漏)
   5. 订单 30 分钟未支付 → 定时任务自动关单(CANCELLED + 释放库存)
+     - 正常路径:扫描 Redis 超时索引发现订单
+     - **DB 兜底**:随后按 `orders.status=PENDING AND expire_time < NOW()` 再扫一遍,
+       覆盖 Redis 索引丢失(淘汰/重启/误删)的场景 —— 否则这些订单会永久停留在 PENDING
 
 - **响应 data**:`int`(新订单 ID)
 
@@ -686,6 +689,7 @@ HTTP/1.1 401 Unauthorized
 | `tmlibrary_inventory_drift_total` | Lua 返回负值,Redis 库存已偏离真值 | 查 `INVENTORY DRIFT` 日志定位根因;对账任务会修复数值 |
 | `tmlibrary_inventory_reconcile_repaired_total` | 对账任务发现并修复了不一致 | 持续增长说明漂移在反复发生,需定位来源 |
 | `tmlibrary_order_compensate_failed_total` | 下单失败后回滚预占也失败 | **任何非零值都应告警**,需人工对账 |
+| `tmlibrary_order_expire_db_fallback_total` | DB 兜底扫描发现"Redis 索引里没有的过期订单" | 非零即说明 Redis 超时索引已不可靠(淘汰/重启丢失),关单正退化为依赖 DB 兜底 |
 
 > ⚠️ **安全提示**:`JwtAuthFilter` 只注册在 `/api/*` 上,`/actuator/**` **不走 JWT 鉴权**。
 > 当前仅暴露 `health` 与 `metrics`;生产环境建议改用独立 management 端口,

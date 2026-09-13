@@ -69,12 +69,14 @@ CREATE TABLE IF NOT EXISTS `users` (
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_users_username` (`username`),
 
-    -- 列表查询默认按 role + status 过滤,并按 created_time 排序
+    -- 只保留主查询真正用到的索引:
+    --   role + status 是列表的固定过滤条件,created_time 支持区间筛选与排序
+    -- 说明:列表还支持 account_locked_until / failed_login_attempts / deleted_at 等
+    --       可选筛选,但这些属于低频后台排查条件,为其各建一个索引会让写放大明显
+    --       而不划算 —— 未命中时走全表扫描,用户量级下可接受。
+    --       若日后这些筛选变高频,再按需补索引。
     KEY `idx_users_role_status_created` (`role`, `status`, `created_time`),
-    KEY `idx_users_created_time`        (`created_time`),
-    KEY `idx_users_locked_until`        (`account_locked_until`),
-    KEY `idx_users_failed_attempts`     (`failed_login_attempts`),
-    KEY `idx_users_deleted_at`          (`deleted_at`)
+    KEY `idx_users_created_time`        (`created_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='用户';
 
 -- 可选:若业务要求邮箱/手机号唯一,再放开下面两个约束
@@ -141,7 +143,11 @@ CREATE TABLE IF NOT EXISTS `orders` (
 
     -- 用户订单列表
     KEY `idx_orders_user_id` (`user_id`),
-    -- 超时关单扫描:按状态过滤 + 过期时间排序
+    -- 超时关单的 DB 兜底扫描:
+    --   SELECT order_number FROM orders WHERE order_status = ? AND expire_time < NOW()
+    --   ORDER BY expire_time  (OrderExpireScheduler.scanDbFallback)
+    -- 正常路径由 Redis ZSet 发现订单;本索引服务于"Redis 索引丢失"时的兜底,
+    -- 保证关单能力不依赖单一存储
     KEY `idx_orders_status_expire` (`order_status`, `expire_time`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='订单';
 
@@ -161,7 +167,9 @@ CREATE TABLE IF NOT EXISTS `order_items` (
     `created_time` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
 
     PRIMARY KEY (`id`),
+    -- 订单详情 JOIN:ON o.id = oi.order_id
     KEY `idx_order_items_order_id` (`order_id`),
+    -- 当前无查询按 book_id 过滤;保留供后续"按图书统计销量"等需求使用
     KEY `idx_order_items_book_id`  (`book_id`),
 
     CONSTRAINT `chk_order_items_quantity_positive` CHECK (`quantity` > 0)
@@ -192,10 +200,7 @@ CREATE TABLE IF NOT EXISTS `order_items` (
 --
 -- ALTER TABLE `users`
 --   ADD INDEX `idx_users_role_status_created` (`role`, `status`, `created_time`),
---   ADD INDEX `idx_users_created_time` (`created_time`),
---   ADD INDEX `idx_users_locked_until` (`account_locked_until`),
---   ADD INDEX `idx_users_failed_attempts` (`failed_login_attempts`),
---   ADD INDEX `idx_users_deleted_at` (`deleted_at`);
+--   ADD INDEX `idx_users_created_time` (`created_time`);
 --
 -- ALTER TABLE `books`
 --   ADD INDEX `idx_books_published_date` (`published_date`),

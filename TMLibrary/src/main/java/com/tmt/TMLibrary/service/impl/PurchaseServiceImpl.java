@@ -564,4 +564,14 @@ public class PurchaseServiceImpl implements PurchaseService {
             redisOp.run();
         }
     }
+
+    @Override
+    public java.util.List<Long> findExpiredPendingOrderNumbers(int limit) {
+        if (limit <= 0) {
+            return java.util.Collections.emptyList();
+        }
+        java.util.List<Long> numbers = orderMapper.selectExpiredPendingOrderNumbers(
+            OrderStatus.PENDING.getCode(), limit);
+        return numbers == null ? java.util.Collections.emptyList() : numbers;
+    }
 }

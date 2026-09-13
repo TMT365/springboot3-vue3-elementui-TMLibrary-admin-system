@@ -1,5 +1,6 @@
 package com.tmt.TMLibrary.scheduler;
 
+import com.tmt.TMLibrary.common.metrics.InventoryMetrics;
 import com.tmt.TMLibrary.common.redis.RedisKeys;
 import com.tmt.TMLibrary.service.PurchaseService;
 
@@ -82,14 +83,23 @@ public class OrderExpireScheduler {
         "  return 0 " +
         "end";
 
+    /**
+     * DB 兜底单轮最多处理多少条 —— 与 Redis 扫描共用同一个锁,故不宜过大,
+     * 否则会拖长持锁时间。
+     */
+    private static final int DB_FALLBACK_LIMIT = 500;
+
     private final StringRedisTemplate stringRedisTemplate;
     private final PurchaseService purchaseService;
+    private final InventoryMetrics metrics;
     private final DefaultRedisScript<Long> unlockScript;
 
     public OrderExpireScheduler(StringRedisTemplate stringRedisTemplate,
-                                PurchaseService purchaseService) {
+                                PurchaseService purchaseService,
+                                InventoryMetrics metrics) {
         this.stringRedisTemplate = stringRedisTemplate;
         this.purchaseService = purchaseService;
+        this.metrics = metrics;
         this.unlockScript = new DefaultRedisScript<>(UNLOCK_LUA, Long.class);
     }
 
@@ -110,6 +120,9 @@ public class OrderExpireScheduler {
 
         try {
             doScan();
+            // Redis 扫描之后跑一遍 DB 兜底:若 Redis 的超时索引丢失(淘汰/重启/误删),
+            // 仅靠 Redis 会让这些订单永久停留在 PENDING
+            scanDbFallback();
         } catch (Exception e) {
             log.error("[order-expire] scan failed", e);
         } finally {
@@ -165,5 +178,38 @@ public class OrderExpireScheduler {
         }
         log.warn("[order-expire] idx {} hit batch limit ({}), remaining entries deferred to next run",
             idxKey, MAX_BATCHES_PER_IDX);
+    }
+
+    /**
+     * DB 兜底扫描 —— 按 {@code orders.expire_time} 找出仍为 PENDING 的超时订单。
+     *
+     * <p>正常路径下这些订单已由 Redis ZSet 发现并关闭,本方法应当<b>查不到任何数据</b>
+     * (命中即说明 Redis 索引不可靠)。查到后逐个走 {@link PurchaseService#cancelExpiredOrder(Long)},
+     * 注意必须经过 Spring 代理调用,事务注解才会生效,因此不把循环放进 Service 内部。</p>
+     */
+    private void scanDbFallback() {
+        List<Long> expired;
+        try {
+            expired = purchaseService.findExpiredPendingOrderNumbers(DB_FALLBACK_LIMIT);
+        } catch (Exception e) {
+            log.warn("[order-expire] DB fallback query failed: {}", e.getMessage());
+            return;
+        }
+        if (expired == null || expired.isEmpty()) {
+            return;
+        }
+
+        log.warn("[order-expire] DB fallback found {} expired PENDING order(s) missing from Redis idx "
+            + "— Redis 超时索引可能已丢失,请检查", expired.size());
+        metrics.expireDbFallbackHit();
+
+        for (Long orderNumber : expired) {
+            try {
+                purchaseService.cancelExpiredOrder(orderNumber);
+            } catch (Exception e) {
+                log.warn("[order-expire] DB fallback failed to cancel order {}: {}",
+                    orderNumber, e.getMessage());
+            }
+        }
     }
 }

@@ -25,6 +25,11 @@ import java.util.concurrent.ConcurrentHashMap;
  *     <td>若持续增长,说明漂移在反复发生,需定位来源而非依赖对账</td>
  *   </tr>
  *   <tr>
+ *     <td>{@code tmlibrary_order_expire_db_fallback_total}</td>
+ *     <td>DB 兜底扫描发现"Redis 索引里没有的过期订单"</td>
+ *     <td>非零即告警:Redis 超时索引已不可靠,关单退化为依赖 DB</td>
+ *   </tr>
+ *   <tr>
  *     <td>{@code tmlibrary_order_compensate_failed_total}</td>
  *     <td>下单失败后回滚预占也失败 —— <b>需要人工对账</b></td>
  *     <td>任何非零值都应告警</td>
@@ -39,6 +44,7 @@ public class InventoryMetrics {
     private static final String DRIFT = "tmlibrary_inventory_drift_total";
     private static final String RECONCILE_REPAIRED = "tmlibrary_inventory_reconcile_repaired_total";
     private static final String COMPENSATE_FAILED = "tmlibrary_order_compensate_failed_total";
+    private static final String EXPIRE_DB_FALLBACK = "tmlibrary_order_expire_db_fallback_total";
 
     private final MeterRegistry registry;
     /** Counter 按 tag 缓存 — 避免每次打点都重建 meter(建 meter 有锁开销) */
@@ -74,6 +80,16 @@ public class InventoryMetrics {
      */
     public void orderCompensateFailed(int bookId) {
         counter(COMPENSATE_FAILED, "bookId", String.valueOf(bookId)).increment();
+    }
+
+    /**
+     * 记录一次"DB 兜底扫描命中"——即发现了 Redis 超时索引里没有的过期订单。
+     *
+     * <p><b>非零即告警</b>:说明 Redis 的 pending:expire 索引已经不可靠
+     * (被淘汰 / 重启丢失 / 误删),订单关单正在退化为依赖 DB 兜底。</p>
+     */
+    public void expireDbFallbackHit() {
+        counter(EXPIRE_DB_FALLBACK).increment();
     }
 
     private Counter counter(String name, String... tags) {

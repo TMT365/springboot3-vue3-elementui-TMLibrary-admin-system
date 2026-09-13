@@ -63,4 +63,20 @@ public interface OrderMapper {
     int updateStatusByOrderNumberGuard(@Param("orderNumber") Long orderNumber,
                                        @Param("fromStatus") Integer fromStatus,
                                        @Param("toStatus") Integer toStatus);
+
+    /**
+     * 查出"已超时但仍未关闭"的订单号 —— 供超时关单的 <b>DB 兜底扫描</b>使用。
+     *
+     * <p>正常情况下超时订单由 Redis ZSet 索引发现。但若该索引丢失
+     * (Redis 淘汰/重启/误删),这些订单将永远不会被关闭,预占也不释放。
+     * 本查询按 DB 的 {@code expire_time} 兜底,使关单能力不依赖单一存储。</p>
+     *
+     * <p>依赖索引 {@code idx_orders_status_expire (order_status, expire_time)}。</p>
+     *
+     * @param status 订单状态(传 PENDING 的 code)
+     * @param limit  单轮最多取多少条,防止一次拉出大量订单
+     * @return 超时订单号,按 expire_time 升序(最旧的优先处理)
+     */
+    List<Long> selectExpiredPendingOrderNumbers(@Param("status") Integer status,
+                                                @Param("limit") int limit);
 }

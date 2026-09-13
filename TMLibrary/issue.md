@@ -1,13 +1,23 @@
 # TMLibrary 遗留问题清单
 
-> 更新时间:2026-09-13(第五轮修复后)
+> 更新时间:2026-09-13(第六轮修复后)
 > 状态:前两轮发现的逻辑问题**已全部修复**。本文件保留完整的修复记录供追溯。
 
 ---
 
 ## 附:已修复清单
 
-### 第五轮(本次)
+### 第六轮(本次)
+
+| 编号 | 问题 | 修复方式 |
+|---|---|---|
+| **索引未与实际查询对齐** | 建表脚本的二级索引部分是我推测的,未逐个核对是否有查询使用。核实后发现 `idx_orders_status_expire` 与 `idx_order_items_book_id` **完全无用**;users 表 6 个索引服务一个后台列表,偏重 | 见下三项 |
+| **超时关单只依赖 Redis(缺陷根源)** | `expire_time` 列只写不读,超时订单的发现完全依赖 Redis ZSet —— 该索引丢失时订单**永久停留 PENDING**,预占不释放;且对账任务会把幽灵预占当成合法值固化下来 | 新增 DB 兜底扫描:`SELECT order_number FROM orders WHERE order_status=PENDING AND expire_time < NOW()`(走 `idx_orders_status_expire`),调度器在 Redis 扫描后执行;命中即打 WARN + 新增指标 `tmlibrary_order_expire_db_fallback_total` |
+| **users 索引过重** | 6 个索引中 3 个仅服务低频可选筛选(锁定时间/失败次数/软删时间) | 精简为 3 个(`uk_username` + `role,status,created_time` + `created_time`),低频筛选走全表扫描并在注释中说明取舍 |
+| **users 列表分页无 ORDER BY** | `LIMIT offset,n` 无排序时翻页可能重复或漏记录(books 侧有 `ORDER BY id`,users 侧漏了) | 补 `ORDER BY id ASC` |
+| `idx_order_items_book_id` | 当前无查询使用 | 按需求**保留**,注释改为"保留供后续按图书统计销量" |
+
+### 第五轮
 
 | 编号 | 问题 | 修复方式 |
 |---|---|---|
