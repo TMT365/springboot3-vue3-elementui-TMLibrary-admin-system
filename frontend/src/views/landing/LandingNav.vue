@@ -155,8 +155,8 @@ function scrollToAnchor(anchor: string) {
 }
 
 .nav-inner {
-  max-width: 1200px;
-  margin: 0 auto;
+  max-width: 100vw;
+  margin: 0 0;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -227,9 +227,8 @@ function scrollToAnchor(anchor: string) {
   padding: 8px 14px;
   color: var(--color-text, #212121);
   text-decoration: none;
-  font-size: 14px;
+  font-size: 18px;
   font-weight: 500;
-  border-radius: 6px;
   transition: background 150ms ease;
   cursor: pointer;
 }
@@ -237,6 +236,7 @@ function scrollToAnchor(anchor: string) {
 .nav-link:hover {
   background: var(--color-bg-alt, #f5f5f5);
   color: var(--color-accent, #4caf50);
+  border: 1px solid var(--color-accent, #4caf50);
 }
 
 .has-children > .nav-link::after {
@@ -289,6 +289,11 @@ function scrollToAnchor(anchor: string) {
   display: flex;
   align-items: center;
   gap: 14px;
+  /* 跟前面的 logo + nav-links 拉开:auto margin 吸收剩余空间,
+     让 logo + ul 挤在左边,.nav-actions 推至最右。
+     对桌面端生效;移动端 nav-links 走 position: absolute,
+     视觉上 logo 左 / nav-actions + 汉堡挤在右,也合理。 */
+  margin-left: auto;
 }
 
 .theme-toggle {

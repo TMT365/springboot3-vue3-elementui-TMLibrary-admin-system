@@ -21,39 +21,14 @@
  * - BackToTop  -  滚动后右下角
  */
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useLoadingStore } from '@/stores/loading'
 import LandingNav from './LandingNav.vue'
 import LoadingScreen from './LoadingScreen.vue'
 import BackToTop from './BackToTop.vue'
 
+const loadingStore = useLoadingStore()
+
 const heroTitle = 'Manage Your Library Beautifully'
-
-// 标题字母动画数据  -  IIFE 只算一次,random 位置固定下来
-// - inDelay: phase 1(中间→两边展开)的延迟
-// - startX/Y: phase 1 起始的随机偏移(中间区域内的随机点)
-// - outDelay: phase 2(从左往右浮起波)的延迟
-const titleChars = (() => {
-  const chars = heroTitle.split('')
-  const len = chars.length
-  const center = (len - 1) / 2
-
-  return chars.map((char, i) => {
-    // 入场延迟:距离字符串中心越远,延迟越大(中间先出),最大 300ms
-    const distFromCenter = Math.abs(i - center)
-    const maxDist = center
-    const inDelay = Math.round((distFromCenter / maxDist) * 300)
-
-    // 起始位置:全部集中在标题中间区域随机分布(±100px 横向,±30px 纵向)
-    const startX = Math.round((Math.random() - 0.5) * 200)
-    const startY = Math.round((Math.random() - 0.5) * 60)
-
-    return {
-      char: char === ' ' ? ' ' : char,
-      startX,
-      startY,
-      inDelay,
-    }
-  })
-})()
 
 const features = [
   {
@@ -162,6 +137,7 @@ onUnmounted(pauseShowcase)
 <template>
   <LoadingScreen />
 
+  <template v-if="!loadingStore.isLoading">
   <a href="#landing-main" class="skip-link">跳过导航,直达主内容</a>
 
   <LandingNav />
@@ -174,18 +150,7 @@ onUnmounted(pauseShowcase)
           Spring Boot · Vue 3 · Element Plus
         </div>
 
-        <h1 class="hero-title">
-          <span
-            v-for="(item, i) in titleChars"
-            :key="i"
-            class="hero-char"
-            :style="{
-              '--start-x': item.startX + 'px',
-              '--start-y': item.startY + 'px',
-              '--in-delay': item.inDelay + 'ms',
-            }"
-          >{{ item.char }}</span>
-        </h1>
+        <h1 class="hero-title">{{ heroTitle }}</h1>
 
         <p class="hero-subtitle">
           一个用现代全栈技术搭建的图书管理系统。
@@ -488,6 +453,7 @@ onUnmounted(pauseShowcase)
   </main>
 
   <BackToTop />
+  </template>
 </template>
 
 <style scoped>
@@ -568,13 +534,37 @@ onUnmounted(pauseShowcase)
  * ============================================================= */
 .hero {
   position: relative;
-  padding: clamp(80px, 14vw, 160px) 24px clamp(60px, 10vw, 120px);
+  /* 占满整个画面 — 100dvh 适配移动端浏览器地址栏收起/展开 */
+  min-height: 100vh;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0 24px;
   text-align: center;
   overflow: hidden;
+
+  /* 3D 主题背景 — 多层 radial + linear 叠加,营造光感与层次
+     第 1 层:顶部光晕(accent 绿),模拟主光源从上方斜照
+     第 2 层:底部暖光(emphasis 琥珀),平衡冷暖
+     第 3 层:垂直渐变 bg → bg-alt,给底色加纵深 */
+  background:
+    radial-gradient(ellipse 90% 50% at 50% 0%, rgba(76, 175, 80, 0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(255, 193, 7, 0.07) 0%, transparent 60%),
+    linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg) 50%, var(--color-bg-alt) 100%);
+}
+
+:root[data-theme='dark'] .hero {
+  /* 暗模式:深底反衬,光感增强(高 1.5-2× 不透明度),色相更亮 */
+  background:
+    radial-gradient(ellipse 90% 50% at 50% 0%, rgba(102, 187, 106, 0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(255, 213, 79, 0.10) 0%, transparent 60%),
+    linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg) 50%, var(--color-bg-alt) 100%);
 }
 
 .hero-inner {
-  max-width: 880px;
+  max-width: 100%;
   margin: 0 auto;
   position: relative;
   z-index: 2;
@@ -594,40 +584,16 @@ onUnmounted(pauseShowcase)
 }
 
 .hero-title {
-  font-family: 'DM Serif Display', Georgia, serif;
-  font-size: clamp(36px, 6vw, 64px);
-  font-weight: 400; /* DM Serif Display 只有 400,本身就是 dramatic 饱满展示字 */
-  line-height: 1.1;
-  letter-spacing: -0.025em;
+  /* 学术 / 论文风:Times 系栈,系统自带,零外部字体依赖 */
+  font-family: 'Times New Roman', 'Times', Georgia, serif;
+  font-size: clamp(56px, 9vw, 128px);
+  font-weight: 700;
+  line-height: 1.05;
+  letter-spacing: -0.02em;
+  /* 跟随主题:亮模式 #212121(几乎纯黑)、暗模式 #f5f5f5(几乎纯白),
+     不写死 #000 是为了避免暗模式下黑字落在黑底上。 */
   color: var(--color-text);
-  margin: 0 0 24px;
-}
-
-.hero-char {
-  display: inline-block;
-  opacity: 0;
-  /* 单一入场动画:字母从中间随机位置飞到最终位置(中间字母先动,合计 ~1.5s) */
-  animation: char-in 1200ms cubic-bezier(0.22, 1, 0.36, 1) var(--in-delay, 0ms) forwards;
-  color: var(--color-accent);
-}
-
-.hero-char:nth-child(3n) {
-  color: var(--color-text);
-}
-
-/* 入场:字母从中间随机位置飞到最终位置(中间先出),700ms 后全部就位 */
-@keyframes char-in {
-  0% {
-    opacity: 0;
-    transform: translate(var(--start-x, 0px), var(--start-y, 0px)) scale(0.6);
-  }
-  60% {
-    opacity: 1;
-  }
-  100% {
-    opacity: 1;
-    transform: translate(0, 0) scale(1);
-  }
+  margin: 0 0 32px;
 }
 
 .hero-subtitle {
@@ -895,7 +861,6 @@ onUnmounted(pauseShowcase)
   height: 400px;
   top: -100px;
   right: -120px;
-  animation: float-1 12s ease-in-out infinite;
 }
 
 .deco-circle-2 {
@@ -903,27 +868,6 @@ onUnmounted(pauseShowcase)
   height: 320px;
   bottom: -80px;
   left: -100px;
-  animation: float-2 14s ease-in-out infinite;
-}
-
-@keyframes float-1 {
-  0%,
-  100% {
-    transform: translate(0, 0);
-  }
-  50% {
-    transform: translate(-20px, 20px);
-  }
-}
-
-@keyframes float-2 {
-  0%,
-  100% {
-    transform: translate(0, 0);
-  }
-  50% {
-    transform: translate(20px, -20px);
-  }
 }
 
 /* =============================================================
