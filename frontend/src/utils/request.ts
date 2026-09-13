@@ -5,7 +5,7 @@
  * 1. 注入 Authorization 头(request interceptor)
  * 2. 解包 Result<T> 壳 → caller 拿到干净的 T
  * 3. 401 处理:清 store + 跳 /login?redirect=...(防并发重入)
- * 4. 业务错误:ElMessage.error + 抛 ApiError
+ * 4. 业务错误:后端返回真实 HTTP 状态码,此处解包响应体 → ElMessage.error + 抛 ApiError
  * 5. 网络错误:ElMessage.error + 抛 ApiError
  *
  * 单向依赖避免环:request.ts → router + stores/user;stores/user.ts 不引 request.ts
@@ -91,7 +91,13 @@ export async function http<T = unknown>(config: AxiosRequestConfig): Promise<T> 
   } catch (err) {
     if (axios.isAxiosError(err)) {
       const status = err.response?.status
-      // Filter 写的 401 是裸 HTTP 401,没有 Result 壳
+      const body = err.response?.data
+      // 后端已改为返回真实 HTTP 状态码,错误响应体仍是统一的 Result 壳。
+      // 交给 unwrap 处理:它会展示 result.msg、处理 401、并抛出带业务码的 ApiError。
+      if (body && typeof body === 'object' && 'code' in body) {
+        return unwrap<T>(body)
+      }
+      // 过滤器写的错误是裸 Result 壳之外的场景(理论上不会走到)
       if (status === 401) return handle401()
       ElMessage.error(err.message || '网络错误')
       throw new ApiError(status ?? 0, err.message)

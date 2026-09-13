@@ -22,6 +22,54 @@ public class IpUtil {
         restTemplate = new RestTemplate();
     }
 
+    /**
+     * 仅解析客户端真实 IP —— 纯本地计算,<b>不发起任何网络请求</b>。
+     *
+     * <p>按代理链逐级回退:X-Forwarded-For → Proxy-Client-IP → WL-Proxy-Client-IP
+     * → X-Real-IP → {@code request.getRemoteAddr()}。</p>
+     *
+     * <p>用于登录时记录 {@code last_login_ip}。与 {@link #getClientIp(HttpServletRequest)}
+     * 的区别:后者会调用外部 API 做地理位置解析,属于阻塞式远程调用,
+     * <b>不应放在登录热路径上</b>。</p>
+     *
+     * @return 客户端 IP;无法解析时返回空串(不返回 null,便于直接落库)
+     */
+    public static String resolveClientIp(HttpServletRequest request) {
+        if (request == null) {
+            return "";
+        }
+        String ip = firstNonBlank(
+            request.getHeader("X-Forwarded-For"),
+            request.getHeader("Proxy-Client-IP"),
+            request.getHeader("WL-Proxy-Client-IP"),
+            request.getHeader("X-Real-IP"),
+            request.getRemoteAddr()
+        );
+        if (ip == null) {
+            return "";
+        }
+        // 经过多级代理时取第一个(最靠近客户端的)地址
+        int comma = ip.indexOf(',');
+        if (comma > 0) {
+            ip = ip.substring(0, comma);
+        }
+        ip = ip.trim();
+        // IPv6 回环地址归一化,便于阅读与筛选
+        if ("0:0:0:0:0:0:0:1".equals(ip) || "::1".equals(ip)) {
+            return "127.0.0.1";
+        }
+        return ip;
+    }
+
+    private static String firstNonBlank(String... candidates) {
+        for (String c : candidates) {
+            if (c != null && !c.isBlank() && !"unknown".equalsIgnoreCase(c.trim())) {
+                return c;
+            }
+        }
+        return null;
+    }
+
     public static IpApiVo getClientIp(HttpServletRequest request) {
         String ipAddress = request.getHeader("X-Forwarded-For");
         if (ipAddress == null || ipAddress.isEmpty() || "unknown".equalsIgnoreCase(ipAddress)) {

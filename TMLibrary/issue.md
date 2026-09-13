@@ -1,13 +1,21 @@
 # TMLibrary 遗留问题清单
 
-> 更新时间:2026-09-13(第三轮修复后)
+> 更新时间:2026-09-13(第四轮修复后)
 > 状态:前两轮发现的逻辑问题**已全部修复**。本文件保留完整的修复记录供追溯。
 
 ---
 
 ## 附:已修复清单
 
-### 第三轮(本次)
+### 第四轮(本次)
+
+| 编号 | 问题 | 修复方式 |
+|---|---|---|
+| **TTL 放大 60 倍** | `RandomExpirationTimeWithOffset` 先把值换算成秒、却仍用原单位构造 `Expiration`,导致所有非秒级 TTL 被放大 60 倍(3 分钟 → 3 小时;已用真实 jar 实测确认) | 换算与构造统一使用秒;亚秒级入参兜底为 1 秒;异常类型改为 `IllegalArgumentException` |
+| **lastLoginIp 恒为 NULL** | `LoginRequest.ipAddress` 从未被赋值,导致 `last_login_ip` 永远为空、按 IP 筛选永远无结果 | 新增 `IpUtil.resolveClientIp()`(纯本地解析,不发起网络请求);登录接口注入客户端真实 IP |
+| **HTTP 状态码不统一** | 业务异常一律返回 HTTP 200(错误码仅存在于响应体),而过滤器返回真实 401 —— 网关按状态码统计错误率失真 | `GlobalExceptionHandler` 全部改用 `ResponseEntity`,返回与 `code` 一致的真实状态码;前端 `request.ts` 错误分支改为解包响应体 |
+
+### 第三轮
 
 | 编号 | 问题 | 修复方式 |
 |---|---|---|

@@ -7,6 +7,8 @@ import org.springframework.dao.DuplicateKeyException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.beans.factory.annotation.Value;
@@ -16,6 +18,20 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+/**
+ * 全局异常处理。
+ *
+ * <p><b>HTTP 状态码约定</b>:所有错误响应都返回<b>真实的 HTTP 状态码</b>
+ * (而非一律 200 把错误码塞在响应体里),与 {@code AuthErrorWriter} 写入的
+ * 过滤器错误保持一致。响应体仍是统一的 {@code Result} 壳,便于前端解包:</p>
+ *
+ * <pre>
+ *   HTTP 409
+ *   { "code": 409, "msg": "Insufficient stock for bookId: 5", "data": null }
+ * </pre>
+ *
+ * <p>这样网关/监控按 HTTP 状态统计错误率才不会失真。</p>
+ */
 @Slf4j
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -36,9 +52,9 @@ public class GlobalExceptionHandler {
      * @return
      */
     @ExceptionHandler(BusinessException.class)
-    public Result<Void> handleBusiness(BusinessException e) {
-        log.warn("业务异常: code={}, msg={}]]],", e.getCode(), e.getMessage(), e);
-        return Result.fail(e.getCode(), e.getMessage());
+    public ResponseEntity<Result<Void>> handleBusiness(BusinessException e) {
+        log.warn("业务异常: code={}, msg={}", e.getCode(), e.getMessage(), e);
+        return fail(e.getCode(), e.getMessage());
     }
 
     /**
@@ -47,11 +63,10 @@ public class GlobalExceptionHandler {
      * 转 409 而不是 500，让前端能区分"业务冲突"和"系统异常"。
      */
     @ExceptionHandler(DuplicateKeyException.class)
-    public Result<Void> handleDuplicateKey(DuplicateKeyException e) {
+    public ResponseEntity<Result<Void>> handleDuplicateKey(DuplicateKeyException e) {
         String field = extractConflictField(e.getMessage());
         log.warn("唯一约束冲突: field={}, raw={}", field, e.getMessage(), e);
-        return Result.fail(ResultCode.CONFLICT.getCode(),
-                "数据已存在,字段 [" + field + "] 重复");
+        return fail(ResultCode.CONFLICT.getCode(), "数据已存在,字段 [" + field + "] 重复");
     }
 
     /**
@@ -60,12 +75,12 @@ public class GlobalExceptionHandler {
      * @return
      */
     @ExceptionHandler(MethodArgumentNotValidException.class)
-    public Result<Void> handleValidation(MethodArgumentNotValidException e) {
+    public ResponseEntity<Result<Void>> handleValidation(MethodArgumentNotValidException e) {
         String msg = e.getBindingResult().getFieldErrors().stream()
                 .map(fe -> fe.getField() + ": " + fe.getDefaultMessage())
                 .collect(Collectors.joining("; "));
         log.warn("参数校验失败: {}", msg, e);
-        return Result.fail(ResultCode.BAD_REQUEST.getCode(), msg);
+        return fail(ResultCode.BAD_REQUEST.getCode(), msg);
     }
 
     /**
@@ -74,11 +89,11 @@ public class GlobalExceptionHandler {
      * @return
      */
     @ExceptionHandler(HttpMessageNotReadableException.class)
-    public Result<Void> handleHttpMessageNotReadable(HttpMessageNotReadableException e) {
+    public ResponseEntity<Result<Void>> handleHttpMessageNotReadable(HttpMessageNotReadableException e) {
         // 完整异常(包括 cause 链里的 Jackson 报错)永远写日志,排查时需要
         log.warn("请求体解析失败", e);
         String msg = "prod".equals(activeProfile) ? "请求体格式错误,请检查 JSON 语法" : "请求体解析失败: " + e.getMessage();
-        return Result.fail(ResultCode.BAD_REQUEST.getCode(), msg);
+        return fail(ResultCode.BAD_REQUEST.getCode(), msg);
     }
 
     /**
@@ -87,7 +102,7 @@ public class GlobalExceptionHandler {
      * @return
      */
     @ExceptionHandler(MethodArgumentTypeMismatchException.class)
-    public Result<Void> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException e) {
+    public ResponseEntity<Result<Void>> handleMethodArgumentTypeMismatch(MethodArgumentTypeMismatchException e) {
         // 防御:某些边缘场景下 getRequiredType() 可能为 null,直接调用 .getSimpleName() 会 NPE
         Class<?> requiredType = e.getRequiredType();
         String typeName = requiredType != null ? requiredType.getSimpleName() : "未知类型";
@@ -96,7 +111,7 @@ public class GlobalExceptionHandler {
                 + "],实际=[" + e.getValue() + "]";
         log.warn("参数类型不匹配: {}", msg, e);
         String userMsg = "prod".equals(activeProfile) ? "参数类型不匹配" : msg;
-        return Result.fail(ResultCode.BAD_REQUEST.getCode(), userMsg);
+        return fail(ResultCode.BAD_REQUEST.getCode(), userMsg);
     }
 
     /**
@@ -106,13 +121,13 @@ public class GlobalExceptionHandler {
      * @return
      */
     @ExceptionHandler(DateTimeParseException.class)
-    public Result<Void> handleDateTimeParse(DateTimeParseException e) {
+    public ResponseEntity<Result<Void>> handleDateTimeParse(DateTimeParseException e) {
         // 解析失败的字符串 + 期望格式提示给前端,方便排查
         String msg = "日期/时间格式错误: 输入=[" + e.getParsedString()
                 + "],期望格式=[" + (e.getErrorIndex() >= 0 ? "ISO-8601 (yyyy-MM-dd 或 yyyy-MM-ddTHH:mm:ss)" : "ISO-8601") + "]";
         log.warn("日期/时间解析失败: {}", msg, e);
         String userMsg = "prod".equals(activeProfile) ? "日期/时间格式错误" : msg;
-        return Result.fail(ResultCode.BAD_REQUEST.getCode(), userMsg);
+        return fail(ResultCode.BAD_REQUEST.getCode(), userMsg);
     }
 
     /**
@@ -122,14 +137,14 @@ public class GlobalExceptionHandler {
      * @return
      */
     @ExceptionHandler(Exception.class)
-    public Result<Void> handleAny(Exception e) {
+    public ResponseEntity<Result<Void>> handleAny(Exception e) {
         log.error("系统异常", e);
         String msg = "prod".equals(activeProfile) ? "服务器内部错误" : "服务器内部错误: " + e.getClass().getSimpleName();
         /*
          * 生产环境下不要把异常堆栈信息返回给前端，避免泄露敏感信息。可以在日志中记录详细的异常信息，方便排查问题。
          * 开发环境下可以返回异常类名，方便调试。
         */
-        return Result.fail(ResultCode.INTERNAL_ERROR.getCode(), msg);
+        return fail(ResultCode.INTERNAL_ERROR.getCode(), msg);
     }
 
     /**
@@ -138,6 +153,19 @@ public class GlobalExceptionHandler {
      * @param message
      * @return
      */
+    /**
+     * 构造带真实 HTTP 状态码的错误响应。
+     * <p>业务码与 HTTP 状态码一一对应(400/401/403/404/409/422/500 均为标准状态码);
+     * 若出现非标准业务码,回退为 500 而不是抛异常。</p>
+     */
+    private static ResponseEntity<Result<Void>> fail(int code, String msg) {
+        HttpStatus status = HttpStatus.resolve(code);
+        if (status == null) {
+            status = HttpStatus.INTERNAL_SERVER_ERROR;
+        }
+        return ResponseEntity.status(status).body(Result.fail(code, msg));
+    }
+
     /** 从 MySQL DuplicateKeyException 消息里抽出冲突字段名 */
     private String extractConflictField(String message) {
         if (message == null) return "未知字段";

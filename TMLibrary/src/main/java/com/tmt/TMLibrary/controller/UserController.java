@@ -4,6 +4,7 @@ import com.tmt.TMLibrary.common.Result.PageResult;
 import com.tmt.TMLibrary.common.Result.Result;
 import com.tmt.TMLibrary.common.Result.ResultCode;
 import com.tmt.TMLibrary.common.User.UserRole;
+import com.tmt.TMLibrary.common.utils.IpUtil;
 import com.tmt.TMLibrary.dto.request.UserDeleteRequest;
 import com.tmt.TMLibrary.dto.request.UserPasswordRequest;
 import com.tmt.TMLibrary.dto.response.PurchaseResponse;
@@ -83,7 +84,11 @@ public class UserController {
 
     /** 登录 - POST /api/users/login */
     @PostMapping("/login")
-    public Result<LoginResponse> login(@Valid @RequestBody LoginRequest req) {
+    public Result<LoginResponse> login(@Valid @RequestBody LoginRequest req,
+                                      HttpServletRequest request) {
+        // 客户端 IP 由服务端解析并落库(前端传的不信任)——此前该字段从未被赋值,
+        // 导致 last_login_ip 恒为 NULL、"按登录 IP 筛选"永远查不到数据
+        req.setIpAddress(IpUtil.resolveClientIp(request));
         log.info("前端请求/api/users/login, 参数={}", req);
         LoginResponse response = authService.login(req);
         return Result.success(response);

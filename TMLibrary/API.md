@@ -52,7 +52,7 @@
 
 - 除白名单(`/api/users/login`、`/api/users/register`、`/api/captcha/**`)外,所有接口**必须**携带 `Authorization: Bearer <token>`。
 - token 由 `POST /api/users/login` 返回,前端保存到 localStorage。
-- `GET /api/users/login` 失败或 token 过期/被登出 → HTTP 401,`code=401, msg=缺少 Authorization 头 / 令牌无效 / Token已登出作废`。
+- token 过期 / 被登出 / 缺失 → **HTTP 401**,`code=401`,`msg` 为 `缺少 Authorization 头` / `令牌无效` / `Token已登出作废，请重新登录` 之一。
 - 当前用户信息由 JwtAuthFilter 解析后写入 request attribute `CURRENT_USER`(内部机制,客户端无感)。
 
 ### 1.4 业务状态码 `ResultCode`
@@ -70,15 +70,26 @@
 | 422 | `UNPROCESSABLE_ENTITY` | 业务校验失败 |
 | 500 | `INTERNAL_ERROR` | 服务器内部错误 |
 
+> 上表的 `code` 同时作为 **HTTP 状态码**返回。
+
 ### 1.5 错误响应示例
 
-```json
+**HTTP 状态码与 `code` 字段一致** —— 错误响应使用真实的 HTTP 状态码
+(而非一律返回 200 把错误码塞在响应体里),便于网关/监控按状态码统计错误率。
+响应体仍是统一的 `Result` 壳:
+
+```http
+HTTP/1.1 401 Unauthorized
+
 {
   "code": 401,
-  "msg": "密码错误",
+  "msg": "用户名或密码错误",
   "data": null
 }
 ```
+
+> 过滤器(`JwtAuthFilter`)写入的错误也遵循同一约定,前端可统一按
+> `err.response.data` 解包,无需区分两套风格。
 
 ---
 
