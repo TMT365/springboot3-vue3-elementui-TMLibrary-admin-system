@@ -31,10 +31,10 @@ export default defineConfig({
     // dev 时把 /api/* 反向代理到 Spring Boot 后端
     proxy: {
       '/api': {
-        target: 'http://172.21.224.134:8080',
+        target: 'http://localhost:8080',
         changeOrigin: true,
       },
     },
-    host: '0.0.0.0',
+    host: '127.0.0.1',
   },
 })

@@ -134,9 +134,3 @@ paths are pinned once so typos don't propagate.
 **Add a store**
 1. Create `src/stores/<name>.ts` with `defineStore('<name>', () => { ... })`
 2. Use it in components via `const store = useXxxStore()` (auto-imported)
-
-## Design History
-
-`improve.md` captures the original design intent, color tokens, and the v2 implementation
-backlog (all 12 items now complete). Read it for the "why" behind the Landing page,
-theme tokens, and onboarding animation choices.
