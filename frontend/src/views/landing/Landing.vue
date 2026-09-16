@@ -25,6 +25,7 @@ import { useLoadingStore } from '@/stores/loading'
 import LandingNav from './LandingNav.vue'
 import LoadingScreen from './LoadingScreen.vue'
 import BackToTop from './BackToTop.vue'
+import SpecialThanks from './SpecialThanks.vue'
 
 const loadingStore = useLoadingStore()
 
@@ -428,6 +429,9 @@ onUnmounted(pauseShowcase)
         </div>
       </div>
     </section>
+
+    <!-- ============== Special Thanks  -  横向滚动鸣谢条 ============== -->
+    <SpecialThanks />
 
     <!-- ============== Footer ============== -->
     <footer class="landing-footer">
