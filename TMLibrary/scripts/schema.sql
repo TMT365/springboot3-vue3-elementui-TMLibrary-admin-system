@@ -104,12 +104,16 @@ CREATE TABLE IF NOT EXISTS `books` (
     `price`          DECIMAL(10,2) NOT NULL DEFAULT 0.00   COMMENT '售价',
     `published_date` DATE          NOT NULL                COMMENT '出版日期',
     `stock_quantity` INT           NOT NULL DEFAULT 0      COMMENT '库存真值;付款时原子扣减',
+    -- 逻辑引用 book_categories.id(小类);NULL = 未分类。
+    -- 完整分类体系(建表 + 种子 + 计数回填)见 db/book_categories.sql
+    `category_id`    INT           NULL                    COMMENT '所属小类 id(逻辑引用 book_categories.id,无物理外键)',
     `created_time`   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_time`   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
 
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_books_isbn` (`isbn`),
 
+    KEY `idx_books_category`       (`category_id`),
     KEY `idx_books_published_date` (`published_date`),
     KEY `idx_books_stock`          (`stock_quantity`),
     KEY `idx_books_price`          (`price`),
@@ -135,6 +139,9 @@ CREATE TABLE IF NOT EXISTS `orders` (
     `total_amount` DECIMAL(10,2) NOT NULL DEFAULT 0.00   COMMENT '订单总额(下单时快照)',
     `order_status` TINYINT       NOT NULL DEFAULT 0      COMMENT '0=PENDING 1=PAID 2=CANCELLED 3=TIMEOUT',
     `expire_time`  DATETIME      NOT NULL                COMMENT '未支付超时时间(默认下单后 30 分钟)',
+    -- 支付时间:只有 PENDING → PAID 那一次流转会写。不能用 updated_time 代替 ——
+    -- 支付后的任何改动都会顶掉 updated_time,而「什么时候付的钱」是财务口径。
+    `paid_time`    DATETIME      NULL                    COMMENT '支付时间;未支付为 NULL',
     `created_time` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_time` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间(状态流转时自动刷新)',
 
@@ -203,6 +210,8 @@ CREATE TABLE IF NOT EXISTS `order_items` (
 --   ADD INDEX `idx_users_created_time` (`created_time`);
 --
 -- ALTER TABLE `books`
+--   ADD COLUMN `category_id` INT NULL COMMENT '所属小类 id',
+--   ADD INDEX `idx_books_category` (`category_id`),
 --   ADD INDEX `idx_books_published_date` (`published_date`),
 --   ADD INDEX `idx_books_stock` (`stock_quantity`),
 --   ADD INDEX `idx_books_price` (`price`),
@@ -210,6 +219,7 @@ CREATE TABLE IF NOT EXISTS `order_items` (
 --   ADD INDEX `idx_books_updated_time` (`updated_time`);
 --
 -- ALTER TABLE `orders`
+--   ADD COLUMN `paid_time` DATETIME NULL COMMENT '支付时间;未支付为 NULL',
 --   ADD INDEX `idx_orders_user_id` (`user_id`),
 --   ADD INDEX `idx_orders_status_expire` (`order_status`, `expire_time`);
 --

@@ -8,6 +8,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import com.tmt.TMLibrary.common.User.UserRole;
 import com.tmt.TMLibrary.common.redis.RedisKeys;
+import com.tmt.TMLibrary.dto.redis.CaptchaRedis;
 import com.tmt.TMLibrary.dto.request.UserRegisterRequest;
 import com.tmt.TMLibrary.dto.request.UserSearchRequest;
 import com.tmt.TMLibrary.dto.request.UserUpdatedRequest;
@@ -28,6 +29,9 @@ import tools.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
+import lombok.extern.slf4j.Slf4j;
+
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class UserManagementServiceImpl implements UserManagementService {
@@ -47,19 +51,52 @@ public class UserManagementServiceImpl implements UserManagementService {
     @Override
     @Transactional(rollbackFor = Exception.class)
     public int createUser(UserRegisterRequest userRegisterRequest) {
-        // 实现创建(注册)用户的逻辑
+        // 1. 校验 captcha —— Redis 路径 tmlibrary:captcha:register:{username}:{uuid}:code
+        //   跟 login captcha 分开,登录 captcha 不能拿去注册
+        String uuid = userRegisterRequest.getUuid();
+        String username = userRegisterRequest.getUsername();
+        String json = stringRedisTemplate.opsForValue()
+            .get(RedisKeys.captchaRegister(username.trim(), uuid.trim()));
+        if (json == null) {
+            throw new BusinessException(ResultCode.NOT_FOUND, "未找到请求验证码");
+        }
+        CaptchaRedis captchaMeta;
+        try {
+            captchaMeta = objectMapper.readValue(json, CaptchaRedis.class);
+        } catch (Exception e) {
+            log.error("注册验证码 Redis 数据解析异常, username={} uuid={} json={}", username, uuid, json, e);
+            throw new BusinessException(ResultCode.INTERNAL_ERROR, "验证码数据异常,请重新获取验证码");
+        }
+        // defense-in-depth:key 层已经保证 username 匹配(否则 404),这里再校验一次防 key 结构被改
+        if (!captchaMeta.getUsername().equals(username)) {
+            log.error("注册 captcha key 命中但 value.username 与请求不一致: key.username={}, req.username={}",
+                captchaMeta.getUsername(), username);
+            throw new BusinessException(ResultCode.BAD_REQUEST, "验证码与账号不匹配");
+        }
+        if (!captchaMeta.getCaptcha().equals(userRegisterRequest.getCaptcha())) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "验证码错误");
+        }
+        // 注意:这里不删 captcha —— 2026-09 改为「只有注册成功才删」。
+        // 注册失败(用户名重复 / 邮箱格式等 DB 层报错)时,用户应该能用同一张图重试,
+        // 而不是重新识别。captcha 自身 3 分钟 TTL 兜底过期。
+        // 前端对应行为:失败时不刷新 captcha,只有用户点击或倒计时归零才换新图。
+
+        // 2. 实现创建(注册)用户的逻辑
         // 首先，必须把DTO对象转换为实体类对象，然后调用UserMapper的insertUser方法将用户信息插入数据库
         User user = new User();
         user.setUsername(userRegisterRequest.getUsername());
         // 强制role 是 USER, 其他角色只能老板在后期提升
         user.setRole(UserRole.USER.getCode());
-        user.setCreatedTime(java.time.LocalDateTime.now()); 
+        user.setCreatedTime(java.time.LocalDateTime.now());
         user.setPasswordHash(passwordEncoder.encode(userRegisterRequest.getPassword()));
         user.setEmail(userRegisterRequest.getEmail());
         user.setPhoneNumber(userRegisterRequest.getPhoneNumber());
         user.setStatus(UserStatus.ACTIVE.getCode()); // 默认状态为激活
 
         userMapper.insertUser(user);
+
+        // 注册成功 → 删除 captcha,防止同一张图被重复使用(2026-09:从"校验通过即删"挪到这里)
+        stringRedisTemplate.delete(RedisKeys.captchaRegister(username.trim(), uuid.trim()));
 
         // 清掉可能存在的负缓存(注册前若有人用该用户名尝试登录,会留下 3 分钟的
         // NEGATIVE_SENTINEL,不清掉会导致新用户注册后立刻登录失败)
@@ -192,8 +229,43 @@ public class UserManagementServiceImpl implements UserManagementService {
         }
         // 清掉 status 缓存(可能改了 status / role)
         stringRedisTemplate.delete(RedisKeys.userStatus(existing.getId()));
+        // 2026-09 加:清理该用户的所有 captcha
+        //   - 旧 username 的 captcha 全部作废(用户名已改,旧 key 永远不会命中,但显式删能立刻释放 Redis 内存)
+        //   - 若 username 改了,新 username 下的 captcha 也清掉(极端情况:用户在另一个浏览器用新名字申请过 captcha)
+        //   - 用 KEYS pattern + DEL 一次性清;captcha 数量小(单用户通常 0-1 个),不会阻塞 Redis
+        //   - 替代方案:用 SCAN + cursor 更稳,但对当前规模过度
+        clearCaptchasForUsername(oldUsername);
+        if (userUpdateRequest.getUsername() != null
+                && !userUpdateRequest.getUsername().equals(oldUsername)) {
+            clearCaptchasForUsername(userUpdateRequest.getUsername());
+        }
         // 如果是在有MySql集群的环境下，使用MQ实现主从一致性
         return 1;
+    }
+
+    /**
+     * 清掉某用户名下所有 captcha(login + register)。
+     * <p>被 {@link #updateUser} 在改完名字后调用 —— 旧 username 的 pending captcha
+     * 立即失效,新 username 也清一遍兜底(防御性,正常不会用到)。</p>
+     * <p>用 {@code KEYS pattern + DEL} 一次性删除;对当前 captcha 规模(单用户 0-1 个)成本可忽略。
+     * 若未来 captcha 量大幅增长,可改用 {@code SCAN MATCH pattern COUNT 100} 增量扫描。</p>
+     */
+    private void clearCaptchasForUsername(String username) {
+        if (username == null || username.isBlank()) return;
+        int removed = 0;
+        for (String pattern : new String[]{
+                RedisKeys.captchaLoginPattern(username),
+                RedisKeys.captchaRegisterPattern(username),
+        }) {
+            java.util.Set<String> keys = stringRedisTemplate.keys(pattern);
+            if (keys != null && !keys.isEmpty()) {
+                stringRedisTemplate.delete(keys);
+                removed += keys.size();
+            }
+        }
+        if (removed > 0) {
+            log.info("用户改完名字,清理该用户名下 captcha: username={} count={}", username, removed);
+        }
     }
 
     @Override

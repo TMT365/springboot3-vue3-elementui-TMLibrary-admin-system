@@ -3,8 +3,9 @@
  * 注册页  -  P5 上线(白名单已通)
  *
  * 字段(对齐后端 UserRegisterRequest):
- *   username / password / email / phoneNumber
+ *   username / password / email / phoneNumber / captcha / uuid
  * 额外:confirmPassword 二次确认(前端校验,不发到后端)
+ * captcha 复用 <Captcha> 组件(type='register'),走 /api/captcha/register
  *
  * 成功后 → ElMessage 提示 + 跳 /login
  */
@@ -13,8 +14,13 @@ import { reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { authApi } from '@/api/auth'
+import { useMediaQuery } from '@/composables/useMediaQuery'
+import Captcha from '@/components/Captcha.vue'
 
 const router = useRouter()
+
+/** 窄屏标签改顶部 —— 同 Login.vue,给验证码行留出整行宽度 */
+const isNarrow = useMediaQuery('(max-width: 600px)')
 
 const form = reactive({
   username: '',
@@ -22,9 +28,11 @@ const form = reactive({
   confirmPassword: '',
   email: '',
   phoneNumber: '',
+  captcha: '',
 })
 const formRef = ref<FormInstance>()
 const loading = ref(false)
+const captchaRef = ref<InstanceType<typeof Captcha> | null>(null)
 
 /** 二次确认密码校验 */
 function validateConfirmPassword(
@@ -60,6 +68,10 @@ const rules: FormRules<typeof form> = {
     { required: true, message: '请输入手机号', trigger: 'blur' },
     { pattern: /^\d{11}$/, message: '手机号必须是 11 位数字', trigger: 'blur' },
   ],
+  captcha: [
+    { required: true, message: '请输入验证码', trigger: 'blur' },
+    { len: 4, message: '验证码必须 4 位', trigger: 'blur' },
+  ],
 }
 
 async function onSubmit(): Promise<void> {
@@ -74,11 +86,15 @@ async function onSubmit(): Promise<void> {
       password: form.password,
       email: form.email,
       phoneNumber: form.phoneNumber,
+      captcha: form.captcha,
+      uuid: captchaRef.value?.uuid ?? '',
     })
     ElMessage.success(`注册成功!欢迎,${form.username}`)
     await router.replace('/login')
   } catch {
-    // request.ts 拦截器已经 ElMessage.error,这里只 swallow
+    // request.ts 拦截器已经 ElMessage.error,这里只 swallow。
+    // 不刷新 captcha —— 后端只在注册成功后才删 Redis 里的验证码,
+    // 失败时用户可以重试;换图只能靠用户点击或倒计时归零。
   } finally {
     loading.value = false
   }
@@ -107,6 +123,7 @@ async function onSubmit(): Promise<void> {
         ref="formRef"
         :model="form"
         :rules="rules"
+        :label-position="isNarrow ? 'top' : 'right'"
         label-width="90px"
         @submit.prevent="onSubmit"
       >
@@ -152,6 +169,14 @@ async function onSubmit(): Promise<void> {
             clearable
           />
         </el-form-item>
+        <el-form-item label="验证码" prop="captcha">
+          <Captcha
+            ref="captchaRef"
+            v-model="form.captcha"
+            :username="form.username"
+            type="register"
+          />
+        </el-form-item>
         <el-form-item>
           <el-button
             type="primary"
@@ -180,6 +205,17 @@ async function onSubmit(): Promise<void> {
   color: var(--color-text);
   overflow: hidden;
   padding: 24px;
+}
+
+/* 窄屏收紧内边距 —— 卡片能多拿 16px 宽度 */
+@media (max-width: 480px) {
+  .register-page {
+    padding: 16px;
+  }
+
+  .register-card :deep(.el-card__body) {
+    padding: 16px;
+  }
 }
 
 .register-deco {

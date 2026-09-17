@@ -1,5 +1,6 @@
 package com.tmt.TMLibrary.service.impl;
 
+import com.tmt.TMLibrary.common.Result.PageResult;
 import com.tmt.TMLibrary.common.utils.RandomExpirationTimeWithOffset;
 import com.tmt.TMLibrary.entity.Book;
 import com.tmt.TMLibrary.entity.Order;
@@ -327,6 +328,21 @@ public class PurchaseServiceImpl implements PurchaseService {
     @Override
     public List<OrderWithItems> listOrdersByUserId(Integer currentUserId) {
         return orderMapper.selectOrderWithItemsByUserId(currentUserId);
+    }
+
+    /** 每页条数上限 —— 防 size=999999 打爆 DB(与 BookController.MAX_PAGE_SIZE 对齐) */
+    private static final int MAX_PAGE_SIZE = 100;
+
+    @Override
+    public PageResult<Order> listAllOrders(int page, int size) {
+        int safePage = Math.max(page, 1);
+        int safeSize = Math.min(Math.max(size, 1), MAX_PAGE_SIZE);
+        int total = orderMapper.countAllOrders();
+        // total=0 时不必再查一次列表(空集)
+        List<Order> rows = total == 0
+                ? List.of()
+                : orderMapper.selectOrderPage((safePage - 1) * safeSize, safeSize);
+        return new PageResult<>(total, rows);
     }
 
     @Override

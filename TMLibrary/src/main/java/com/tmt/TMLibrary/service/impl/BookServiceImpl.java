@@ -8,6 +8,7 @@ import com.tmt.TMLibrary.dto.request.BookUpdateRequest;
 import com.tmt.TMLibrary.dto.request.BookSaveRequest;
 import com.tmt.TMLibrary.service.BookService;
 import com.tmt.TMLibrary.service.BookInventoryService;
+import com.tmt.TMLibrary.service.CategoryService;
 
 import com.tmt.TMLibrary.entity.Book;
 import com.tmt.TMLibrary.exception.BusinessException;
@@ -41,6 +42,8 @@ public class BookServiceImpl implements BookService {
     private final ObjectMapper objectMapper;
     private final StringRedisTemplate stringRedisTemplate;
     private final BookInventoryService bookInventoryService;
+    /** 分类计数维护 —— 书的分类变了要同步 book_categories.book_count */
+    private final CategoryService categoryService;
 
     // Redis key 由 RedisKeys 统一管理
     // 旧常量(已删除,域名错配):
@@ -68,11 +71,13 @@ public class BookServiceImpl implements BookService {
     public BookServiceImpl(BookMapper bookMapper,
                            StringRedisTemplate stringRedisTemplate,
                            ObjectMapper objectMapper,
-                           BookInventoryService bookInventoryService) {
+                           BookInventoryService bookInventoryService,
+                           CategoryService categoryService) {
         this.bookMapper = bookMapper;
         this.stringRedisTemplate = stringRedisTemplate;
         this.objectMapper = objectMapper;
         this.bookInventoryService = bookInventoryService;
+        this.categoryService = categoryService;
     }
 
     @Override
@@ -93,6 +98,11 @@ public class BookServiceImpl implements BookService {
         book.setCreatedTime(LocalDateTime.now());
         bookMapper.insertBook(book);
 
+        // 分类计数 +1 —— 同一个事务,书插失败则计数回滚
+        if (book.getCategoryId() != null && book.getCategoryId() > 0) {
+            categoryService.adjustBookCount(book.getCategoryId(), 1);
+        }
+
         // 主动失效负缓存 — 之前如果有同 isbn 的负缓存,必须清掉,否则新书3 分钟内看不到
         stringRedisTemplate.delete(RedisKeys.bookInfoByIsbn(request.getIsbn()));
     }
@@ -109,6 +119,10 @@ public class BookServiceImpl implements BookService {
             // 图书已删除 → 详情缓存和库存 Hash 都应清掉(此时 reserved 已无意义)
             stringRedisTemplate.delete(RedisKeys.bookInfoByIsbn(isbn));
             stringRedisTemplate.delete(RedisKeys.bookInventory(book.getId()));
+            // 分类计数 -1(book 是删除前查出来的,分类还在)
+            if (book.getCategoryId() != null && book.getCategoryId() > 0) {
+                categoryService.adjustBookCount(book.getCategoryId(), -1);
+            }
         }
         return rowsAffected;
     }
@@ -120,10 +134,21 @@ public class BookServiceImpl implements BookService {
         if (book == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "图书不存在, isbn=" + isbn);
         }
+        // 换分类要同时改新旧两个分类的计数 —— 必须在 copyProperties 覆盖之前拿到旧值
+        Integer oldCategoryId = book.getCategoryId();
         BeanUtils.copyProperties(request, book);
         book.setUpdatedTime(LocalDateTime.now());
         int rowsAffected = bookMapper.updateBookByISBN(book);
         if (rowsAffected > 0) {
+            // 只有"真的换了分类"才动计数。request 传 null / 0 时 mapper 的 <if> 不更新该列,
+            // 语义就是"不改分类",所以这里也不能按 null 去 -1(否则计数会凭空少掉)
+            Integer newCategoryId = book.getCategoryId();
+            if (newCategoryId != null && newCategoryId > 0 && !newCategoryId.equals(oldCategoryId)) {
+                if (oldCategoryId != null && oldCategoryId > 0) {
+                    categoryService.adjustBookCount(oldCategoryId, -1);
+                }
+                categoryService.adjustBookCount(newCategoryId, 1);
+            }
             // 1) 详情缓存直接失效
             stringRedisTemplate.delete(RedisKeys.bookInfoByIsbn(isbn));
             // 2) 库存 Hash 不能删!里面存着在途订单的 reserved,删掉会让这些预占消失,

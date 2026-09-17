@@ -3,7 +3,7 @@ package com.tmt.TMLibrary.service.impl;
 import com.tmt.TMLibrary.common.User.UserRole;
 import com.tmt.TMLibrary.common.redis.RedisKeys;
 import com.tmt.TMLibrary.common.utils.RandomExpirationTimeWithOffset;
-import com.tmt.TMLibrary.dto.redis.LoginCaptchaRedis;
+import com.tmt.TMLibrary.dto.redis.CaptchaRedis;
 import com.tmt.TMLibrary.exception.BusinessException;
 import com.tmt.TMLibrary.service.AuthService;
 import com.tmt.TMLibrary.dto.response.LoginResponse;
@@ -78,32 +78,39 @@ public class AuthServiceImpl implements AuthService {
     @Override
     public LoginResponse login(LoginRequest loginRequest) {
         String uuid = loginRequest.getUuid();
-        // 先验证验证码
-        String jsonString = stringRedisTemplate.opsForValue().get(RedisKeys.captchaLogin(uuid.trim()));
+        String username = loginRequest.getUsername();
+        // 先验证验证码 —— key 是 login:{username}:{uuid},username 不匹配直接 404
+        String jsonString = stringRedisTemplate.opsForValue()
+            .get(RedisKeys.captchaLogin(username.trim(), uuid.trim()));
         if (jsonString == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "未找到请求验证码");
         }
-        LoginCaptchaRedis loginCaptchaRedis;
+        CaptchaRedis loginCaptchaRedis;
         try {
             // 2. 只有解析这一步才会出现意料之外的异常：脏json、格式错乱
-            loginCaptchaRedis = objectMapper.readValue(jsonString, LoginCaptchaRedis.class);
+            loginCaptchaRedis = objectMapper.readValue(jsonString, CaptchaRedis.class);
         } catch (JacksonException e) {
-            log.error("验证码Redis数据解析异常，uuid:{} , json:{}", uuid, jsonString, e);
+            log.error("验证码Redis数据解析异常，username:{} uuid:{} json:{}", username, uuid, jsonString, e);
             throw new BusinessException(ResultCode.INTERNAL_ERROR, "验证码数据异常，请重新获取验证码");
         }
 
-        // 后续：验证码内容 + 绑定用户名校验
-        // 注意：captcha 不再绑定 password —— 密码验证交给后文 BCrypt
-        if(!loginCaptchaRedis.getUsername().equals(loginRequest.getUsername())){
-            throw new BusinessException(ResultCode.BAD_REQUEST,"验证码与账号不匹配");
+        // 后续：验证码内容校验
+        // 注:username 一致性已经从 key 层保证(404 拿不到),这里再 defense-in-depth 比对一次
+        if (!loginCaptchaRedis.getUsername().equals(username)) {
+            log.error("key 命中但 value.username 与请求不一致: key.username={}, req.username={}",
+                loginCaptchaRedis.getUsername(), username);
+            throw new BusinessException(ResultCode.BAD_REQUEST, "验证码与账号不匹配");
         }
-        if(!loginCaptchaRedis.getCaptcha().equals(loginRequest.getCaptcha())){
-            throw new BusinessException(ResultCode.BAD_REQUEST,"验证码错误");
+        if (!loginCaptchaRedis.getCaptcha().equals(loginRequest.getCaptcha())) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "验证码错误");
         }
 
-        // 校验通过，删除验证码，防止重复使用
-        stringRedisTemplate.delete(RedisKeys.captchaLogin(uuid.trim()));
-
+        // 注意:这里不再立即删除 captcha —— 2026-09 改为「只有登录成功才删」。
+        // 原因:密码打错 / 账户锁定 / 用户不存在 等失败场景下,用户应该能用同一张
+        // 验证码重试,而不是被迫重新识别。安全边界由两点保证:
+        //   ① captcha 自身 3 分钟 TTL(过期自动失效)
+        //   ② 密码连续失败 3 次锁定 15 分钟(见下文 incrementAndMaybeLock)
+        // 前端对应行为:失败时不刷新 captcha,只有用户点击或倒计时归零才换新图。
 
         // 从Redis里面拿数据，未命中去数据库
         jsonString = stringRedisTemplate.opsForValue().get(RedisKeys.userByUsername(loginRequest.getUsername()));
@@ -182,6 +189,10 @@ public class AuthServiceImpl implements AuthService {
         String jti = UUID.randomUUID().toString().replace("-", "");
         // 生成JWT token
         String token = jwtService.issue(user, jti);
+
+        // 登录成功 → 删除 captcha,防止同一张图被重复使用(2026-09:从"校验通过即删"挪到这里)
+        stringRedisTemplate.delete(RedisKeys.captchaLogin(username.trim(), uuid.trim()));
+
         // 登出时，将jti作为key，剩余时间TTL，放入blackList:jti中，时间一过自动清除
         return new LoginResponse(token, user.getUsername(), UserRole.getUserRoleByCode(user.getRole()));
     }

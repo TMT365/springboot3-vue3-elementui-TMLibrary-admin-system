@@ -20,6 +20,8 @@ public enum ResultCode {
     PAYLOAD_TOO_LARGE(413, "请求体过大"),
     UNSUPPORTED_MEDIA_TYPE(415, "媒体类型不支持"),
     UNPROCESSABLE_ENTITY(422, "业务校验失败"),
+    /** 429 —— IP 被风控封禁(与"请求过于频繁"同义,前端据此弹封禁提示) */
+    TOO_MANY_REQUESTS(429, "访问已被限制"),
 
     INTERNAL_ERROR(500, "服务器内部错误"),
     BAD_GATEWAY(502, "网关错误"),

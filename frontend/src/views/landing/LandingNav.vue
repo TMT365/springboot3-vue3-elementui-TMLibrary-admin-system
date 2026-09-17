@@ -7,11 +7,15 @@
  * - 主题切换 + 登录/进入后台(右)
  * - 移动端汉堡菜单
  *
- * 主题状态走 useTheme composable(单例),不在这里维护 local ref。
- * v2 §7-#11:从 LandingNav 局部 state 升级到全站 composable,
- * 切到 admin 再回 / 不会丢主题。
+ * v3 改造:
+ *   - 把指示器从「每个 nav-link 的 ::after 伪元素」解耦成「ul 容器里的共享滑块」,
+ *     FLIP 动画跨 link 平滑位移。
+ *   - 状态从 DOM class 改成响应式 ref:pinned(click 锁定) 和 hovered(鼠标悬停),
+ *     sliderTarget = hovered ?? pinned,鼠标预览结束后恢复点击锁定项。
+ *   - 下拉子项改用左侧绿色竖条(::before 高度过渡),与水平滑块视觉呼应但实现独立。
+ *   - 移动端隐藏滑块,改用 .is-active 类做静态高亮(列布局不需要平滑位移)。
  */
-import { ref } from 'vue'
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { useTheme } from '@/composables/useTheme'
 
@@ -51,11 +55,126 @@ const navItems: NavItem[] = [
 
 const mobileOpen = ref(false)
 
+/** 点击后锁定的顶层导航项和子项 */
+const pinnedItem = ref<NavItem | null>(null)
+const pinnedChild = ref<{ parent: NavItem; child: NavChild } | null>(null)
+
+/** 当前鼠标悬停的顶层导航项和子项,移出整个导航区域后清空 */
+const hoveredItem = ref<NavItem | null>(null)
+const hoveredChild = ref<{ parent: NavItem; child: NavChild } | null>(null)
+
+/** 鼠标悬停时预览当前项,离开后恢复点击锁定项 */
+const sliderTarget = computed<NavItem | null>(() => {
+  return hoveredItem.value ?? pinnedItem.value
+})
+
+/** 子项边框同样优先跟随鼠标,离开后恢复点击锁定项 */
+const activeChild = computed<{ parent: NavItem; child: NavChild } | null>(() => {
+  return hoveredChild.value ?? pinnedChild.value
+})
+
+/* ---------------- DOM refs ---------------- */
+
+const ulRef = ref<HTMLUListElement | null>(null)
+const itemRefs = new Map<String, HTMLLIElement>()
+const sliderStyle = ref({
+  transform: 'translate(0px, 0px)',
+  width: '0px',
+  height: '0px',
+  opacity: '0',
+})
+
+function setItemRef(item: NavItem, el: unknown) {
+  // 先用label作为key,因为anchor可能不存在,或者重复(比如父子都指向#home)，后面可以改成用label+anchor的组合key
+  // 或是使用Symbol来唯一标识每个item，或是data-attribute来存储唯一标识符
+  if (el) itemRefs.set(item.label, el as HTMLLIElement)
+  else itemRefs.delete(item.label)
+
+}
+
+/* ---------------- 交互事件 ---------------- */
+
+function onEnterItem(item: NavItem) {
+  hoveredItem.value = item
+  hoveredChild.value = null
+}
+
+function onEnterChild(parent: NavItem, child: NavChild) {
+  hoveredItem.value = parent
+  hoveredChild.value = { parent, child }
+}
+
+function onNavLeave() {
+  hoveredItem.value = null
+  hoveredChild.value = null
+}
+
+function onClickItem(item: NavItem) {
+  pinnedItem.value = item
+  pinnedChild.value = null
+}
+
+function onClickChild(parent: NavItem, child: NavChild) {
+  pinnedItem.value = parent
+  pinnedChild.value = { parent, child }
+}
+
 function scrollToAnchor(anchor: string) {
   mobileOpen.value = false
   const el = document.querySelector(anchor)
   if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' })
 }
+
+/* ---------------- 滑块定位 ---------------- */
+
+function moveSlider() {
+  const ul = ulRef.value;
+  if (!ul) return
+
+  const target = sliderTarget.value
+  if (!target) {
+    sliderStyle.value = { ...sliderStyle.value, opacity: '0' }
+    return
+  }
+
+  // computed 计算出来的值是Proxy代理响应式，直接和 Map 的 key 比较会失败，所以要用 target.label 来获取对应的 li 元素
+  const li = itemRefs.get(target.label)
+
+  if (!li) return
+
+  const ulRect = ul.getBoundingClientRect()
+  const liRect = li.getBoundingClientRect()
+  const newX = liRect.left - ulRect.left
+  const newY = liRect.top - ulRect.top
+  const newW = liRect.width
+  const newH = liRect.height
+  console.log(newX, newY, newW, newH, newW, newH);
+  sliderStyle.value = {
+    transform: `translate(${newX}px, ${newY}px)`,
+    width: `${newW}px`,
+    height: `${newH}px`,
+    opacity: '1',
+  }
+}
+
+/* ---------------- 监听 & 生命周期 ---------------- */
+
+watch(sliderTarget, () => {
+  moveSlider();
+}, { flush: 'post' })
+
+let resizeObserver: ResizeObserver | null = null
+onMounted(() => {
+  if (ulRef.value) {
+    resizeObserver = new ResizeObserver(moveSlider)
+    resizeObserver.observe(ulRef.value)
+  }
+  nextTick(moveSlider)
+})
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+})
 </script>
 
 <template>
@@ -75,29 +194,57 @@ function scrollToAnchor(anchor: string) {
         <span /><span /><span />
       </button>
 
-      <ul class="nav-links" :class="{ open: mobileOpen }">
+      <ul
+        ref="ulRef"
+        class="nav-links"
+        :class="{ open: mobileOpen }"
+        @mouseleave="onNavLeave"
+      >
+        <span
+          class="nav-slider"
+          :style="sliderStyle"
+          aria-hidden="true"
+        />
+
         <li
           v-for="item in navItems"
           :key="item.label"
           class="nav-item"
-          :class="{ 'has-children': !!item.children }"
+          :class="{
+            'has-children': !!item.children,
+            'is-active': sliderTarget === item
+          }"
+          :ref="(el) => setItemRef(item, el)"
+          @mouseenter="onEnterItem(item)"
         >
           <a
             v-if="item.anchor"
             :href="item.anchor"
             class="nav-link"
-            @click.prevent="scrollToAnchor(item.anchor)"
+            @click.prevent="onClickItem(item); scrollToAnchor(item.anchor)"
           >
             {{ item.label }}
           </a>
 
           <template v-else-if="item.children">
-            <span class="nav-link nav-parent">{{ item.label }}</span>
+            <span class="nav-link nav-parent" @click="onClickItem(item)">
+              {{ item.label }}
+            </span>
             <ul class="nav-dropdown">
-              <li v-for="child in item.children" :key="child.label">
+              <li
+                v-for="child in item.children"
+                :key="child.label"
+                class="nav-dropdown-item"
+                :class="{
+                  'is-pinned':
+                    activeChild?.parent.label === item.label &&
+                    activeChild?.child.label === child.label
+                }"
+                @mouseenter="onEnterChild(item, child)"
+              >
                 <a
                   :href="child.anchor"
-                  @click.prevent="scrollToAnchor(child.anchor)"
+                  @click.prevent="onClickChild(item, child); scrollToAnchor(child.anchor)"
                 >
                   {{ child.label }}
                 </a>
@@ -210,6 +357,7 @@ function scrollToAnchor(anchor: string) {
 }
 
 .nav-links {
+  position: relative; /* 滑块的定位上下文 */
   display: flex;
   align-items: center;
   gap: 4px;
@@ -218,32 +366,47 @@ function scrollToAnchor(anchor: string) {
   padding: 0;
 }
 
+/* 共享滑块 —— ul 里的唯一元素,跨 link 平滑位移 */
+.nav-slider {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: block;
+  background: var(--color-accent, #4caf50);
+  border-radius: 30px;
+  pointer-events: none;
+  z-index: 0;
+  will-change: transform, width, height;
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.28);
+  transition:
+    transform 280ms cubic-bezier(0.22, 0.61, 0.36, 1),
+    width 220ms ease,
+    height 220ms ease,
+    opacity 180ms ease;
+}
+
 .nav-item {
   position: relative;
+  list-style: none;
 }
 
 .nav-link {
+  position: relative;
+  z-index: 1; /* 文字在滑块之上 */
   display: block;
   padding: 8px 14px;
   color: var(--color-text, #212121);
   text-decoration: none;
   font-size: 18px;
   font-weight: 500;
-  transition: background 150ms ease;
+  border-radius: 30px;
   cursor: pointer;
+  transition: color 180ms ease;
 }
 
-.nav-link:hover {
-  background: var(--color-bg-alt, #f5f5f5);
-  color: var(--color-accent, #4caf50);
-  border: 1px solid var(--color-accent, #4caf50);
-}
-
-.has-children > .nav-link::after {
-  content: '▾';
-  margin-left: 6px;
-  font-size: 10px;
-  opacity: 0.6;
+/* 滑块在该 nav-item 时文字反白 */
+.nav-item.is-active > .nav-link {
+  color: #fff;
 }
 
 .nav-dropdown {
@@ -271,18 +434,46 @@ function scrollToAnchor(anchor: string) {
   transform: translateY(0);
 }
 
-.nav-dropdown a {
+.nav-dropdown-item {
+  list-style: none;
+}
+
+.nav-dropdown-item a {
+  position: relative;
   display: block;
-  padding: 8px 12px;
+  padding: 8px 12px 8px 16px;
   font-size: 14px;
   color: var(--color-text, #212121);
   text-decoration: none;
   border-radius: 4px;
+  transition: color 150ms ease, background 150ms ease;
 }
 
-.nav-dropdown a:hover {
+/* 左侧绿色竖条 —— pinned 时从 0 长到 60% 高度 */
+.nav-dropdown-item a::before {
+  content: '';
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  width: 3px;
+  height: 0;
+  background: var(--color-accent, #4caf50);
+  border-radius: 2px;
+  transform: translateY(-50%);
+  transition: height 220ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.nav-dropdown-item a:hover {
   background: var(--color-bg-alt, #f5f5f5);
+}
+
+/* 子项被点击选中 —— 绿色文字 + 绿色竖条 */
+.nav-dropdown-item.is-pinned a {
   color: var(--color-accent, #4caf50);
+}
+
+.nav-dropdown-item.is-pinned a::before {
+  height: 60%;
 }
 
 .nav-actions {
@@ -412,11 +603,19 @@ function scrollToAnchor(anchor: string) {
     opacity: 1;
     pointer-events: auto;
   }
+  /* 移动端隐藏滑块,直接用 .is-active 类做静态高亮 */
+  .nav-slider {
+    display: none;
+  }
   .nav-item {
     width: 100%;
   }
   .nav-link {
     padding: 12px;
+  }
+  /* 移动端高亮用纯背景色 */
+  .nav-item.is-active > .nav-link {
+    background: var(--color-accent, #4caf50);
   }
   .nav-dropdown {
     position: static;
@@ -434,6 +633,33 @@ function scrollToAnchor(anchor: string) {
   }
   .nav-actions {
     order: 2;
+  }
+}
+
+/* 窄屏手机(≤480):顶栏一行放不下 logo + 主题开关 + 登录 + 注册 + 汉堡
+   (≈430px > 375px),而 .landing 是 overflow-x: hidden —— 溢出的部分会被直接裁掉,
+   最坏情况把汉堡按钮切掉、菜单打不开。这里收掉「注册」(登录页里有注册入口)、
+   缩小 logo 和间距,把整行压回 375px 以内。 */
+@media (max-width: 480px) {
+  .nav-inner {
+    padding: 10px 14px;
+    gap: 10px;
+  }
+
+  .register-link {
+    display: none;
+  }
+
+  .nav-actions {
+    gap: 8px;
+  }
+
+  .logo-text {
+    font-size: 15px;
+  }
+
+  .login-link {
+    padding: 6px 10px;
   }
 }
 </style>

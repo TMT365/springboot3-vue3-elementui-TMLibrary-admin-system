@@ -6,12 +6,12 @@
  * 后续可加:SearchBar 过滤 / 多条件搜索 / 行内编辑
  */
 
-import { ref, onMounted } from 'vue'
+import { computed, ref, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { bookApi } from '@/api/book'
 import { formatPrice, formatDate } from '@/utils/format'
 import Pager from '@/components/Pager.vue'
-import type { BookDto, PageResult } from '@/types/api'
+import type { BookCategoryNode, BookDto, PageResult } from '@/types/api'
 
 const router = useRouter()
 const page = ref<number>(1)
@@ -20,6 +20,29 @@ const total = ref<number>(0)
 const items = ref<BookDto[]>([])
 const loading = ref<boolean>(true)
 const error = ref<string | null>(null)
+
+// ------------------------------------------------------------
+// 分类:列表只返回 categoryId,名字要靠分类树翻译
+// ------------------------------------------------------------
+const categories = ref<BookCategoryNode[]>([])
+
+/** categoryId → "大类 / 小类" 的查表 —— 分类总共几十条,一次展平比每行现查便宜 */
+const categoryLabel = computed<Map<number, string>>(() => {
+  const map = new Map<number, string>()
+  for (const parent of categories.value) {
+    map.set(parent.id, parent.name)
+    for (const sub of parent.children ?? []) {
+      map.set(sub.id, `${parent.name} / ${sub.name}`)
+    }
+  }
+  return map
+})
+
+// 参数只取用得上的字段:el-table 的插槽 row 是 DefaultRow(索引签名),直接收 BookDto 会类型不兼容
+function categoryOf(row: { categoryId?: number | null }): string {
+  if (!row.categoryId) return ''
+  return categoryLabel.value.get(row.categoryId) ?? ''
+}
 
 async function fetchBooks(): Promise<void> {
   loading.value = true
@@ -35,15 +58,27 @@ async function fetchBooks(): Promise<void> {
   }
 }
 
+/** 分类拉失败不影响列表本身 —— 分类那列显示空即可 */
+async function fetchCategories(): Promise<void> {
+  try {
+    categories.value = await bookApi.listCategories()
+  } catch {
+    categories.value = []
+  }
+}
+
 function goCreate(): void {
   router.replace('/admin/books/new')
 }
 
-function goEdit(id: number): void {
-  router.replace(`/admin/books/${id}/edit`)
+function goEdit(isbn: string): void {
+  router.replace(`/admin/books/${encodeURIComponent(isbn)}/edit`)
 }
 
-onMounted(fetchBooks)
+onMounted(() => {
+  void fetchBooks()
+  void fetchCategories()
+})
 </script>
 
 <template>
@@ -109,6 +144,12 @@ onMounted(fetchBooks)
             </span>
           </template>
         </el-table-column>
+        <el-table-column label="分类" min-width="170">
+          <template #default="{ row }">
+            <span v-if="categoryOf(row)" class="cell-cat">{{ categoryOf(row) }}</span>
+            <span v-else class="cell-cat is-none">未分类</span>
+          </template>
+        </el-table-column>
         <el-table-column label="出版日期" width="120">
           <template #default="{ row }">
             <span class="cell-muted">{{ formatDate(row.publishedDate) }}</span>
@@ -116,7 +157,7 @@ onMounted(fetchBooks)
         </el-table-column>
         <el-table-column label="操作" width="160" fixed="right" align="center">
           <template #default="{ row }">
-            <el-button link type="primary" size="small" @click="goEdit(row.id)">
+            <el-button link type="primary" size="small" @click="goEdit(row.isbn)">
               编辑
             </el-button>
             <el-button link type="danger" size="small" disabled>
@@ -235,6 +276,14 @@ onMounted(fetchBooks)
   font-size: 14px;
   color: var(--color-text);
   border-bottom: 1px solid var(--color-border);
+  /* 行距:EP 默认 padding 只有 8px 上下,密得像电子表格;
+     调到 15px 让每行有呼吸,扫读时不容易串行 */
+  padding: 15px 0;
+}
+
+/* 表头同步加厚一点,视觉上压得住下面的行 */
+.premium-table :deep(.el-table__header-wrapper) th {
+  padding: 12px 0;
 }
 
 .premium-table :deep(.el-table__row:last-child td) {
@@ -253,11 +302,14 @@ onMounted(fetchBooks)
   letter-spacing: -0.01em;
   color: var(--color-text);}
 
+/* ISBN —— 13 位数字连排,加字距才不糊成一团(同订单号的处理) */
 .cell-mono {
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-  font-size: 13px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: 13.5px;
+  font-weight: 500;
   color: var(--color-text);
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.05em;
 }
 
 .cell-muted {
@@ -267,7 +319,7 @@ onMounted(fetchBooks)
 }
 
 .cell-price {
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-size: 14px;
   font-weight: 600;
   color: var(--color-accent);
@@ -275,7 +327,7 @@ onMounted(fetchBooks)
 }
 
 .cell-stock {
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-size: 14px;
   font-weight: 600;
   font-variant-numeric: tabular-nums;
@@ -286,6 +338,17 @@ onMounted(fetchBooks)
   color: #f56c6c;
 }
 
+/* 分类 —— 「大类 / 小类」,大类弱化、小类正常,扫读时先看小类 */
+.cell-cat {
+  font-size: 13px;
+  color: var(--color-text-soft);
+}
+
+.cell-cat.is-none {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
 /* ============================================================
  * 响应式  -  小屏:表格横向滚动
  * ============================================================ */
@@ -294,13 +357,14 @@ onMounted(fetchBooks)
     font-size: 24px;
   }
 
+  /* 窄屏横向滚动交给 el-table 自己(.el-scrollbar)——
+     不要在外面套一层 overflow-x 容器 + 给表格 min-width:
+     EP 的固定列是 position: sticky,它的吸附基准是**最近的滚动祖先**,
+     即表格内部的 .el-scrollbar;外层再套一个滚动容器的话,
+     内部那个永远不滚,固定列就跟着表格一起被推出屏幕,
+     「操作」列要一路滑到最右才看得见。 */
   .table-card {
     border-radius: 12px;
-    overflow-x: auto;
-  }
-
-  .premium-table {
-    min-width: 720px;
   }
 }
 </style>

@@ -5,12 +5,14 @@
  * 验证:
  * 1. Composition API(reactive / ref)
  * 2. Element Plus el-form + rules
- * 3. authApi.login → userStore.setLogin → router.push(redirect || '/dashboard')
+ * 3. 验证码用 <Captcha> 组件(v-model:captcha)
+ * 4. authApi.login → userStore.setLogin → router.push
  *
- * v2 §7-#12:视觉从 deep blue/purple gradient 改为 editorial 风格,
- *           跟 Landing 的暖米白 / 绿色基调对齐。
- *
- * 已知问题:后端 /api/users/register 不在 JWT 白名单 → 顶部 alert 提示,不放注册入口
+ * 流程(API §2.3 + §8.1):
+ *   1. 进入页面 → Captcha 组件 mount 立即拉 /api/captcha/login
+ *   2. 输入 username → 组件 400ms debounce 重新拉(跟 username 绑定)
+ *   3. POST /api/users/login {username, password, captcha, uuid}
+ *   4. 失败:request.ts 已 toast;此处触发 Captcha 组件刷新
  */
 
 import { reactive, ref } from 'vue'
@@ -18,23 +20,40 @@ import { useRoute, useRouter } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { authApi } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
+import { useMediaQuery } from '@/composables/useMediaQuery'
+import Captcha from '@/components/Captcha.vue'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 
+/**
+ * 窄屏(手机)把表单标签改到输入框上方。
+ * 原因:固定 label-width=80px 会把每行内容压到 ~199px(375px 屏),
+ * 而验证码那一行是「图 130px + 倒计时圆 82px」≈ 226px,会横向溢出被裁掉。
+ * 标签位置换成 top 后整行 279px 可用,验证码完整显示。
+ */
+const isNarrow = useMediaQuery('(max-width: 600px)')
+
 const form = reactive({
   username: '',
   password: '',
+  captcha: '',
+  captchaUuid: '',
 })
 const formRef = ref<FormInstance>()
 const loading = ref(false)
+const captchaRef = ref<InstanceType<typeof Captcha> | null>(null)
 
 const rules: FormRules<typeof form> = {
   username: [{ required: true, message: '请输入用户名', trigger: 'blur' }],
   password: [
     { required: true, message: '请输入密码', trigger: 'blur' },
     { min: 6, max: 20, message: '密码长度 6-20 位', trigger: 'blur' },
+  ],
+  captcha: [
+    { required: true, message: '请输入验证码', trigger: 'blur' },
+    { len: 4, message: '验证码必须 4 位', trigger: 'blur' },
   ],
 }
 
@@ -44,20 +63,26 @@ async function onSubmit(): Promise<void> {
   if (!valid) {
     ElMessage.error('参数错误，请检查表单输入')
     return
-  } 
+  }
 
   loading.value = true
   try {
-    const resp = await authApi.login({ username: form.username, password: form.password })
+    const resp = await authApi.login({
+      username: form.username,
+      password: form.password,
+      captcha: form.captcha,
+      uuid: captchaRef.value?.uuid ?? '',
+    })
     userStore.setLogin(resp)
-    ElMessage.success(`欢迎,${resp.username}`)
+    ElMessage.success(`欢迎，${resp.username}`)
     // 登录后所有角色统一进商城(/mall) -  后续可在商城内导航到个人中心/后台
     const defaultRedirect = '/mall'
     const redirect = (route.query.redirect as string) || defaultRedirect
     await router.push(redirect)
   } catch {
-    // request.ts 拦截器已经 ElMessage.error,这里只 swallow
-    
+    // request.ts 拦截器已 toast。
+    // 不刷新 captcha —— 后端只在登录成功后才删 Redis 里的验证码,
+    // 失败时用户可以用同一张图重试;换图只能靠用户点击或倒计时归零。
   } finally {
     loading.value = false
   }
@@ -86,6 +111,7 @@ async function onSubmit(): Promise<void> {
         ref="formRef"
         :model="form"
         :rules="rules"
+        :label-position="isNarrow ? 'top' : 'right'"
         label-width="80px"
         @submit.prevent="onSubmit"
       >
@@ -97,6 +123,7 @@ async function onSubmit(): Promise<void> {
             clearable
           />
         </el-form-item>
+
         <el-form-item label="密码" prop="password">
           <el-input
             v-model="form.password"
@@ -106,6 +133,16 @@ async function onSubmit(): Promise<void> {
             autocomplete="current-password"
           />
         </el-form-item>
+
+        <el-form-item label="验证码" prop="captcha">
+          <Captcha
+            ref="captchaRef"
+            v-model="form.captcha"
+            :username="form.username"
+            type="login"
+          />
+        </el-form-item>
+
         <el-form-item>
           <el-button
             type="primary"
@@ -131,6 +168,13 @@ async function onSubmit(): Promise<void> {
   color: var(--color-text);
   overflow: hidden;
   padding: 24px;
+}
+
+/* 窄屏收紧内边距 —— 卡片能多拿 16px 宽度 */
+@media (max-width: 480px) {
+  .login-page {
+    padding: 16px;
+  }
 }
 
 .login-deco {

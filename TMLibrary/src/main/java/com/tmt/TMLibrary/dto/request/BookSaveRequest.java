@@ -51,6 +51,9 @@ public class BookSaveRequest {
 
     @NotNull(message = "出版日期不能为空")
     private LocalDate publishedDate;
+
+    /** 图书分类 id(book_categories 里的小类)。可空 —— 兼容分类功能上线前录入的老书 */
+    private Integer categoryId;
 }
 
 /*

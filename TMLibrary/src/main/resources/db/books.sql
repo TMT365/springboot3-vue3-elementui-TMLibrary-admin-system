@@ -24,12 +24,16 @@ CREATE TABLE IF NOT EXISTS `books` (
     `price`          DECIMAL(10,2) NOT NULL DEFAULT 0.00   COMMENT '售价',
     `published_date` DATE          NOT NULL                COMMENT '出版日期',
     `stock_quantity` INT           NOT NULL DEFAULT 0      COMMENT '库存真值;付款时原子扣减',
+    -- 逻辑引用 book_categories.id(小类);NULL = 未分类。
+    -- 老库升级走 db/book_categories.sql 里的 add_books_category_id 存储过程,那段是幂等的。
+    `category_id`    INT           NULL                    COMMENT '所属小类 id(逻辑引用 book_categories.id,无物理外键)',
     `created_time`   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_time`   DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间',
 
     PRIMARY KEY (`id`),
     UNIQUE KEY `uk_books_isbn` (`isbn`),
 
+    KEY `idx_books_category`       (`category_id`),
     KEY `idx_books_published_date` (`published_date`),
     KEY `idx_books_stock`          (`stock_quantity`),
     KEY `idx_books_price`          (`price`),

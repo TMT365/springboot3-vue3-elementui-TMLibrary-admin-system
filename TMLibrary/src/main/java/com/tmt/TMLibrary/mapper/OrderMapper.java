@@ -48,6 +48,18 @@ public interface OrderMapper {
     List<OrderWithItems> selectOrderWithItemsByUserId(@Param("userId") Integer userId);
 
     /**
+     * 全量订单分页(管理端「订单列表」用)—— 按 id 倒序,最新的在最前。
+     * <p>必须带 ORDER BY:无排序的 LIMIT offset,n 在不同页之间可能重复或漏记录。</p>
+     *
+     * @param offset 起始行(从 0 开始)
+     * @param limit  每页条数
+     */
+    List<Order> selectOrderPage(@Param("offset") int offset, @Param("limit") int limit);
+
+    /** 全量订单总数(配合 selectOrderPage 算分页) */
+    int countAllOrders();
+
+    /**
      * 根据订单ID更新订单状态, 在以后的业务中, 订单状态可能会有很多种, 但是存java对象和字符串不如存枚举的数字
      * @param orderNumber
      * @param status

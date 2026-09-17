@@ -20,10 +20,15 @@
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { useTheme } from '@/composables/useTheme'
+import { bookApi } from '@/api/book'
+import { highlightParts, useBookSuggest } from '@/composables/useBookSuggest'
+import type { BookCategoryNode, BookSuggestion } from '@/types/api'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const { theme, toggleTheme } = useTheme()
 
 /**
  * sidebar 折叠状态
@@ -76,96 +81,47 @@ watch(
   },
 )
 
-// 多级分类  -  8 个一级分类,每个 3-4 个二级
-const categoryTree = [
-  {
-    id: 'lit',
-    label: '文学小说',
-    icon: 'Reading',
-    children: [
-      { id: 'lit-cn', label: '中国文学' },
-      { id: 'lit-en', label: '外国文学' },
-      { id: 'lit-classic', label: '古典文学' },
-      { id: 'lit-modern', label: '现当代文学' },
-    ],
-  },
-  {
-    id: 'cs',
-    label: '计算机',
-    icon: 'Cpu',
-    children: [
-      { id: 'cs-lang', label: '编程语言' },
-      { id: 'cs-algo', label: '算法与数据结构' },
-      { id: 'cs-ai', label: 'AI / 机器学习' },
-      { id: 'cs-arch', label: '系统架构' },
-    ],
-  },
-  {
-    id: 'history',
-    label: '历史人文',
-    icon: 'Clock',
-    children: [
-      { id: 'h-cn', label: '中国史' },
-      { id: 'h-world', label: '世界史' },
-      { id: 'h-ancient', label: '古代文明' },
-    ],
-  },
-  {
-    id: 'phil',
-    label: '哲学思辨',
-    icon: 'MagicStick',
-    children: [
-      { id: 'p-cn', label: '中国哲学' },
-      { id: 'p-west', label: '西方哲学' },
-      { id: 'p-ethic', label: '伦理学' },
-    ],
-  },
-  {
-    id: 'art',
-    label: '艺术设计',
-    icon: 'PictureFilled',
-    children: [
-      { id: 'a-paint', label: '绘画' },
-      { id: 'a-design', label: '平面设计' },
-      { id: 'a-photo', label: '摄影' },
-    ],
-  },
-  {
-    id: 'biz',
-    label: '商业经管',
-    icon: 'DataAnalysis',
-    children: [
-      { id: 'b-mgmt', label: '管理学' },
-      { id: 'b-fin', label: '金融投资' },
-      { id: 'b-mkt', label: '市场营销' },
-    ],
-  },
-  {
-    id: 'edu',
-    label: '教育考试',
-    icon: 'Notebook',
-    children: [
-      { id: 'e-textbook', label: '教材教辅' },
-      { id: 'e-exam', label: '考试认证' },
-      { id: 'e-lang', label: '语言学习' },
-    ],
-  },
-  {
-    id: 'kids',
-    label: '少儿亲子',
-    icon: 'Star',
-    children: [
-      { id: 'k-pic', label: '绘本' },
-      { id: 'k-lit', label: '儿童文学' },
-      { id: 'k-edu', label: '启蒙教育' },
-    ],
-  },
-]
+/**
+ * 多级分类  -  来自 GET /api/books/categories(免登录可读)
+ *
+ * 以前这里写死了一份 8 大类 29 小类的数组,和数据库完全脱节:
+ * 后台新建的分类商城看不见,商城点分类后端也筛不了书。
+ * 现在整棵树由后端给,后台建完分类刷新即见。
+ */
+const categoryTree = ref<BookCategoryNode[]>([])
+const categoryLoading = ref<boolean>(true)
+const categoryError = ref<boolean>(false)
 
-function selectCategory(catId: string, subId?: string): void {
+async function loadCategories(): Promise<void> {
+  categoryLoading.value = true
+  categoryError.value = false
+  try {
+    categoryTree.value = await bookApi.listCategories()
+  } catch {
+    categoryError.value = true
+  } finally {
+    categoryLoading.value = false
+  }
+}
+
+/** 大类没配图标(后台新建的)时给个兜底,免得出个空洞 */
+function iconOf(cat: BookCategoryNode): string {
+  return cat.icon || 'Collection'
+}
+
+function selectCategory(catId: number, subId?: number): void {
   // 同 MallLayout 内切换,replace 不污染历史栈
   router.replace(`/mall/category/${catId}${subId ? `/${subId}` : ''}`)
   // 移动端选完分类自动收起浮层
+  if (isMobile.value) closeSidebar()
+}
+
+/** 「全部图书」菜单项的 index —— activeMenuKey 为 null(不在分类路由上)时它高亮 */
+const ALL_BOOKS_KEY = 'all'
+
+/** 取消分类筛选,回到商城首页的全量列表 */
+function goAllBooks(): void {
+  router.replace('/mall')
   if (isMobile.value) closeSidebar()
 }
 
@@ -174,6 +130,7 @@ function selectCategory(catId: string, subId?: string): void {
  */
 let resizeHandler: (() => void) | null = null
 onMounted(() => {
+  void loadCategories()
   if (typeof window === 'undefined') return
   updateIsMobile()
   resizeHandler = updateIsMobile
@@ -209,8 +166,44 @@ async function handleCommand(command: string): Promise<void> {
   }
 }
 
+/** 顶栏搜索框的内容 */
+const searchText = ref<string>('')
+
+const { fetchSuggestions } = useBookSuggest()
+
+/**
+ * 搜索 —— 结果状态放在 URL 上(`/mall?q=xxx`)。
+ *
+ * 好处:顶栏这个框和手机端那个框共用同一个数据源,不用互相传事件;
+ * 刷新、分享、前进后退都能保持结果。
+ *
+ * 注意会把分类清掉:点搜索的语义是"在全馆里找",而不是"在当前分类里找"。
+ */
 function onSearch(): void {
-  ElMessage.info('搜索功能开发中,试试左侧分类吧')
+  const q = searchText.value.trim()
+  router.replace({ path: '/mall', query: q ? { q } : {} })
+}
+
+/**
+ * 选中候选词的时间戳。
+ *
+ * el-autocomplete 里"↑↓ 选中后回车"会走 @select(keydown 触发),
+ * 而 @keyup.enter 也会跟着冒泡上来 —— 两个都跑的话,后者会用输入框里的
+ * 原始文字覆盖掉用户刚选的那条。用一个很短的时间窗把这种情况挡掉。
+ */
+let lastSelectAt = 0
+
+// 参数类型跟着 EP 走(el-autocomplete 的 @select 声明是 Record<string, any>),
+// 声明成 BookSuggestion 会因为"函数参数逆变"报错
+function onSelectSuggestion(item: Record<string, unknown>): void {
+  lastSelectAt = Date.now()
+  searchText.value = String(item.text ?? '')
+  onSearch()
+}
+
+function onSearchEnter(): void {
+  if (Date.now() - lastSelectAt < 300) return
+  onSearch()
 }
 </script>
 
@@ -257,18 +250,59 @@ function onSearch(): void {
       </div>
 
       <div class="search">
-        <el-input
+        <!-- el-autocomplete 而不是 el-input:自带下拉 + ↑↓/Esc 键盘导航 +
+             :debounce 节流(不用自己写 setTimeout) -->
+        <el-autocomplete
+          v-model="searchText"
+          :fetch-suggestions="fetchSuggestions"
+          :debounce="280"
+          :trigger-on-focus="false"
+          value-key="text"
           placeholder="搜索 书名 / 作者 / ISBN"
           size="large"
-          @keyup.enter="onSearch"
+          clearable
+          popper-class="book-suggest-popper"
+          class="search-autocomplete"
+          @select="onSelectSuggestion"
+          @keyup.enter="onSearchEnter"
         >
           <template #prefix>
             <el-icon><Search /></el-icon>
           </template>
-        </el-input>
+          <template #default="{ item }">
+            <div class="sug">
+              <el-icon class="sug-icon">
+                <User v-if="item.type === 'AUTHOR'" />
+                <Postcard v-else-if="item.type === 'ISBN'" />
+                <Reading v-else />
+              </el-icon>
+              <span class="sug-text">
+                <template
+                  v-for="(part, i) in highlightParts(item.text, searchText)"
+                  :key="i"
+                >
+                  <em v-if="part.hit" class="sug-hit">{{ part.text }}</em>
+                  <template v-else>{{ part.text }}</template>
+                </template>
+              </span>
+              <span v-if="item.hot > 0" class="sug-hot">销量 {{ item.hot }}</span>
+            </div>
+          </template>
+        </el-autocomplete>
       </div>
 
       <div class="topbar-right">
+        <button
+          class="sidebar-toggle"
+          :title="theme === 'light' ? '切换到夜间模式' : '切换到日间模式'"
+          :aria-label="theme === 'light' ? '切换到夜间模式' : '切换到日间模式'"
+          @click="toggleTheme"
+        >
+          <el-icon>
+            <Moon v-if="theme === 'light'" />
+            <Sunny v-else />
+          </el-icon>
+        </button>
         <template v-if="userStore.isAuthenticated">
           <el-dropdown trigger="click" @command="handleCommand">
             <span class="user-trigger">
@@ -323,30 +357,51 @@ function onSearch(): void {
           class="category-menu"
           :collapse="sidebarCollapsed"
           :collapse-transition="false"
-          :default-active="activeMenuKey ?? ''"
+          :default-active="activeMenuKey ?? ALL_BOOKS_KEY"
           background-color="transparent"
           text-color="var(--color-text-muted)"
           active-text-color="var(--color-accent)"
           unique-opened
         >
-          <el-sub-menu
-            v-for="cat in categoryTree"
-            :key="cat.id"
-            :index="cat.id"
-          >
-            <template #title>
-              <el-icon><component :is="cat.icon" /></el-icon>
-              <span>{{ cat.label }}</span>
-            </template>
-            <el-menu-item
-              v-for="sub in cat.children"
-              :key="sub.id"
-              :index="`${cat.id}-${sub.id}`"
-              @click="selectCategory(cat.id, sub.id)"
+          <!-- 「全部图书」——没有它,从侧栏点进任何分类后就回不到全量列表了 -->
+          <el-menu-item :index="ALL_BOOKS_KEY" @click="goAllBooks">
+            <el-icon><Grid /></el-icon>
+            <span class="cat-label">全部图书</span>
+          </el-menu-item>
+
+          <!-- 分类加载中:占位骨架,避免侧栏空一下又蹦出来 -->
+          <div v-if="categoryLoading" class="cat-placeholder">
+            <el-skeleton :rows="5" animated />
+          </div>
+
+          <div v-else-if="categoryError" class="cat-placeholder is-error">
+            <el-icon><WarningFilled /></el-icon>
+            <span>分类加载失败</span>
+            <el-button link type="primary" size="small" @click="loadCategories">重试</el-button>
+          </div>
+
+          <template v-else>
+            <el-sub-menu
+              v-for="cat in categoryTree"
+              :key="cat.id"
+              :index="String(cat.id)"
             >
-              {{ sub.label }}
-            </el-menu-item>
-          </el-sub-menu>
+              <template #title>
+                <el-icon><component :is="iconOf(cat)" /></el-icon>
+                <span class="cat-label">{{ cat.name }}</span>
+                <span v-if="!sidebarCollapsed" class="cat-count">{{ cat.bookCount }}</span>
+              </template>
+              <el-menu-item
+                v-for="sub in (cat.children ?? [])"
+                :key="sub.id"
+                :index="`${cat.id}-${sub.id}`"
+                @click="selectCategory(cat.id, sub.id)"
+              >
+                <span class="cat-label">{{ sub.name }}</span>
+                <span class="cat-count">{{ sub.bookCount }}</span>
+              </el-menu-item>
+            </el-sub-menu>
+          </template>
         </el-menu>
 
         <div v-if="!sidebarCollapsed" class="sidebar-promo">
@@ -454,6 +509,10 @@ function onSearch(): void {
   max-width: 520px;
 }
 
+.search-autocomplete {
+  width: 100%;
+}
+
 .search :deep(.el-input__wrapper) {
   background: var(--color-card);
   border-radius: 999px;
@@ -524,18 +583,31 @@ function onSearch(): void {
   bottom: 0;
   width: 240px;
   z-index: 9;
+  /* 亮色:暖米白玻璃 = --color-bg(#faf8f3)+ 透明度 */
   background: rgba(250, 248, 243, 0.78);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   backdrop-filter: blur(20px) saturate(180%);
-  border-right: 1px solid rgba(255, 255, 255, 0.4);
+  /* 白描边在浅底上不可见 → 淡墨描边定义边界(暗色由下方 dark 块覆盖) */
+  border-right: 1px solid rgba(17, 25, 40, 0.07);
   /* 多层阴影 - 桌面端浮起感 */
   box-shadow:
-    4px 0 12px rgba(0, 0, 0, 0.04),
-    16px 0 40px rgba(0, 0, 0, 0.06),
-    32px 0 80px rgba(0, 0, 0, 0.04);
+    4px 0 12px rgba(17, 25, 40, 0.05),
+    16px 0 40px rgba(17, 25, 40, 0.08),
+    32px 0 80px rgba(17, 25, 40, 0.05);
   overflow: hidden;
   transition: transform 320ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 320ms cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
+}
+
+/* 暗色:侧栏底色必须跟着换 —— 之前没有 dark 覆盖,奶白面板上压着
+   --color-text(#f5f5f5 近白)的标题,直接看不见;边框也用亮棱边 */
+:root[data-theme='dark'] .sidebar {
+  background: rgba(26, 26, 26, 0.82);
+  border-right-color: rgba(255, 255, 255, 0.08);
+  box-shadow:
+    4px 0 12px rgba(0, 0, 0, 0.32),
+    16px 0 40px rgba(0, 0, 0, 0.26),
+    32px 0 80px rgba(0, 0, 0, 0.18);
 }
 
 .is-collapsed .sidebar {
@@ -691,6 +763,60 @@ function onSearch(): void {
 .category-menu :deep(.el-menu) {
   --el-transition-duration: 320ms;
   --el-transition-function-ease-in-out-bezier: cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* ============================================================
+ * 分类项:名字吃掉剩余宽度 + 数量靠右
+ * ============================================================ */
+.cat-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cat-count {
+  margin-left: auto;
+  align-self: center;
+  height: 18px;
+  line-height: 18px;
+  padding: 0 7px;
+  border-radius: 999px;
+  background: var(--color-bg-alt);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: 11.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+  transition:
+    color 220ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 220ms cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* 父级标题里的数字要让开右侧的展开箭头(箭头是绝对定位的) */
+.category-menu :deep(.el-sub-menu__title) .cat-count {
+  margin-right: 14px;
+}
+
+.category-menu :deep(.el-menu-item:hover) .cat-count,
+.category-menu :deep(.el-menu-item.is-active) .cat-count,
+.category-menu :deep(.el-sub-menu__title:hover) .cat-count {
+  color: var(--color-accent);
+  background: rgba(76, 175, 80, 0.12);
+}
+
+/* 分类加载中 / 失败 */
+.cat-placeholder {
+  padding: 14px 20px;
+}
+
+.cat-placeholder.is-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 28px 20px;
+  font-size: 13px;
+  color: var(--color-text-muted);
 }
 
 .sidebar-promo {

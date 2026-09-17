@@ -11,3 +11,6 @@ frontend/node_modules/
 frontend/dist/
 
 TMLibrary/qodana.yaml
+
+# 运行日志
+logs/

@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<!--
+    搜索候选词 —— MySQL LIKE 版本。
+
+    热度口径:order_status = 1(PAID)的订单明细里 quantity 的累计。
+    只算已支付 + 只算 quantity(不是订单笔数),这样"卖了 5 本"和"卖了 1 本 5 次"等价,
+    更接近"这本书有多热"。
+
+    注意:下面的 LIKE 都是前后模糊,走不了索引。候选词查询带 LIMIT、
+    且只在用户输入时触发(前端有防抖),图书表量级小可以接受;
+    真上量就换 Elasticsearch —— 届时只需替换本文件的匹配逻辑,
+    BookSuggestion 的形状不变。
+-->
+<mapper namespace="com.tmt.TMLibrary.mapper.SearchSuggestMapper">
+
+    <!-- 每本书的已支付销量 —— 三个查询共用 -->
+    <sql id="PaidSalesByBook">
+        SELECT oi.book_id AS book_id, SUM(oi.quantity) AS sold
+        FROM order_items oi
+        INNER JOIN orders o ON o.id = oi.order_id AND o.order_status = 1
+        GROUP BY oi.book_id
+    </sql>
+
+    <!-- 书名候选 -->
+    <select id="selectTitleSuggestions" resultType="com.tmt.TMLibrary.dto.response.BookSuggestion">
+        SELECT 'TITLE' AS `type`,
+               b.title  AS text,
+               b.isbn   AS isbn,
+               CAST(COALESCE(s.sold, 0) AS SIGNED) AS hot
+        FROM books b
+        LEFT JOIN (<include refid="PaidSalesByBook"/>) s ON s.book_id = b.id
+        WHERE b.title LIKE CONCAT('%', #{q}, '%')
+        ORDER BY hot DESC, b.title ASC
+        LIMIT #{limit}
+    </select>
+
+    <!--
+        作者候选
+        - 按作者分组,热度 = 名下所有书的销量之和
+        - isbn 显式给 NULL:作者没有单一 ISBN,前端据此判断不给"跳详情"
+    -->
+    <select id="selectAuthorSuggestions" resultType="com.tmt.TMLibrary.dto.response.BookSuggestion">
+        SELECT 'AUTHOR' AS `type`,
+               b.author AS text,
+               NULL     AS isbn,
+               CAST(COALESCE(SUM(s.sold), 0) AS SIGNED) AS hot
+        FROM books b
+        LEFT JOIN (<include refid="PaidSalesByBook"/>) s ON s.book_id = b.id
+        WHERE b.author LIKE CONCAT('%', #{q}, '%')
+        GROUP BY b.author
+        ORDER BY hot DESC, b.author ASC
+        LIMIT #{limit}
+    </select>
+
+    <!-- ISBN 候选 -->
+    <select id="selectIsbnSuggestions" resultType="com.tmt.TMLibrary.dto.response.BookSuggestion">
+        SELECT 'ISBN' AS `type`,
+               b.isbn AS text,
+               b.isbn AS isbn,
+               CAST(COALESCE(s.sold, 0) AS SIGNED) AS hot
+        FROM books b
+        LEFT JOIN (<include refid="PaidSalesByBook"/>) s ON s.book_id = b.id
+        WHERE b.isbn LIKE CONCAT('%', #{q}, '%')
+        ORDER BY hot DESC, b.isbn ASC
+        LIMIT #{limit}
+    </select>
+
+</mapper>

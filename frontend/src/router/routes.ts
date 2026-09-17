@@ -72,7 +72,9 @@ export const routes: RouteRecordRaw[] = [
         meta: { title: '新增图书', admin: true },
       },
       {
-        path: 'books/:id(\\d+)/edit',
+        // 用 isbn 而不是自增 id:后端 PATCH/DELETE/详情全部以 isbn 为自然键,
+        // 路由参数跟后端对齐就不用再为"id → isbn"多打一次接口
+        path: 'books/:isbn/edit',
         name: 'book-edit',
         component: () => import('@/views/book/Edit.vue'),
         meta: { title: '编辑图书', admin: true },

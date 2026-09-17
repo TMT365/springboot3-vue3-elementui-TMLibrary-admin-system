@@ -27,8 +27,16 @@ function readSystemPreference(): Theme {
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
 }
 
+/**
+ * 主题落到 DOM 上 —— 同时写两个标记,缺一不可:
+ *   - data-theme='dark' :项目自己的 token(theme.css 里的 --color-*)
+ *   - class 'dark'      :Element Plus 暗色变量(element-plus/theme-chalk/dark)
+ * EP 只认 html.dark,不认 data-theme,所以必须同时维护。
+ */
 function applyToDom(t: Theme): void {
-  document.documentElement.setAttribute('data-theme', t)
+  const root = document.documentElement
+  root.setAttribute('data-theme', t)
+  root.classList.toggle('dark', t === 'dark')
 }
 
 function persist(t: Theme): void {

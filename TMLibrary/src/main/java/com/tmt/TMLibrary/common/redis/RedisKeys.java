@@ -47,10 +47,38 @@ public final class RedisKeys {
     public static final String JWT_BLACKLIST = "tmlibrary:auth:byJti:%s:blackList";
 
     // ============================================================
-    // 2. Captcha(按 uuid)
+    // 2. Captcha(按 username + uuid + 类型)
     // ============================================================
-    /** 登录验证码,与 username 绑定,3 分钟 TTL。占位符 = uuid */
-    public static final String CAPTCHA_LOGIN = "tmlibrary:captcha:byUuid:%s:code";
+    /**
+     * 登录验证码 —— 把 username 编进 key(2026-09 加):
+     * <br>路径模式:{@code tmlibrary:captcha:login:{username}:{uuid}:code}
+     * <br>占位符 = {username}, {uuid}
+     * <br><b>为什么 key 里要带 username?</b>
+     * <ul>
+     *   <li>防止极端情况下(前端 bug / UUID 碰撞)用户 A 的 captcha 被用户 B 拿去登录</li>
+     *   <li>支持按 username 清理:用户改名字后,可以用
+     *       {@code KEYS tmlibrary:captcha:login:{oldUsername}:*:code} 一次性清掉旧名字的所有 captcha</li>
+     *   <li>UUID v4 冲突概率极低(~1/2^122),但带 username 0 成本,且语义更清晰</li>
+     * </ul>
+     */
+    public static final String CAPTCHA_LOGIN = "tmlibrary:captcha:login:%s:%s:code";
+
+    /**
+     * 注册验证码 —— 跟 login 路径对称。
+     * <br>路径模式:{@code tmlibrary:captcha:register:{username}:{uuid}:code}
+     * <br>占位符 = {username}, {uuid}
+     */
+    public static final String CAPTCHA_REGISTER = "tmlibrary:captcha:register:%s:%s:code";
+
+    /**
+     * 用于 {@code KEYS} 模式匹配 —— 清掉某用户的所有登录 captcha
+     */
+    public static final String CAPTCHA_LOGIN_PATTERN = "tmlibrary:captcha:login:%s:*:code";
+
+    /**
+     * 用于 {@code KEYS} 模式匹配 —— 清掉某用户的所有注册 captcha
+     */
+    public static final String CAPTCHA_REGISTER_PATTERN = "tmlibrary:captcha:register:%s:*:code";
 
     // ============================================================
     // 3. User — 三种用户维度缓存
@@ -86,8 +114,48 @@ public final class RedisKeys {
     public static final java.util.regex.Pattern BOOK_INVENTORY_ID_EXTRACTOR =
             java.util.regex.Pattern.compile("^tmlibrary:book:byId:(\\d+):inventory$");
 
+    /**
+     * 图书分类树 —— 整棵树一个 key(全表也就几十行,一次往返拿全,不做分片)。
+     * <br>路径模式:{@code tmlibrary:book:byScope:categories:tree}
+     * <br>无占位符(全站唯一的一棵树),跟 {@code SCHED_LOCK_*} 一样直接引用常量。
+     * <br><b>失效</b>:写路径(新建分类、图书增删改引起的计数变化)**先删本 key 再写 MySQL**
+     * —— 是 cache-aside 的"删除"而不是"更新",避免并发写把旧值又写回缓存。
+     * <br><b>TTL 30 分钟只作兜底</b>:漏删(直接改库、异常路径)时靠它自愈。
+     */
+    public static final String BOOK_CATEGORY_TREE = "tmlibrary:book:byScope:categories:tree";
+
     // ============================================================
-    // 6. Scheduler — 分布式锁
+    // 6. Stats — 仪表盘统计缓存
+    // ============================================================
+    /**
+     * 仪表盘统计快照 —— 整个响应体一个 key(一次往返拿全量,不用 4 个 key)。
+     * <br>路径模式:{@code tmlibrary:stats:byScope:dashboard-{days}d:overview}
+     * <br>占位符 = {days}(统计窗口天数)
+     * <br>TTL 5 分钟:统计非强一致场景,过期自动回源,不做主动失效
+     */
+    public static final String STATS_DASHBOARD = "tmlibrary:stats:byScope:dashboard-%dd:overview";
+
+    // ============================================================
+    // 7. Security — IP 风控(封禁标记 + 请求计数)
+    // ============================================================
+    /**
+     * IP 封禁标记 —— 每个 /api/* 请求都要读一次,必须走 Redis(不能查 DB)。
+     * <br>路径模式:{@code tmlibrary:sec:byIp:{ip}:ban}
+     * <br>TTL = 封禁剩余时间,到期自动消失(不用定时任务解封)。
+     * <br>占位符 = ip
+     */
+    public static final String IP_BAN = "tmlibrary:sec:byIp:%s:ban";
+
+    /**
+     * IP 请求计数(固定窗口)。窗口号 = 当前时间 / 窗口秒数,天然滚动。
+     * <br>路径模式:{@code tmlibrary:sec:byIp:{ip}:rate:{window}}
+     * <br>TTL = 窗口长度 × 2(留一倍余量,避免边界上 key 提前消失)
+     * <br>占位符 = ip, window
+     */
+    public static final String IP_RATE = "tmlibrary:sec:byIp:%s:rate:%d";
+
+    // ============================================================
+    // 8. Scheduler — 分布式锁
     // ============================================================
     /** 订单超时关单调度锁(SETNX 抢锁) — 固定 key,无占位符 */
     public static final String SCHED_LOCK_ORDER_EXPIRE = "tmlibrary:scheduler:lock:order-expire";
@@ -103,8 +171,22 @@ public final class RedisKeys {
         return String.format(JWT_BLACKLIST, jti);
     }
 
-    public static String captchaLogin(String uuid) {
-        return String.format(CAPTCHA_LOGIN, uuid);
+    public static String captchaLogin(String username, String uuid) {
+        return String.format(CAPTCHA_LOGIN, username, uuid);
+    }
+
+    public static String captchaRegister(String username, String uuid) {
+        return String.format(CAPTCHA_REGISTER, username, uuid);
+    }
+
+    /** 该用户名下所有登录 captcha 的 KEY 匹配模式 */
+    public static String captchaLoginPattern(String username) {
+        return String.format(CAPTCHA_LOGIN_PATTERN, username);
+    }
+
+    /** 该用户名下所有注册 captcha 的 KEY 匹配模式 */
+    public static String captchaRegisterPattern(String username) {
+        return String.format(CAPTCHA_REGISTER_PATTERN, username);
     }
 
     public static String userByUsername(String username) {
@@ -125,5 +207,17 @@ public final class RedisKeys {
 
     public static String bookInfoByIsbn(String isbn) {
         return String.format(BOOK_INFO_BY_ISBN, isbn);
+    }
+
+    public static String statsDashboard(int days) {
+        return String.format(STATS_DASHBOARD, days);
+    }
+
+    public static String ipBan(String ip) {
+        return String.format(IP_BAN, ip);
+    }
+
+    public static String ipRate(String ip, long window) {
+        return String.format(IP_RATE, ip, window);
     }
 }

@@ -3,6 +3,8 @@ package com.tmt.TMLibrary.security;
 import com.tmt.TMLibrary.security.jwt.JwtAuthFilter;
 import com.tmt.TMLibrary.security.jwt.JwtProperties;
 import com.tmt.TMLibrary.security.jwt.JwtService;
+import com.tmt.TMLibrary.service.IpBanService;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.boot.web.servlet.FilterRegistrationBean;
 import org.springframework.context.annotation.Bean;
@@ -61,6 +63,31 @@ public class SecurityConfig {
         reg.addUrlPatterns("/api/*");
         reg.setOrder(10);
         reg.setName("jwtAuthFilter");
+        return reg;
+    }
+
+    /**
+     * IP 风控过滤器 —— 同样不带 @Component,由这里显式注册。
+     *
+     * <p>order 5:排在 JwtAuthFilter(10)之前 —— 已封禁的 IP 连 token 都不解析,
+     * 直接 429 打回,省掉后续解析/查库开销。也在登录验证码等白名单接口之前,
+     * 所以脚本刷验证码同样会被拦。</p>
+     */
+    @Bean
+    public IpRiskControlFilter ipRiskControlFilter(
+            IpBanService ipBanService,
+            AuthErrorWriter errorWriter,
+            @Value("${app.security.ip-ban.trust-private-ips:true}") boolean trustPrivateIps) {
+        return new IpRiskControlFilter(ipBanService, errorWriter, trustPrivateIps);
+    }
+
+    @Bean
+    public FilterRegistrationBean<IpRiskControlFilter> ipRiskControlFilterRegistration(
+            IpRiskControlFilter filter) {
+        FilterRegistrationBean<IpRiskControlFilter> reg = new FilterRegistrationBean<>(filter);
+        reg.addUrlPatterns("/api/*");
+        reg.setOrder(5);
+        reg.setName("ipRiskControlFilter");
         return reg;
     }
 

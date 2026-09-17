@@ -16,6 +16,7 @@
 import axios, { type AxiosInstance, type AxiosRequestConfig } from 'axios'
 import router from '@/router'
 import { useUserStore } from '@/stores/user'
+import { useIpBanStore, type IpBanInfo } from '@/stores/ipBan'
 import type { Result } from '@/types/api'
 
 
@@ -68,6 +69,12 @@ function unwrap<T>(body: Result<T> | unknown): T {
     const result = body as Result<T>
     if (result.code === 200) return result.data as T
     if (result.code === 401) return handle401()
+    // 429 = IP 被风控封禁:弹大尺寸封禁弹窗(挂在 App.vue 上的 IpBanDialog),
+    // 不再叠一个 toast —— 弹窗本身已经把信息说清了
+    if (result.code === 429) {
+      useIpBanStore().show(result.data as IpBanInfo | null)
+      throw new ApiError(result.code, result.msg)
+    }
     ElMessage.error(result.msg || '请求失败')
     throw new ApiError(result.code, result.msg)
   }

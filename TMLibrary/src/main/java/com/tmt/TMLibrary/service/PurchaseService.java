@@ -1,5 +1,6 @@
 package com.tmt.TMLibrary.service;
 
+import com.tmt.TMLibrary.common.Result.PageResult;
 import com.tmt.TMLibrary.entity.Order;
 import com.tmt.TMLibrary.entity.OrderWithItems;
 import com.tmt.TMLibrary.entity.OrderItem;
@@ -75,6 +76,18 @@ public interface PurchaseService {
      * @return 订单列表，按创建时间排序
      */
     List<OrderWithItems> listOrdersByUserId(Integer currentUserId);
+
+    /**
+     * 全量订单分页（管理端「订单列表」用，权限由调用方校验 ADMIN / BOSS）。
+     *
+     * <p>只返回订单主体、不带 items —— 列表页不展开明细,
+     * 带上明细会让每页数据量翻好几倍,还要 MyBatis 合并多行。</p>
+     *
+     * @param page 页码(从 1 开始,&lt;1 夹到 1)
+     * @param size 每页条数(夹到 [1, 100])
+     * @return 分页结果,按 id 倒序(最新在前)
+     */
+    PageResult<Order> listAllOrders(int page, int size);
 
     /**
      * 用户主动取消订单。

@@ -20,4 +20,7 @@ public class Order {
 
     // 过期时间
     private LocalDateTime expireTime;
+
+    /** 支付时间 —— 只有 PENDING → PAID 那次流转会写;未支付为 null */
+    private LocalDateTime paidTime;
 }

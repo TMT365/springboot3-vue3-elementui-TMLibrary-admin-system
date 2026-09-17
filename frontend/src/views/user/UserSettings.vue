@@ -20,7 +20,9 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { userApi } from '@/api/user'
 import { useUserStore } from '@/stores/user'
-import type { FormInstance, FormRules, UserUpdatedRequest } from '@/types/api'
+// FormInstance / FormRules 是 Element Plus 的类型,不在 @/types/api 里
+import type { FormInstance, FormRules } from 'element-plus'
+import type { UserUpdatedRequest } from '@/types/api'
 
 const userStore = useUserStore()
 
@@ -33,7 +35,8 @@ interface FieldDef {
   label: string
   type: 'text' | 'password'
   placeholder: string
-  rules: FormRules['rules'] // 占位,运行时绑定
+  /** 预留字段:每个字段的规则目前统一在下面的 rules 里按 key 组织 */
+  rules?: FormRules['rules']
 }
 
 const fieldDefs: FieldDef[] = [
@@ -110,7 +113,7 @@ const rules: FormRules = {
   passwordConfirm: [
     { required: true, message: '请再次输入新密码', trigger: 'blur' },
     {
-      validator: (_rule, value, callback) => {
+      validator: (_rule: unknown, value: string, callback: (error?: Error) => void) => {
         if (value !== fields.password.newValue) {
           callback(new Error('两次输入的密码不一致'))
         } else {
@@ -231,9 +234,9 @@ async function onSubmit(): Promise<void> {
       fields.passwordConfirm.newValue = ''
       fields.passwordConfirm.dirty = false
     }
-    // 重新 fetch profile 让 store 里的 username 同步
-    await userStore.refreshProfile?.()
-    // store 没 refreshProfile 方法的话 fallback:只更新 username(展示用)
+    // 改完用户名立即同步到 store,顶栏和下拉里的名字才会跟着变
+    // (token 里的 username claim 是登录时签的,换发要等下次登录,这里只同步展示)
+    if (fields.username.dirty) userStore.setUsername(fields.username.oldValue)
   } catch {
     /* request.ts 已经 toast */
   }
@@ -354,22 +357,29 @@ onMounted(loadMe)
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
-/* ============ 3D 立体卡片 - 多层 box-shadow 浮起 ============ */
+/* ============ 3D 立体卡片 - 多层 box-shadow 浮起 ============
+ *
+ * 配色全部走 token:原来写死 #ffffff 打头,暗色下这个渐变变成
+ * "上白下黑" —— 卡片顶部惨白、越往下越黑,是暗色最刺眼的一处。
+ * 换成 --color-card → --color-bg 后,两套主题各自成立:
+ *   亮色 #ffffff → #faf8f3(与原来一致)
+ *   暗色 #1f1f1f → #1a1a1a(卡片比页面底色略亮,自然浮起)
+ * ============================================================ */
 .settings-card {
   position: relative;
   background:
-    linear-gradient(180deg, #ffffff 0%, var(--color-bg, #faf8f3) 100%);
+    linear-gradient(180deg, var(--color-card) 0%, var(--color-bg) 100%);
   border-radius: 18px;
   padding: 36px 40px;
   box-shadow:
-    0 1px 2px rgba(0, 0, 0, 0.04),       /* 近距离接触阴影 */
-    0 6px 16px rgba(0, 0, 0, 0.06),     /* 中距离浮起阴影 */
-    0 32px 80px rgba(0, 0, 0, 0.08),    /* 远距离大气阴影 */
-    inset 0 1px 0 rgba(255, 255, 255, 0.7); /* 顶部 1px 内高光 = 立体感关键 */
+    var(--shadow-card),              /* 近/中距离:亮暗各自定义 */
+    0 32px 80px var(--color-shadow), /* 远距离大气阴影 */
+    var(--edge-highlight);           /* 顶部内高光:亮色白,暗色微弱亮棱边 */
 }
 
+/* 顶部细高光线 —— 亮色下白线压白卡等于没有,暗色下 0.9 又太扎眼,
+   所以亮暗各给一档(暗色见文件末尾覆盖) */
 .settings-card::before {
-  /* 一条更细的高光线,贴在卡片顶部 */
   content: '';
   position: absolute;
   top: 0;
@@ -439,12 +449,14 @@ onMounted(loadMe)
   gap: 24px;
 }
 
+/* 字段块 —— 原来写死 rgba(255,255,255,0.4),
+   暗色下变成一块"发灰的浅色面板",和卡片底几乎同亮度还发白 */
 .field-row {
   display: flex;
   flex-direction: column;
   gap: 8px;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.4);
+  background: var(--color-bg-alt);
   border-radius: 12px;
   transition: background-color 220ms cubic-bezier(0.2, 0, 0, 1);
 }
@@ -514,7 +526,7 @@ onMounted(loadMe)
   box-shadow:
     0 0 0 1px var(--color-border),
     0 2px 4px rgba(0, 0, 0, 0.04),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    var(--edge-highlight);
   transition:
     box-shadow 220ms cubic-bezier(0.2, 0, 0, 1),
     transform 220ms cubic-bezier(0.2, 0, 0, 1);
@@ -524,7 +536,7 @@ onMounted(loadMe)
   box-shadow:
     0 0 0 1px var(--color-text-soft),
     0 2px 6px rgba(0, 0, 0, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    var(--edge-highlight);
 }
 
 .field-input :deep(.el-input__wrapper.is-focus) {
@@ -533,7 +545,7 @@ onMounted(loadMe)
     0 0 0 1px var(--color-accent),
     0 0 0 4px rgba(76, 175, 80, 0.15),
     0 4px 12px rgba(76, 175, 80, 0.18),
-    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+    var(--edge-highlight);
   transform: translateY(-1px);
 }
 
@@ -588,5 +600,126 @@ onMounted(loadMe)
 
 .action-btn:active {
   transform: scale(0.96);
+}
+
+/* ============================================================
+ * 暗色适配
+ *
+ * 这页原来是照纯亮色写的,深底上有一批地方"搭配不合理":
+ *   - 卡片渐变写死 #ffffff 打头 → 暗色下上白下黑(已改成 token)
+ *   - 字段块 rgba(255,255,255,0.4) → 深底上一块发灰的浅面板(已改成 token)
+ *   - 输入框内高光、卡片顶线是白色,深底上要么看不见要么刺眼
+ * 下面把剩下几处亮暗差异明显的地方单独给暗色值。
+ * ============================================================ */
+
+/* 卡片顶部高光线:亮色 0.9(压白卡上看不见,留着无妨),
+   暗色必须压到 0.1 以下 —— 深底上一条 0.9 的白线太扎眼 */
+:root[data-theme='dark'] .settings-card::before {
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    rgba(255, 255, 255, 0.10) 50%,
+    transparent 100%
+  );
+}
+
+/* 字段块:--color-bg-alt(#212121)和卡片底(#1f1f1f)几乎同色,分不出层次,
+   暗色改用半透明白提亮一档,自动跟随卡片渐变 */
+:root[data-theme='dark'] .field-row {
+  background: rgba(255, 255, 255, 0.045);
+}
+
+/* dirty 态的绿底:深底上 0.06 几乎看不出,提到 0.12 */
+:root[data-theme='dark'] .field-row.is-dirty {
+  background: rgba(102, 187, 106, 0.12);
+}
+
+/* ============================================================
+ * 移动端适配(≤640px)
+ *
+ * 这页原来一条 @media 都没有:卡片左右各 40px 内边距在 375px 屏上就吃掉
+ * 五分之一宽度,标题 26px + 「已确认」标签把旧值挤到换行,
+ * 邮件地址这种长文本还会顶破卡片。
+ * ============================================================ */
+@media (max-width: 600px) {
+  .settings-card {
+    padding: 20px 16px;
+    border-radius: 14px;
+  }
+
+  .card-header {
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    padding-bottom: 16px;
+  }
+
+  .card-title {
+    font-size: 21px;
+  }
+
+  .card-desc {
+    font-size: 12.5px;
+    line-height: 1.5;
+  }
+
+  .field-list {
+    gap: 16px;
+  }
+
+  .field-row {
+    padding: 13px 12px;
+  }
+
+  /* label + 旧值 + 待提交标签:窄屏允许换行,别互相挤 */
+  .field-meta {
+    flex-wrap: wrap;
+    gap: 4px 10px;
+  }
+
+  .field-label {
+    min-width: 0;
+  }
+
+  /* 邮箱/手机号这类长值必须能断行,否则顶破卡片 */
+  .field-old {
+    font-size: 14px;
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  .field-dirty-tag {
+    margin-left: 0;
+  }
+
+  /* 输入框和「确认修改」并排会把输入框压到没法用 —— 竖着放 */
+  .field-input-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .field-input-row .confirm-btn {
+    align-self: flex-end;
+  }
+
+  /* 底部三个按钮:窄屏平分整行,比挤在右下角好点 */
+  .card-footer {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+    margin-top: 22px;
+  }
+
+  .footer-actions {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+
+  .footer-actions .action-btn {
+    width: 100%;
+    margin-left: 0;
+  }
 }
 </style>

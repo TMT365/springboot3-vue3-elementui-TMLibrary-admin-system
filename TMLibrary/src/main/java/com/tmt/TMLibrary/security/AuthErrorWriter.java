@@ -26,11 +26,23 @@ public class AuthErrorWriter {
      * @param errorMessage 错误信息
      */
     public void writeError(HttpServletResponse response, int httpStatus, String errorMessage) {
+        writeError(response, httpStatus, errorMessage, null);
+    }
+
+    /**
+     * 带业务数据的错误响应 —— 风控封禁要把 IpBanInfo 放进 {@code data},
+     * 前端据此渲染"访问已被限制"弹窗(见 IpRiskControlFilter)。
+     *
+     * @param data 放进 {@code Result.data} 的业务对象;没有就传 null
+     */
+    public <T> void writeError(HttpServletResponse response, int httpStatus,
+                               String errorMessage, T data) {
         response.setStatus(httpStatus);
         response.setContentType("application/json;charset=UTF-8");
         response.setCharacterEncoding("UTF-8");
         try {
-            String json = objectMapper.writeValueAsString(new Result<Void>(httpStatus, errorMessage, null));
+            String json = objectMapper.writeValueAsString(
+                    new Result<>(httpStatus, errorMessage, data));
             response.getWriter().write(json);
             response.getWriter().flush();
         } catch (Exception e) {

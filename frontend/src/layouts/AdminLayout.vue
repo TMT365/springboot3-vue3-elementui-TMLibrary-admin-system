@@ -20,7 +20,7 @@
  *   └────────────────────────────────────────────────┘
  */
 
-import { ref, computed, watch, onMounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
 import { useRoute, useRouter, type RouteLocationMatched } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useTheme } from '@/composables/useTheme'
@@ -40,14 +40,70 @@ const sidebarCollapsed = ref<boolean>(false)
 onMounted(() => {
   const stored = localStorage.getItem(SIDEBAR_KEY)
   if (stored === '1') sidebarCollapsed.value = true
+
+  updateIsMobile()
+  window.addEventListener('resize', updateIsMobile)
+  window.addEventListener('keydown', onKeydown)
+})
+
+onUnmounted(() => {
+  window.removeEventListener('resize', updateIsMobile)
+  window.removeEventListener('keydown', onKeydown)
+  // 别把 body 的滚动锁带走(否则从后台切到别的页面会滚不动)
+  document.body.style.overflow = ''
 })
 
 watch(sidebarCollapsed, (v) => {
   localStorage.setItem(SIDEBAR_KEY, v ? '1' : '0')
 })
 
+/* ============================================================
+ * 移动端  -  侧栏改抽屉(隐藏式),而不是挤成 64px 图标条
+ *
+ * 之前 ≤768px 只是把侧栏压到 64px:在 375px 的手机上等于白白吃掉 17% 宽度,
+ * 而且图标条既难点中也看不懂。现在跟商城/个人中心一致 —— 默认移出屏外,
+ * 顶栏汉堡按钮滑入,遮罩或 Esc 关闭。
+ * ============================================================ */
+const MOBILE_BREAKPOINT = 900
+const isMobile = ref<boolean>(false)
+const isMobileMenuOpen = ref<boolean>(false)
+
+function updateIsMobile(): void {
+  if (typeof window === 'undefined') return
+  const mobile = window.innerWidth <= MOBILE_BREAKPOINT
+  if (mobile === isMobile.value) return
+  isMobile.value = mobile
+  // 回到桌面就把抽屉状态清掉,免得下次再进移动端时它是"开着"的
+  if (!mobile) isMobileMenuOpen.value = false
+}
+
+function closeMobileMenu(): void {
+  isMobileMenuOpen.value = false
+}
+
+/** 顶栏那个按钮:桌面切折叠宽度,移动端开关抽屉 */
 function toggleSidebar(): void {
+  if (isMobile.value) {
+    isMobileMenuOpen.value = !isMobileMenuOpen.value
+    return
+  }
   sidebarCollapsed.value = !sidebarCollapsed.value
+}
+
+// 路由一变就收起抽屉 —— 点了菜单项应该立刻看到内容
+watch(
+  () => route.path,
+  () => closeMobileMenu(),
+)
+
+// 抽屉打开时锁住 body 滚动(浮层后面的页面不该跟着滚)
+watch(isMobileMenuOpen, (open) => {
+  if (typeof document === 'undefined') return
+  document.body.style.overflow = open ? 'hidden' : ''
+})
+
+function onKeydown(e: KeyboardEvent): void {
+  if (e.key === 'Escape') closeMobileMenu()
 }
 
 /* ============================================================
@@ -118,25 +174,40 @@ async function handleLogout(): Promise<void> {
 }
 
 async function handleCommand(command: string): Promise<void> {
-  if (command === 'logout') {
+  if (command === 'mall') {
+    // 用 push 而不是 replace:保留历史,浏览器后退键能回后台
+    await router.push('/mall')
+  } else if (command === 'logout') {
     await handleLogout()
   }
 }
 </script>
 
 <template>
-  <el-container class="admin-layout">
-    <!-- 侧栏:动态宽度 + 折叠 transition -->
+  <el-container
+    class="admin-layout"
+    :class="{ 'is-mobile': isMobile, 'is-mobile-menu-open': isMobileMenuOpen }"
+  >
+    <!-- 移动端抽屉遮罩 —— 点空白处关掉侧栏 -->
+    <div
+      v-if="isMobile && isMobileMenuOpen"
+      class="sidebar-mask"
+      aria-hidden="true"
+      @click="closeMobileMenu"
+    />
+
+    <!-- 侧栏:桌面动态宽度 + 折叠 transition;移动端浮层抽屉 -->
     <el-aside
       :width="sidebarCollapsed ? '64px' : '220px'"
       class="sidebar"
-      :class="{ 'is-collapsed': sidebarCollapsed }"
+      :class="{ 'is-collapsed': sidebarCollapsed && !isMobile }"
     >
       <router-link to="/admin/dashboard" replace class="logo" aria-label="后台首页">
         <span class="logo-mark">T</span>
-        <span v-show="!sidebarCollapsed" class="logo-text">TMLibrary</span>
+        <span v-show="!sidebarCollapsed || isMobile" class="logo-text">TMLibrary</span>
       </router-link>
-      <SidebarMenu :collapsed="sidebarCollapsed" />
+      <!-- 移动端抽屉里始终展开(抽屉本来就是为"看清菜单"打开的) -->
+      <SidebarMenu :collapsed="isMobile ? false : sidebarCollapsed" />
     </el-aside>
 
     <el-container>
@@ -175,11 +246,17 @@ async function handleCommand(command: string): Promise<void> {
         <div class="topbar-actions">
           <button
             class="icon-btn"
-            :title="sidebarCollapsed ? '展开侧栏' : '收起侧栏'"
-            :aria-label="sidebarCollapsed ? '展开侧栏' : '收起侧栏'"
+            :title="isMobile ? '菜单' : (sidebarCollapsed ? '展开侧栏' : '收起侧栏')"
+            :aria-label="isMobile ? '菜单' : (sidebarCollapsed ? '展开侧栏' : '收起侧栏')"
+            :aria-expanded="isMobile ? isMobileMenuOpen : !sidebarCollapsed"
             @click="toggleSidebar"
           >
-            <el-icon>
+            <!-- 移动端 = 汉堡/关闭,桌面 = 折叠/展开 -->
+            <el-icon v-if="isMobile">
+              <Close v-if="isMobileMenuOpen" />
+              <Menu v-else />
+            </el-icon>
+            <el-icon v-else>
               <Fold v-if="!sidebarCollapsed" />
               <Expand v-else />
             </el-icon>
@@ -210,7 +287,13 @@ async function handleCommand(command: string): Promise<void> {
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="logout">
+                <!-- 回商城的入口 —— 商城那边有「进入管理后台」,这边得有回程,
+                     否则进了后台就只能靠手改地址栏回去 -->
+                <el-dropdown-item command="mall">
+                  <el-icon><Shop /></el-icon>
+                  返回商城
+                </el-dropdown-item>
+                <el-dropdown-item command="logout" divided>
                   <el-icon><SwitchButton /></el-icon>
                   注销
                 </el-dropdown-item>
@@ -565,13 +648,58 @@ async function handleCommand(command: string): Promise<void> {
 }
 
 /* ============================================================
- * 响应式  -  移动端:侧栏自动收起,面包屑可滚动
+ * 响应式(≤900px)  -  侧栏改隐藏式抽屉 + 浮层遮罩
  * ============================================================ */
-@media (max-width: 768px) {
-  .topbar {
-    padding: 0 16px;
+.sidebar-mask {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  .sidebar-mask {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 30;
+    background: rgba(12, 18, 30, 0.36);
+    -webkit-backdrop-filter: blur(2px);
+    backdrop-filter: blur(2px);
   }
 
+  /* 抽屉:默认移出屏外,宽度不跟 el-aside 的 :width 走(那是桌面端的折叠宽度) */
+  .sidebar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: min(78vw, 260px) !important;
+    z-index: 40;
+    transform: translateX(-100%);
+    box-shadow: none;
+    /* 移出屏外后不该还能点到/聚焦到里面的菜单项 */
+    pointer-events: none;
+    /* 移动端只动 transform,不做宽度动画 */
+    transition: transform 280ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 280ms ease;
+  }
+
+  .is-mobile-menu-open .sidebar {
+    transform: translateX(0);
+    pointer-events: auto;
+    box-shadow:
+      4px 0 24px rgba(12, 18, 30, 0.14),
+      24px 0 64px rgba(12, 18, 30, 0.10);
+  }
+
+  /* 抽屉是浮层,主内容区不再为侧栏留位 */
+  .main-content {
+    padding: 16px 16px 32px;
+  }
+
+  .topbar {
+    padding: 0 16px;
+    gap: 10px;
+  }
+
+  /* 面包屑:小屏放不下就横向滚动,别换行把顶栏撑高 */
   .crumb-list {
     overflow-x: auto;
     scrollbar-width: none;
@@ -580,28 +708,22 @@ async function handleCommand(command: string): Promise<void> {
   .crumb-list::-webkit-scrollbar {
     display: none;
   }
+}
+
+/* 窄屏手机:顶栏只留头像,面包屑收到上一层就够 */
+@media (max-width: 600px) {
+  .topbar-actions .user-name,
+  .topbar-actions .el-tag,
+  .topbar-actions .caret {
+    display: none;
+  }
+
+  .crumb-list {
+    font-size: 13px;
+  }
 
   .main-content {
-    padding: 16px 16px 32px;
-  }
-
-  
-  .sidebar {
-    width: 64px !important;
-  }
-
-  .logo {
-    padding: 0;
-    justify-content: center;
-  }
-
-  .logo-text {
-    display: none;
-  }
-
-  .topbar-actions .user-name,
-  .topbar-actions .el-tag {
-    display: none;
+    padding: 12px 12px 28px;
   }
 }
 </style>

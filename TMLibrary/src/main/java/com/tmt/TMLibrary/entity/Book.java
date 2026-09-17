@@ -20,6 +20,8 @@ public class Book {
     private LocalDateTime createdTime;  // 记录创建时间
     private LocalDateTime updatedTime;  // 记录更新时间
     private Integer stockQuantity;
+    /** 所属分类 id(逻辑引用 book_categories.id);null = 未分类(老数据) */
+    private Integer categoryId;
     // Getters and setters
 
     //@Data 注解会自动生成所有字段的 getter 和 setter 方法，以及 equals、hashCode 和 toString 方法。你可以根据需要添加其他方法或注解。

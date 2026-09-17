@@ -105,6 +105,32 @@ HTTP/1.1 401 Unauthorized
 > 过滤器(`JwtAuthFilter`)写入的错误也遵循同一约定,前端可统一按
 > `err.response.data` 解包,无需区分两套风格。
 
+### 1.6 Jackson 序列化约定(Spring Boot 自动配置)
+
+后端没有自定义 `ObjectMapper`,遵循 Spring Boot 4.x 默认行为:
+
+| Java 类型 | JSON 形态 | 示例 |
+|---|---|---|
+| `BigDecimal` | **number** | `99.00` |
+| `Integer` / `int` | number | `0` / `42` |
+| `Long` | number | `1234567890123456`(订单号精度) |
+| `Enum` | **字符串(name())** | `"PENDING"` / `"USER"` |
+| `LocalDate` | `yyyy-MM-dd` | `"2024-01-15"` |
+| `LocalDateTime` | `yyyy-MM-ddTHH:mm:ss` | `"2024-01-15T10:00:00"` |
+| `Instant` | ISO-8601 UTC | `"2026-09-13T13:20:00Z"` |
+| `String` | 字符串 | — |
+
+**⚠️ 易踩的坑(后端 DTO 之间不一致)**:
+
+- `LoginResponse.role` 字段是 `UserRole` 枚举 → JSON **`"USER"`** (字符串)
+- `UserVo.role` / `UserVo.status` 字段是 `Integer` → JSON **`0` / `1` / `2`** (数字)
+- `PurchaseResponse.status` 字段是 `OrderStatus` 枚举 → JSON **`"PENDING"`** (字符串)
+- `Book.price` / `PurchaseResponse.totalAmount` 等 `BigDecimal` → JSON **number**
+
+> **重要**:`UserVo` 用 Integer 而不是枚举类型,**是因为管理端搜索条件要按 code 精确筛选
+> (BOSS 看 role=2,ADMIN 看 role=0)**;如果改成枚举字段,搜索 query 就拿不到 code 了。
+> LoginResponse 用枚举是为了 JWT 反序列化直观 (`UserRole.fromString(claims.get("role"))`)。
+
 ---
 
 ## 2. 鉴权模块 `/api`
@@ -117,14 +143,53 @@ HTTP/1.1 401 Unauthorized
   ```json
   { "username": "alice" }
   ```
-- **响应**：`image/png` 二进制流(直接渲染到 `<img src>`)。
+- **响应 data** `CaptchaResponse`(2026-09 改为 JSON 对象,替代原 image/png 二进制):
+  ```json
+  {
+    "image": "data:image/jpeg;base64,/9j/4AAQ...",
+    "expiresAt": 1763325600000
+  }
+  ```
+  | 字段 | 类型 | 说明 |
+  |---|---|---|
+  | `image` | string | base64 data URI,可直接作为 `<img src>` 使用 |
+  | `expiresAt` | **string** | 过期时间戳(毫秒,**用 String 不用 long**,见下方) |
+
+  > **为什么 `expiresAt` 是 String 不是 long?**
+  >
+  > JS 的 `Number` 是 64-bit 浮点,安全整数范围 `±2^53 ≈ ±9×10^15`;
+  > 当前毫秒时间戳 `~1.7×10^12` 还在范围内,但:
+  > - Java `long` 范围 `±9.2×10^18`,某些序列化路径(微秒/纳秒精度)会越界
+  > - 前端某些 JSON 解析器(老浏览器)会丢精度
+  > - String 跨网络无损,前端 `Number(str)` 解析毫秒时间戳永远安全
+  >
+  > 这是「string at the boundary」惯例 —— 内部 `long` 算时间,跨网络用 String 传输。
 - **白名单**:无需 token。
 - **说明**:
   - `uuid` 由前端生成(推荐 UUID),作为 captcha 在 Redis 的 key 后缀。
   - 验证码和请求时的 `username` 绑定,3 分钟 TTL。
   - 同一个 uuid 只能验证一次(登录成功后被 Redis 删除)。
+  - 验证码字符集:**大写字母 + 数字,排除 l/1/I/0/O 五个易混字符**(剩 32 字符),长度 4;图像尺寸 120×48。
+    早版本用 62 个大小写字母+数字,因 l/1/I 字号宽度差异大,会裁字;
+    2026-09 改为「A-Z 除 I/O + 数字 2-9」+ 26px 粗体 + 抗锯齿,信息熵 log₂(32⁴) ≈ 20 bit。
+  - **Redis key(2026-09 加 username)**:`tmlibrary:captcha:login:{username}:{uuid}:code`(见 `RedisKeys.CAPTCHA_LOGIN`)。key 里带 username 是安全改进:① 即使前端 bug / UUID 碰撞导致 A、B 用了同一 uuid,key 不同也互不污染;② 用户改名字后,可以用 `KEYS tmlibrary:captcha:login:{oldUsername}:*:code` 一次性清掉旧名字的所有 captcha。
 
-### 2.2 注册
+### 2.2 获取注册验证码(2026-09 新增)
+
+`POST /api/captcha/register?uuid=<uuid>`
+
+- **请求体**:
+  ```json
+  { "username": "alice" }
+  ```
+- **响应 data**:`CaptchaResponse`(同 § 2.1)
+- **白名单**:无需 token。
+- **说明**:
+  - 跟 § 2.1 同一份 `CaptchaUtil` 生成图片,但 Redis key 走 `tmlibrary:captcha:register:{username}:{uuid}:code`
+    —— 跟 login captcha 分开(路径段不同),登录 captcha 不能拿去注册,反之亦然
+  - key 里同样带 username(2026-09 安全改进),理由同 § 2.1
+
+### 2.3 注册
 
 `POST /api/users/register`
 
@@ -135,7 +200,9 @@ HTTP/1.1 401 Unauthorized
     "username": "alice",
     "password": "secret123",
     "email": "alice@example.com",
-    "phoneNumber": "13800000000"
+    "phoneNumber": "13800000000",
+    "captcha": "aB3x",
+    "uuid": "550e8400-e29b-41d4-a716-446655440000"
   }
   ```
   | 字段 | 类型 | 必填 | 校验 |
@@ -144,10 +211,18 @@ HTTP/1.1 401 Unauthorized
   | `password` | string | ✅ | 长度 6-20(后端 BCrypt 哈希) |
   | `email` | string | ✅ | 邮箱格式 |
   | `phoneNumber` | string | ✅ | 长度 11 |
+  | `captcha` | string | ✅ | 长度 = `CaptchaUtil.LENGTH`(4) |
+  | `uuid` | string | ✅ | 跟 § 2.2 申请时同一个 uuid |
 
-- **响应 data**：`int`(新用户 ID)
+- **校验流程**:后端先读 `tmlibrary:captcha:register:{username}:{uuid}:code`,校验:
+  1. key 存在(`404 NOT_FOUND`)—— 因为 key 里有 username,**请求 username 跟 captcha 申请时不一致直接 404**,不用单独比对
+  2. captcha 跟申请时一致(`400 BAD_REQUEST`「验证码错误」)
+  3. defense-in-depth 再比对一次 value 里的 username 跟请求(`400 BAD_REQUEST`「验证码与账号不匹配」)
+  4. 全部通过 → 删 key(防重放)→ 创建用户 → 返回新用户 ID
 
-### 2.3 登录
+- **响应 data**:`int`(新用户 ID)
+
+### 2.4 登录
 
 `POST /api/users/login`
 
@@ -167,6 +242,7 @@ HTTP/1.1 401 Unauthorized
   | `password` | string | ✅ | 明文,后端 BCrypt |
   | `captcha` | string | ✅ | 验证码原文 |
   | `uuid` | string | ✅ | 调用 § 2.1 时用的 uuid |
+  | `ipAddress` | string | ❌ | 前端不传,后端从 `request.getRemoteAddr()` 拿 |
 
 - **响应 data** `LoginResponse`:
   ```json
@@ -206,10 +282,10 @@ HTTP/1.1 401 Unauthorized
 
   | 字段 | 类型 | 说明 |
   |---|---|---|
-  | `loggedOut` | boolean | 固定 `true`,前端据此清 localStorage 并跳转 |
+  | `loggedOut` | boolean | 后端固定返回 `true`,前端据此清 localStorage 并跳转 |
   | `message` | string | 提示文案,可直接展示 |
   | `redirectUrl` | string | 建议前端跳转的路径 |
-  | `logoutAt` | Instant | 服务端登出时间(ISO-8601) |
+  | `logoutAt` | Instant | 服务端登出时间(ISO-8601,见 § 1.6) |
 
 - **机制**:解析 token,提取 `jti`,按剩余 TTL 写入 Redis 黑名单(同 token 不能再用)。
 - **前端约定**:收到 `loggedOut=true` 后必须清除本地 token 并跳转 `redirectUrl`;
@@ -243,7 +319,7 @@ HTTP/1.1 401 Unauthorized
   | `page` | int | 默认 1 |
   | `size` | int | 默认 10,上限 100 |
 
-- **响应 data**:`PageResult<UserVo>`,`UserVo` 见 [§ 5.3](#53-user-用户视图)。
+- **响应 data**:`PageResult<UserVo>`,`UserVo` 字段见 [§ 3.2 详情](#32-详情)(包括脱敏规则和序列化方式)。
 
 ### 3.2 详情
 
@@ -252,9 +328,35 @@ HTTP/1.1 401 Unauthorized
 - **路径**:`id` int
 - **权限**:自己 / `ADMIN` / `BOSS` 可看,其他角色 `403 FORBIDDEN`。
 - **响应 data**:`UserVo`,敏感字段已脱敏:
-  - `realName` — 保留首字符,余下 `*`(`张三丰` → `张**`)
-  - `phoneNumber` — 保留前 7 位,余下 `*`(`13800001234` → `1380000****`)
-  - `email` — 本地部分保留首字符,域名完整(`alice@example.com` → `a****@example.com`)
+  - `realName` — 保留首字符,余下 `*`(`张三丰` → `张**`);为 `null` 时后端兜底为 `""`(空串,**不是 null**)
+  - `phoneNumber` — 保留前 7 位,余下 `*`(`13800001234` → `1380000****`);为 `null` 时后端兜底为 `""`
+  - `email` — 本地部分保留首字符,域名完整(`alice@example.com` → `a****@example.com`);为 `null` 时后端兜底为 `""`
+  - `avatarUrl` — 头像 URL,可能为 `null`(未设置头像),前端按 fallback 处理
+
+  **序列化重要**:
+  - `role` / `status` 字段是 **`Integer` (0/1/2)**,JSON 序列化为 **number**,**不是字符串枚举** —— 跟 `LoginResponse.role` 不一样(那边是枚举 → 字符串)
+  - 原因:管理端搜索要按 code 精确筛(role=2 / status=0 等),见 § 1.6 的"易踩坑"
+  - 前端若要用枚举名(`'ACTIVE'` / `'ADMIN'`),需要自己 number → string 映射;前端 `utils/safeUser.ts` 已实现
+
+  ```json
+  {
+    "id": 42,
+    "username": "alice",
+    "realName": "张**",
+    "email": "a****@example.com",
+    "avatarUrl": null,
+    "role": 1,
+    "status": 0,
+    "phoneNumber": "1380000****",
+    "createdTime": "2024-01-15T10:00:00",
+    "updatedTime": "2024-01-15T10:00:00",
+    "lastLoginTime": "2026-09-13T13:20:00",
+    "lastLoginIp": "192.168.1.1",
+    "failedLoginAttempts": 0,
+    "accountLockedUntil": null,
+    "deletedAt": null
+  }
+  ```
 
 ### 3.3 更新用户信息
 
@@ -275,8 +377,9 @@ HTTP/1.1 401 Unauthorized
     "role": 0
   }
   ```
-  - `id` 字段**忽略**:以 URL `{id}` 为准,防止 body 串改。
+  - `id` 字段**忽略**:以 URL `{id}` 为准,防止 body 串改(后端 DTO 里**确实存在** `id` 字段,前端可不传)。
   - 密码 / 软删 / 登录时间 / 失败计数 等字段**不接受**通过本接口改。
+  - **`status` / `role` 字段是 `Integer`**(JSON number),不是字符串枚举 —— 同 § 3.2 UserVo。
 
 ### 3.4 软删(需密码确认)
 
@@ -327,9 +430,13 @@ HTTP/1.1 401 Unauthorized
   "publishedDate": "2024-01-15",
   "createdTime": "2024-01-15T10:00:00",
   "updatedTime": "2024-01-15T10:00:00",
-  "stockQuantity": 100
+  "stockQuantity": 100,
+  "categoryId": 201
 }
 ```
+
+> `categoryId` 指向 `book_categories.id` 里的**小类**(见 § 4.11);
+> `null` = 未分类(分类功能上线前录入的老书)。
 
 ### 4.1 简单分页列表
 
@@ -354,7 +461,8 @@ HTTP/1.1 401 Unauthorized
     "isbn": "9787111543246",
     "price": 99.00,
     "stockQuantity": 100,
-    "publishedDate": "2024-01-15"
+    "publishedDate": "2024-01-15",
+    "categoryId": 201
   }
   ```
   | 字段 | 类型 | 必填 | 校验 |
@@ -362,9 +470,12 @@ HTTP/1.1 401 Unauthorized
   | `title` | string | ✅ | 长度 ≤ 200 |
   | `author` | string | ✅ | 长度 ≤ 100 |
   | `isbn` | string | ✅ | 正则 `^[0-9Xx-]{10,20}$` |
-  | `price` | BigDecimal | ✅ | ≥ 0 |
+  | `price` | BigDecimal | ✅ | ≥ 0;**JSON 序列化为 number**(见 § 1.6) |
   | `stockQuantity` | Integer | ✅ | ≥ 0 |
   | `publishedDate` | date | ✅ | — |
+  | `categoryId` | Integer | ❌ | 小类 id;不传 = 未分类 |
+
+  > 传了 `categoryId` 时,该分类的 `book_count` 会在**同一个事务里 +1**。
 
 ### 4.3 按 ISBN 查询
 
@@ -383,9 +494,14 @@ HTTP/1.1 401 Unauthorized
     "author": "周志明",
     "price": 109.00,
     "createdDate": "2024-01-15",
-    "publishedDate": "2024-01-15"
+    "publishedDate": "2024-01-15",
+    "categoryId": 204
   }
   ```
+  - `price` 是 `BigDecimal`,JSON 序列化为 **number**(见 § 1.6)。
+  - `categoryId` **传了才改**,且只接受 > 0 的值(即"改成某个分类");
+    不传 / 传 0 都表示"保持原分类" —— 本接口**不支持把分类置空**。
+    改分类时旧分类 `book_count` −1、新分类 +1,与图书更新同一事务。
 
   > **库存字段已移出本接口**,改用 § 4.5 独立调整。原因:交易链路(下单/取消/付款)
   > 会持续改动可用库存,管理端直接覆盖会与在途预占冲突,且无法审计。
@@ -415,18 +531,28 @@ HTTP/1.1 401 Unauthorized
 
 ### 4.7 多条件组合搜索
 
-`GET /api/books?title=&author=&minPrice=&maxPrice=&minStock=&maxStock=&publishedDate=&page=1&size=10`
+`GET /api/books?title=&author=&keyword=&minPrice=&maxPrice=&minStock=&maxStock=&publishedDate=&categoryId=&page=1&size=10`
 
 - **Query 参数** `BookSearchRequest`(全部可选,空串 = 不参与):
   | 字段 | 类型 | 说明 |
   |---|---|---|
-  | `title` | string | 模糊 |
-  | `author` | string | 模糊 |
+  | `title` | string | 书名模糊 |
+  | `author` | string | 作者模糊 |
+  | `keyword` | string | **关键字**:书名 / 作者 / ISBN **任一**命中即可(OR)。商城搜索框用这个 |
+  | `minPrice` / `maxPrice` | BigDecimal | 价格区间 |
   | `minPrice` / `maxPrice` | BigDecimal | 价格区间 |
   | `minStock` / `maxStock` | int | 库存区间 |
   | `publishedDate` | date | 精确匹配 |
+  | `categoryId` | int | 按分类筛选,**传大类时连同其所有子类一起命中**(商城点分类用) |
   | `page` | int | 默认 1 |
   | `size` | int | 默认 10,上限 100 |
+
+  > `keyword` 与 `title` / `author` 这些**精确维度是 AND 叠加**:两个都传 = "关键字命中 **且** 书名匹配"。
+  > `keyword` 内部那三个 LIKE 才是 OR —— 搜索框只给一个输入框,用户不区分自己输的是书名还是作者,
+  > 用 AND 的话「周志明」(作者名)永远搜不到。
+  >
+  > 代价:三个 LIKE 都是前后模糊(`'%x%'`),**走不了索引**。图书表量级小可以接受,
+  > 真要上量得换全文索引或搜索引擎。
 
 - **响应 data**:`PageResult<Book>`
 
@@ -449,6 +575,108 @@ HTTP/1.1 401 Unauthorized
 `GET /api/books/search/UpdatedTime/by?year=...&...`
 
 - 同 § 4.8,字段语义换成 `updatedTime`。
+
+### 4.11 图书分类树
+
+`GET /api/books/categories`
+
+- **鉴权**:❌ **免登录**(商城侧栏、分类 chips、后台表单都要读)。
+  挂在 `/api/books` 前缀下是为了命中 `JwtAuthFilter` 里 `("/api/books", GET)` 的白名单;
+  字面量段 `categories` 的匹配优先级高于变量段 `{isbn}`,不会和 § 4.3 撞车。
+- **响应 data**:`List<BookCategoryNode>`,只有两级(大类 → 小类):
+  ```json
+  [
+    {
+      "id": 2,
+      "name": "计算机",
+      "icon": "Cpu",
+      "bookCount": 7,
+      "children": [
+        { "id": 201, "name": "编程语言", "icon": null, "bookCount": 4, "children": null },
+        { "id": 202, "name": "算法与数据结构", "icon": null, "bookCount": 1, "children": null }
+      ]
+    }
+  ]
+  ```
+  | 字段 | 类型 | 说明 |
+  |---|---|---|
+  | `icon` | string\|null | 大类图标名(Element Plus 图标,如 `Cpu`);小类恒为 `null` |
+  | `bookCount` | int | **大类是累加值**(自身直挂 + 所有子类之和),小类是自身直挂数 |
+  | `children` | array\|null | 大类的子类列表(可能为空数组);小类为 `null` |
+
+  > `bookCount` 存在 `book_categories.book_count` 字段里,由图书的增 / 删 / 改分类
+  > 在同一事务内维护(见 § 4.2、§ 4.4、§ 4.6)。
+  > 只在服务端做增量,不依赖定时重算;漂移时可用 `BookCategoryMapper.recountAll()` 修复
+  > (走 SQL 修完要手动 `DEL tmlibrary:book:byScope:categories:tree`,见下)。
+
+- **缓存**:整棵树缓存在 Redis 单 key `tmlibrary:book:byScope:categories:tree`,TTL 30 分钟。
+  - 读:cache-aside —— 命中直接返回,未命中回源组装后写回(Redis 异常时静默回源,不影响可用性)
+  - 写:**先删该 key,再写 MySQL**(不是"更新缓存");删除点是 § 4.12 新建分类、
+    以及 § 4.2 / § 4.4 / § 4.6 里图书增删改引起的计数变化
+  - 不做延迟双删 —— 第二次删除的时序问题留给后续 MQ(订阅 binlog)在事务提交后统一失效
+  - TTL 只作兜底:直接改库、漏删、异常路径靠它自愈
+
+### 4.12 新建分类
+
+`POST /api/books/categories`
+
+- **鉴权**:✅ 需要 `ADMIN` / `BOSS`(后端二次校验角色,普通用户 `403`)。
+- **请求体** `CategoryCreateRequest`:
+  ```json
+  { "parentId": 2, "name": "函数式编程" }
+  ```
+  | 字段 | 类型 | 必填 | 说明 |
+  |---|---|:---:|---|
+  | `parentId` | Integer | ❌ | **省略或 0 = 新建大类**;> 0 = 在该大类下新建小类 |
+  | `name` | string | ✅ | 长度 ≤ 50,同父下唯一 |
+
+- **响应 data**:`BookCategory` 实体(含 DB 回填的 `id` / `bookCount` / 时间戳)
+- **幂等**:同父下重名**不报错**,直接返回已存在的那个分类(避免前端重复点击失败)。
+- **失败码**:
+  - `400 BAD_REQUEST` — 名字为空 / 超长 / 试图在**小类**下再建子类(最多两级)
+  - `404 NOT_FOUND` — `parentId` 指向的大类不存在
+  - `403 FORBIDDEN` — 非管理员
+
+- **后台用法**:新增图书页的「小类」下拉开了 `allow-create`,
+  用户敲一个新名字 → 先打本接口建分类拿到 `id` → 再带着 `categoryId` 提交 § 4.2。
+
+### 4.13 搜索候选词(下拉建议)
+
+`GET /api/books/suggest?q=计算&limit=8`
+
+- **鉴权**:❌ **免登录**(商城搜索框未登录也要能用)。
+  同样挂在 `/api/books` 前缀下蹭白名单;字面量段 `suggest` 优先于 `{isbn}`。
+- **Query**:
+  | 字段 | 类型 | 默认 | 说明 |
+  |---|---|---|---|
+  | `q` | string | — | 已输入内容;空白直接返回 `[]`(不打库) |
+  | `limit` | int | 8 | 条数上限,夹到 `[1, 20]` |
+- **响应 data**:`List<BookSuggestion>`
+  ```json
+  [
+    { "type": "TITLE",  "text": "深入理解计算机系统", "isbn": "9787111544937", "hot": 4 },
+    { "type": "AUTHOR", "text": "周志明",             "isbn": null,            "hot": 4 },
+    { "type": "ISBN",   "text": "9787111543246",      "isbn": "9787111543246", "hot": 4 }
+  ]
+  ```
+  | 字段 | 说明 |
+  |---|---|
+  | `type` | `TITLE` / `AUTHOR` / `ISBN`,前端据此选图标 |
+  | `text` | 候选词本身,选中后回填输入框 |
+  | `isbn` | 只有 `TITLE` / `ISBN` 有值(留给"点候选直接进详情"),作者为 `null` |
+  | `hot` | **热度** = 该候选在**已支付订单**里的累计销量;无成交为 `0`(不会为 `null`) |
+
+- **匹配**:书名 / 作者 / ISBN 任一命中即可(OR);`ISBN` 类候选只在输入
+  **≥3 位且只含数字/X/横杠**时才查(省掉纯中文输入时的一次无用查询)。
+- **排序**:`hot` 降序 → 类型优先级(书名 > 作者 > ISBN)→ 字面序。
+  字面序兜底是故意的:同热度时结果必须稳定,否则翻页/重查会跳。
+- **实现位置**:`SearchSuggestServiceImpl` —— 这是将来换 Elasticsearch 的**接缝**,
+  入参出参形状不变,只替换取数与相关性打分。
+  > 当前匹配走 MySQL `LIKE '%q%'`,**用不上索引**。候选词查询带 LIMIT、
+  > 且前端有 280ms 防抖,图书表量级下可以接受。
+- **个性化排序暂未实现**:本接口免登录,而 `JwtAuthFilter` 命中白名单后
+  直接放行、**不解析 token**,服务端拿不到 userId。要做"按这个用户买过的分类加权",
+  得先让白名单路径支持"有 token 就解析"(可选鉴权)。
 
 ---
 
@@ -546,6 +774,8 @@ HTTP/1.1 401 Unauthorized
   "orderNumber": "1234567890123456",
   "status": "PENDING",
   "totalAmount": 297.00,
+  "createdTime": "2026-09-16T21:36:33",
+  "paidTime": null,
   "items": [
     {
       "bookId": 1,
@@ -557,9 +787,18 @@ HTTP/1.1 401 Unauthorized
 }
 ```
 
-- `status`: `PENDING`(待支付)/ `PAID`(已支付)/ `CANCELLED`(已取消)/ `TIMEOUT`(超时取消)
-- `price` 是下单时的**快照价**,不受后续 book 调价影响。
-- 不暴露内部字段:`id` / `orderId` / `createdTime` / `userId` 等。
+- `status`: `OrderStatus` **枚举**,JSON 序列化为字符串(`"PENDING"` / `"PAID"` / `"CANCELLED"` / `"TIMEOUT"`,见 § 6.3 / § 1.6)
+- `totalAmount` / `price` / `subtotal` 是 `BigDecimal`,JSON 序列化为 **number**(见 § 1.6)
+- `price` 是下单时的**快照价**,不受后续 book 调价影响
+- `createdTime` = 下单时间(`orders.created_time`),`paidTime` = 支付时间(`orders.paid_time`)
+  - 都是 `LocalDateTime` → `"yyyy-MM-ddTHH:mm:ss"`,**已截到秒**(`truncatedTo(SECONDS)`),
+    前端可以直接 `new Date(...)`(Safari 解析不了超过 3 位的小数秒)
+  - **`paidTime` 在未支付时为 `null`**(待支付 / 已取消 / 超时关闭都没有支付时刻),
+    前端必须按 null 处理
+  - `paidTime` 只有 `PENDING → PAID` 那一次流转会写(`updateStatusByOrderNumberGuard`
+    里按 `toStatus = 1` 判定)。**不要用 `updated_time` 代替** —— 支付后的任何改动
+    都会顶掉它,而"什么时候付的钱"是财务口径
+- 不暴露内部字段:`id` / `orderId` / `userId` 等
 
 ---
 
@@ -590,15 +829,43 @@ HTTP/1.1 401 Unauthorized
 | 2 | `CANCELLED` | 已取消 |
 | 3 | `TIMEOUT` | 超时取消 |
 
+### 6.4 枚举在 DTO 中的两种序列化方式
+
+后端 DTO 字段**不一致地**使用 `Integer` 或 `Enum` 类型,导致 JSON 序列化结果有差异。
+具体到哪个 DTO 用哪种:
+
+| 字段 | 所在 DTO | 字段类型 | JSON 形态 | 用法 |
+|---|---|---|---|---|
+| `role` | `LoginResponse` | `UserRole` **枚举** | **字符串** `"USER"` | 登录后 JWT 一致性 |
+| `role` | `UserVo` (列表/详情) | `Integer` code | **number** `0/1/2` | 管理端按 code 搜索 |
+| `role` | `UserSearchRequest` (query) | `Integer` code | **number** `0/1/2` | 同上,query 传 number |
+| `role` | `UserUpdatedRequest` (body) | `Integer` code | **number** `0/1/2` | 同上,body 传 number |
+| `status` | `UserVo` | `Integer` code | **number** `0/1/2` | 列表/详情展示用 number |
+| `status` | `UserSearchRequest` (query) | `Integer` code | **number** `0/1/2` | 同上 |
+| `status` | `UserUpdatedRequest` (body) | `Integer` code | **number** `0/1/2` | 同上 |
+| `status` | `PurchaseResponse` | `OrderStatus` **枚举** | **字符串** `"PENDING"` | 订单状态语义清晰 |
+
+> **设计取舍**:
+> - 登录用枚举 → JWT claim `role` 也是 `UserRole.name()`,反序列化时 `UserRole.fromString(claims.get("role"))` 直观
+> - 管理用 Integer → 搜索 query 直接传 `?role=2`,无需做 name → code 转换;管理界面用 `<el-tag :type="tagType(row.status)">` 之类的转换
+> - 订单用枚举 → 状态语义直接读,无歧义;DB `order_status` 是 `Integer`,Java 端 `OrderStatus.getOrderStatusByCode()` 还原
+
+> **前端处理**:
+> 前端用 `safeUser.ts` 在 API 出口处把 `UserVo` 的 `role` / `status` 从 number 翻译回字符串枚举
+> (`'USER'` / `'ADMIN'` / `'BOSS'`、`'ACTIVE'` / `'INACTIVE'` / `'SUSPENDED'`),
+> 让 view 层可以写 `status === 'ACTIVE'` 这样的字符串比较。`LoginResponse` 和 `PurchaseResponse`
+> 的枚举字段由 Jackson 自动序列化为字符串,前端无需翻译。
+
 ---
 
 ## 7. 端点速查表
 
 | Method | URL | Auth | 说明 |
 |---|---|:---:|---|
-| POST | `/api/captcha/login` | ❌ | 获取登录验证码 |
-| POST | `/api/users/register` | ❌ | 注册 |
-| POST | `/api/users/login` | ❌ | 登录 |
+| POST | `/api/captcha/login` | ❌ | 获取登录验证码(返回 JSON `{image, expiresAt}`) |
+| POST | `/api/captcha/register` | ❌ | 获取注册验证码(2026-09 新增) |
+| POST | `/api/users/register` | ❌ | 注册(需 captcha + uuid) |
+| POST | `/api/users/login` | ❌ | 登录(需 captcha + uuid) |
 | POST | `/api/users/logout` | ✅ | 登出 |
 | GET | `/api/users/list` | ✅ | 列表查询(分页+多条件) |
 | GET | `/api/users/{id}` | ✅ | 详情 |
@@ -632,7 +899,7 @@ HTTP/1.1 401 Unauthorized
 ```
 ┌─────────┐  POST /api/captcha/login?uuid=X   ┌────────┐
 │ Frontend│ ─────────────────────────────────→ │Backend │
-│         │ ←───── image/png ────────────────── │        │
+│         │ ←─ {image: dataURI, expiresAt} ── │        │
 │         │                                     │ 写Redis│
 │         │                                     │  TTL=3m│
 └─────────┘                                     └────────┘

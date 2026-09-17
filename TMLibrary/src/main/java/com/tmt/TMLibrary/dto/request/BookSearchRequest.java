@@ -27,6 +27,16 @@ public class BookSearchRequest {
     private Integer minStock;
     private Integer maxStock;
     private LocalDate publishedDate;
+    /**
+     * 关键字模糊搜索 —— 书名 / 作者 / ISBN <b>任一</b>命中即算(OR)。
+     * <p>商城搜索框用这个:用户输入的是一串没有语义的词("周志明" 是作者,
+     * "9787" 是 ISBN 前缀,用户自己也不区分),所以不能落成 AND。</p>
+     * <p>与 title / author 这些精确维度参数是**叠加**关系(AND),两个都传就是
+     * "关键字命中 且 书名匹配"。</p>
+     */
+    private String keyword;
+    /** 按分类筛选 —— 商城点分类就传这个。传大类时,SQL 里用子查询一并带上它的子类 */
+    private Integer categoryId;
     private Integer page;
     private Integer size;
 
@@ -38,6 +48,7 @@ public class BookSearchRequest {
     public BookSearchRequest compact() {
         this.title = blankToNull(this.title);
         this.author = blankToNull(this.author);
+        this.keyword = blankToNull(this.keyword);
         this.minPrice = (minPrice == null || minPrice.signum() < 0) ? null : minPrice;
         this.maxPrice = (maxPrice == null || maxPrice.signum() < 0) ? null : maxPrice;
         this.minStock = (minStock == null || minStock < 0) ? null : minStock;

@@ -49,10 +49,13 @@ echo "✅ 已加载 $ENV_FILE"
 echo "   DB_URL      = $DB_URL"
 echo "   DB_USERNAME = $DB_USERNAME"
 echo "   DB_PASSWORD = *** (${#DB_PASSWORD} chars)"
+echo "   Redis_Host      = $REDIS_HOST"
+echo "   Redis_USERNAME = $REDIS_USERNAME"
+echo "   Redis_PASSWORD = *** (${#REDIS_PASSWORD} chars)"
 echo "   JWT_SECRET  = *** (${#JWT_SECRET} chars)"
 echo "   LOG_FILE     = ${LOG_FILE:-(/opt/logs/tmlibrary.log)}"
-echo 
-
+echo "   JWT_EXPIRATION_SECONDS   = $JWT_EXPIRATION_SECONDS"
+echo "================配置完成================="
 # ---------- 5. 启动后端 (exec 让 Ctrl-C 直接传给 Maven) ----------
 cd "$PROJECT_ROOT"
 exec ./mvnw spring-boot:run "$@"

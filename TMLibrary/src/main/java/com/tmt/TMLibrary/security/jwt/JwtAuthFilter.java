@@ -47,7 +47,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             // 认证入口:仅 POST
             new WhitelistRule("/api/users/login", Set.of("POST"), true),
             new WhitelistRule("/api/users/register", Set.of("POST"), true),
-            // 验证码:POST 取图,前缀匹配
+            // 验证码:POST 取图(login / register 两个端点),前缀匹配
             new WhitelistRule("/api/captcha/", Set.of("POST"), false),
             // 图书展示:所有 GET 放行(未登录可浏览商城/图书列表/详情/搜索),
             // 同一前缀下的 POST/PATCH/DELETE(新建、修改、删书、盘点调库存)仍需 token

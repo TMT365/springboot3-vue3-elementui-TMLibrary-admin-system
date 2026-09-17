@@ -21,8 +21,16 @@ import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { bookApi } from '@/api/book'
 import { userApi } from '@/api/user'
+import { statsApi } from '@/api/stats'
 import { formatPrice, formatDate } from '@/utils/format'
-import type { BookDto } from '@/types/api'
+import BaseChart from '@/components/charts/BaseChart.vue'
+import {
+  buildSalesTrendConfig,
+  buildNewUsersConfig,
+  buildBookSalesConfig,
+  buildOrderStatusConfig,
+} from '@/utils/dashboardCharts'
+import type { BookDto, DashboardStatsResponse } from '@/types/api'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -33,6 +41,12 @@ const error = ref<string | null>(null)
 const bookTotal = ref<number>(0)
 const userTotal = ref<number>(0)
 const recentBooks = ref<BookDto[]>([])
+
+/** 仪表盘统计(4 张图的数据)—— 仅 ADMIN/BOSS 拉取,普通用户为 null。
+ *  命名避开 stats:后者是本页统计卡配置的 computed */
+const dashboardStats = ref<DashboardStatsResponse | null>(null)
+/** 统计窗口天数 —— 与图副标题保持一致 */
+const STATS_DAYS = 30
 
 const isAdmin = computed<boolean>(() => userStore.isAdmin)
 
@@ -45,12 +59,24 @@ const roleLabel = computed<string>(() => {
   }
 })
 
+/** 统计卡配置项 —— value 允许 number(计数)或 string(日期/角色名),
+ *  显式声明否则 TS 按首元素推断成 number,后面 push 字符串会报错 */
+interface StatCard {
+  key: string
+  label: string
+  value: number | string
+  unit: string
+  icon: string
+  tone: string
+  loading: boolean
+}
+
 /**
  * 4 张统计卡配置  -  顺序 = 显示顺序
  * isAdmin=false 时,「注册用户」卡自动隐藏(普通用户无访问权)
  */
-const stats = computed(() => {
-  const baseStats = [
+const stats = computed<StatCard[]>(() => {
+  const baseStats: StatCard[] = [
     {
       key: 'books',
       label: '馆藏图书',
@@ -108,10 +134,11 @@ async function fetchData(): Promise<void> {
   loading.value = true
   error.value = null
   try {
-    // 同时拉图书列表和用户列表(并行)
-    const requests: [Promise<unknown>, Promise<unknown>?] = [
+    // 图书 / 用户 / 统计三路并行(统计仅管理员)
+    const requests: [Promise<unknown>, Promise<unknown>?, Promise<unknown>?] = [
       bookApi.list({ page: 1, size: 5 }),
       isAdmin.value ? userApi.list({ page: 1, size: 1 }) : undefined,
+      isAdmin.value ? statsApi.dashboard(STATS_DAYS) : undefined,
     ] as const
     const results = await Promise.all(requests.filter(Boolean))
     const bookResult = results[0] as { total: number; data: BookDto[] }
@@ -121,6 +148,9 @@ async function fetchData(): Promise<void> {
     if (isAdmin.value && results[1]) {
       const userResult = results[1] as { total: number }
       userTotal.value = userResult.total
+    }
+    if (isAdmin.value && results[2]) {
+      dashboardStats.value = results[2] as DashboardStatsResponse
     }
   } catch (e) {
     error.value = e instanceof Error ? e.message : '加载失败'
@@ -182,6 +212,57 @@ function goTo(path: string): void {
           </p>
         </div>
       </article>
+    </section>
+
+    <!-- ============================================================
+     * 统计图表  -  4 张 Chart.js 图(仅管理员可见)
+     * 数据来自 /api/stats/dashboard,后端带 5 分钟 Redis 缓存
+     * ============================================================ -->
+    <section v-if="isAdmin" class="charts-section">
+      <h2 class="section-title">数据看板</h2>
+
+      <div class="charts-grid">
+        <BaseChart
+          class="chart-wide"
+          title="销量趋势"
+          :subtitle="`最近 ${STATS_DAYS} 天成交订单与销售额`"
+          :data="dashboardStats?.salesTrend ?? []"
+          :build="buildSalesTrendConfig"
+          :loading="loading"
+          empty-text="最近 30 天没有成交订单"
+          :height="280"
+        />
+
+        <BaseChart
+          title="订单状态分布"
+          :subtitle="`最近 ${STATS_DAYS} 天`"
+          :data="dashboardStats?.orderStatusDistribution ?? []"
+          :build="buildOrderStatusConfig"
+          :loading="loading"
+          empty-text="最近 30 天没有订单"
+          :height="280"
+        />
+
+        <BaseChart
+          title="最近新增用户"
+          :subtitle="`最近 ${STATS_DAYS} 天注册`"
+          :data="dashboardStats?.newUsersTrend ?? []"
+          :build="buildNewUsersConfig"
+          :loading="loading"
+          empty-text="最近 30 天没有新增用户"
+          :height="280"
+        />
+
+        <BaseChart
+          title="每本书销量 Top"
+          subtitle="按售出件数排序(仅统计已支付订单)"
+          :data="dashboardStats?.bookSalesTop ?? []"
+          :build="buildBookSalesConfig"
+          :loading="loading"
+          empty-text="还没有已支付订单"
+          :height="280"
+        />
+      </div>
     </section>
 
     <!-- ============================================================
@@ -349,8 +430,9 @@ function goTo(path: string): void {
   padding: 24px;
   background: var(--color-card);
   border-radius: 14px;
+  /* 分层阴影(亮=环境+直射两层,暗=压边)+ 1px 描边定义轮廓 */
   box-shadow:
-    0 1px 2px var(--color-shadow),
+    var(--shadow-card),
     0 0 0 1px var(--color-border);
   transition:
     transform 220ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -360,7 +442,7 @@ function goTo(path: string): void {
 .stat-card:hover {
   transform: translateY(-2px);
   box-shadow:
-    0 8px 20px var(--color-shadow),
+    var(--shadow-card-hover),
     0 0 0 1px var(--color-accent);
 }
 
@@ -437,6 +519,32 @@ function goTo(path: string): void {
 }
 
 /* ============================================================
+ * 统计图表区  -  2 列网格,销量趋势占满整行(双轴折线需要宽度)
+ * ============================================================ */
+.charts-section {
+  margin-bottom: 32px;
+}
+
+.charts-grid {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 16px;
+}
+
+.chart-wide {
+  grid-column: span 2;
+}
+
+@media (max-width: 900px) {
+  .charts-grid {
+    grid-template-columns: 1fr;
+  }
+  .chart-wide {
+    grid-column: auto;
+  }
+}
+
+/* ============================================================
  * 快捷操作  -  4 张卡,hover 浮起
  * ============================================================ */
 .quick-actions {
@@ -472,7 +580,7 @@ function goTo(path: string): void {
   font-family: inherit;
   color: inherit;
   box-shadow:
-    0 1px 2px var(--color-shadow),
+    var(--shadow-card),
     0 0 0 1px var(--color-border);
   transition:
     transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
@@ -483,18 +591,22 @@ function goTo(path: string): void {
 .action-card:hover {
   transform: translateY(-2px);
   box-shadow:
-    0 6px 16px var(--color-shadow),
+    var(--shadow-card-hover),
     0 0 0 1px var(--color-accent);
 }
 
+/* 按下:收回阴影 + 轻微收缩,像真的被按下去 */
 .action-card:active {
   transform: translateY(0) scale(0.99);
+  box-shadow:
+    var(--shadow-card),
+    0 0 0 1px var(--color-accent);
 }
 
 .action-card:focus-visible {
   outline: none;
   box-shadow:
-    0 1px 2px var(--color-shadow),
+    var(--shadow-card),
     0 0 0 2px var(--color-accent);
 }
 
@@ -536,7 +648,7 @@ function goTo(path: string): void {
   background: var(--color-card);
   border-radius: 14px;
   box-shadow:
-    0 1px 2px var(--color-shadow),
+    var(--shadow-card),
     0 0 0 1px var(--color-border);
   padding: 24px;
 }
@@ -673,6 +785,52 @@ function goTo(path: string): void {
     flex-direction: row;
     justify-content: space-between;
     align-items: center;
+  }
+}
+
+/* 手机(≤600):区块间距和图表间距再收一档,一屏里能多看到点内容 */
+@media (max-width: 600px) {
+  .charts-section,
+  .quick-actions {
+    margin-bottom: 22px;
+  }
+
+  .charts-grid {
+    gap: 12px;
+  }
+
+  /* 统计卡改成两列 —— 单列时 4 张卡要滚一屏才看完 */
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    margin-bottom: 22px;
+  }
+
+  /* 两列后每张卡只有 ~165px:图标缩小、内边距收紧,数字才不被挤到换行 */
+  .stat-card {
+    padding: 14px 12px;
+    gap: 10px;
+  }
+
+  /* 图标盒缩小 —— 里面的 el-icon 尺寸是 :size="22" 写在行内样式上的,
+     这里改不动也不用改(22px 的图标放在 34px 盒子里比例正好) */
+  .stat-icon {
+    width: 34px;
+    height: 34px;
+    border-radius: 9px;
+  }
+
+  .stat-label {
+    font-size: 11.5px;
+    letter-spacing: 0.02em;
+  }
+
+  .stat-value {
+    font-size: 19px;
+  }
+
+  .stat-unit {
+    font-size: 11px;
   }
 }
 </style>

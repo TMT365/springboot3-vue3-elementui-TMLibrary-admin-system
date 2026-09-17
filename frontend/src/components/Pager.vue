@@ -9,6 +9,7 @@
  */
 
 import { computed } from 'vue'
+import { useMediaQuery } from '@/composables/useMediaQuery'
 
 const props = defineProps<{
   page: number
@@ -31,6 +32,15 @@ const pageSize = computed<number>({
   get: () => props.size,
   set: (v) => emit('update:size', v),
 })
+
+/**
+ * 手机窄屏:六个区块(总数/每页条数/上一页/页码/下一页/跳页框)横着排不进 375px,
+ * 会顶出横向滚动条。窄屏只留「上一页 页码 下一页」。
+ */
+const isNarrow = useMediaQuery('(max-width: 600px)')
+const layout = computed<string>(() =>
+  isNarrow.value ? 'prev, pager, next' : 'total, sizes, prev, pager, next, jumper',
+)
 </script>
 
 <template>
@@ -40,7 +50,8 @@ const pageSize = computed<number>({
       v-model:page-size="pageSize"
       :total="total"
       :page-sizes="[10, 20, 50, 100]"
-      layout="total, sizes, prev, pager, next, jumper"
+      :layout="layout"
+      :pager-count="isNarrow ? 5 : 7"
       background
       @current-change="emit('change')"
       @size-change="emit('change')"
@@ -53,5 +64,18 @@ const pageSize = computed<number>({
   display: flex;
   justify-content: flex-end;
   margin-top: 16px;
+}
+
+/* 窄屏:分页器居中,并且允许换行(页码多的时候不要顶破容器) */
+@media (max-width: 600px) {
+  .pager {
+    justify-content: center;
+  }
+
+  .pager :deep(.el-pagination) {
+    flex-wrap: wrap;
+    justify-content: center;
+    row-gap: 6px;
+  }
 }
 </style>

@@ -17,17 +17,15 @@
  * 7. Footer  -  版权 + 联系方式 + 备案号
  *
  * Overlays:
- * - LoadingScreen  -  首屏
  * - BackToTop  -  滚动后右下角
+ *
+ * 注:加载动画(LoadingScreen)已提到 App.vue 全局,所有路由刷新都会播,
+ *     本页不再自己挂载。
  */
 import { ref, onMounted, onUnmounted } from 'vue'
-import { useLoadingStore } from '@/stores/loading'
 import LandingNav from './LandingNav.vue'
-import LoadingScreen from './LoadingScreen.vue'
 import BackToTop from './BackToTop.vue'
 import SpecialThanks from './SpecialThanks.vue'
-
-const loadingStore = useLoadingStore()
 
 const heroTitle = 'Manage Your Library Beautifully'
 
@@ -136,9 +134,6 @@ onUnmounted(pauseShowcase)
 </script>
 
 <template>
-  <LoadingScreen />
-
-  <template v-if="!loadingStore.isLoading">
   <a href="#landing-main" class="skip-link">跳过导航,直达主内容</a>
 
   <LandingNav />
@@ -457,7 +452,6 @@ onUnmounted(pauseShowcase)
   </main>
 
   <BackToTop />
-  </template>
 </template>
 
 <style scoped>
@@ -521,10 +515,11 @@ onUnmounted(pauseShowcase)
      - 合成 bold(font-weight 700) -  浏览器给每个字形额外加一道轮廓
      - 字号 +18-40%  -  大本身就是视觉权重
      - letter-spacing -0.04em  -  字距收紧让字符更紧凑,体感更重
+     (注:原先注释的结束标记写在了这三条声明下面,把它们一起吞了 ——
+      标题实际只有 font-family + font-size 生效,比设计意图轻且没有下边距) */
   font-weight: 700;
   letter-spacing: -0.04em;
   margin: 0 0 8px;
-  */
 }
 
 .section-sub {

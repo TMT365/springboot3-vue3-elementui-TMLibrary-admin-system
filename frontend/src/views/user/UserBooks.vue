@@ -35,8 +35,8 @@ async function fetchBooks(): Promise<void> {
   }
 }
 
-function formatPrice(price: string): string {
-  return `¥${Number(price).toFixed(2)}`
+function formatPrice(price: number): string {
+  return `¥${price.toFixed(2)}`
 }
 
 function formatDate(date: string): string {
@@ -200,7 +200,8 @@ onMounted(fetchBooks)
   display: flex;
   flex-direction: column;
   background: rgba(255, 255, 255, 0.58);
-  border: 1px solid rgba(255, 255, 255, 0.52);
+  /* 亮色下白描边压在浅底上不可见 —— 换淡墨描边定义轮廓(暗色由下方 dark 块覆盖) */
+  border: 1px solid rgba(17, 25, 40, 0.07);
   backdrop-filter: blur(14px) saturate(125%);
   -webkit-backdrop-filter: blur(14px) saturate(125%);
   border-radius: 18px;
@@ -346,13 +347,74 @@ onMounted(fetchBooks)
     font-size: 24px;
   }
 
+  /* 保持两列 —— 单列时一张卡占满整屏,手机上一屏看不完一本书 */
   .book-grid {
-    grid-template-columns: 1fr;
-    gap: 16px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 14px;
   }
 
   .book-card {
     border-radius: 12px;
+  }
+}
+
+/* 手机(≤600):卡片整体缩小一档。
+   放在 600 而不是 768 —— 601~768px 下每张卡还有 300px 宽,用桌面尺寸正好;
+   提前缩小反而显得空。 */
+@media (max-width: 600px) {
+  /* 封面压扁、内边距减半、字号降档:375px 屏两列时每张只有 ~165px */
+  .book-cover {
+    aspect-ratio: 3 / 2;
+  }
+
+  .book-cover-mark {
+    font-size: 32px;
+  }
+
+  .book-body {
+    padding: 10px 11px 12px;
+    gap: 5px;
+  }
+
+  .book-title {
+    font-size: 13px;
+  }
+
+  .book-author {
+    font-size: 11px;
+  }
+
+  /* ISBN / 出版日期两行在窄卡里太占地方,小屏只留出版日期(详情页有完整信息) */
+  .book-meta {
+    font-size: 10.5px;
+    gap: 2px;
+  }
+
+  .book-meta > span:first-child {
+    display: none;
+  }
+
+  .book-price {
+    font-size: 15px;
+  }
+
+  .book-stock {
+    font-size: 10.5px;
+  }
+
+  /* 价格 + 库存在 ~165px 里并排会挤,上下摞起来 */
+  .book-footer {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 2px;
+    margin-top: 4px;
+    padding-top: 8px;
+  }
+
+  .add-to-cart-btn {
+    width: 100%;
+    margin-top: 6px;
+    font-size: 12px;
   }
 }
 </style>

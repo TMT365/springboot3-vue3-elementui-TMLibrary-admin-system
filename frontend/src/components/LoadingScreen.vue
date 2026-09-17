@@ -1,62 +1,62 @@
 <script setup lang="ts">
 /**
- * LoadingScreen  -  页面加载指示器
+ * LoadingScreen  -  全局页面加载指示器
+ *
+ * 挂载在 App.vue 根组件,所有路由刷新时都会播一次(每次刷新都播,不做 session 去重)。
+ * 加载期间 App.vue 用 v-if 隐藏 router-view,播完调 loadingStore.finish() 放行。
  *
  * 视觉:
  * - 屏幕中央 div 包裹,上下左右 padding 适中
  * - 3D 立体感圆环 + 内部 "Loading..." 文本(圆点逐个出现)
  * - 圆环下方 3 个圆点,从左到右循环高亮
  *
- * 时长:
- * - 固定 5s 后开始淡出,不依赖页面加载事件
+ * 时序(三段):
+ *   1. 挂载 → 等 window.load(资源全就绪)
+ *   2. 再多停 AFTER_LOAD_MS,避免"刚画完就消失"的仓促感
+ *   3. 淡出 —— **淡出播完**(@after-leave)才调 finish() 放行路由内容
  *
- * 一次性:
- * - sessionStorage['tm_landing_loaded'],session 内只放一次
- * - 关 tab 重开会再播一次;同 tab 刷新不再播
+ * ⚠️ 第 3 步的先后顺序是关键:早先的实现在 `visible = false` 的**同一时刻**
+ *    就调了 finish(),于是内容立刻出现、而遮罩还在淡出 —— 看起来就是
+ *    "页面先出来了,loading 还在"。必须等 after-leave。
+ *
+ * 另外设了最短展示时长:缓存命中时 window.load 几乎立刻触发,
+ * 不设下限动画只闪 ~200ms,看起来像页面抽了一下,不像"加载中"。
  */
 import { ref, onMounted } from 'vue'
 import { useLoadingStore } from '@/stores/loading'
 
-const STORAGE_KEY = 'tm_landing_loaded'
+/** 动画最短展示时长(毫秒)—— 低于这个时长就不开始淡出 */
+const MIN_VISIBLE_MS = 700
+/** window.load 之后再停留多久才开始淡出 */
+const AFTER_LOAD_MS = 200
+
 const loadingStore = useLoadingStore()
-
-const alreadyPlayed = sessionStorage.getItem(STORAGE_KEY) === '1'
-const visible = ref(!alreadyPlayed)
-
-// 已 session 播过 → 跳过动画,直接告诉 store 进入主体内容
-if (alreadyPlayed) {
-  loadingStore.skip()
-}
+const visible = ref(true)
+const mountedAt = Date.now()
 
 onMounted(() => {
-  if (alreadyPlayed) return
-
-  const onFinish = () => {
-    visible.value = false
-    loadingStore.finish()
-    sessionStorage.setItem(STORAGE_KEY, '1')
+  const beginFadeOut = () => {
+    const elapsed = Date.now() - mountedAt
+    const delay = Math.max(0, MIN_VISIBLE_MS - elapsed)
+    setTimeout(() => {
+      // 只负责开始淡出;放行内容交给模板上的 @after-leave
+      visible.value = false
+    }, delay)
   }
 
-  // ============================================================
-  // 开发环境:固定 5s(注释掉下面这块以切换到生产模式)
-  // ============================================================
-  setTimeout(onFinish, 5000)
-
-  /*
-  // ============================================================
-  // 生产环境:等 window.load 页面真正加载完
-  // ============================================================
+  // 等 window.load 页面真正加载完(资源全就绪)再收工
   if (document.readyState === 'complete') {
-    setTimeout(onFinish, 200)
+    setTimeout(beginFadeOut, AFTER_LOAD_MS)
   } else {
-    window.addEventListener('load', () => setTimeout(onFinish, 200), { once: true })
+    window.addEventListener('load', () => setTimeout(beginFadeOut, AFTER_LOAD_MS), { once: true })
   }
-  */
 })
 </script>
 
 <template>
-  <transition name="loading-fade">
+  <!-- @after-leave:淡出动画彻底播完才放行路由内容,
+       否则会出现"内容已渲染 + 遮罩还在淡出"的重叠 -->
+  <transition name="loading-fade" @after-leave="loadingStore.finish()">
     <div v-if="visible" class="loading-screen" aria-hidden="true">
       <div class="loader">
         <div class="spinner">
@@ -104,12 +104,13 @@ onMounted(() => {
 /* ============================================================
  * Spinner  -  3D 立体感圆环 + 内部 Loading 文本
  *
- * 多层 box-shadow 营造「浮起 + 内嵌 + 微光」3D 感:
- *   inset 0 3px 8px  -  上方凹陷阴影
- *   inset 0 -2px 6px -  下方高光
- *   0 20px 40px      -  主投影
- *   0 6px 12px       -  近投影
- *   0 0 0 1px        -  accent 微光描边
+ * 亮色:圆盘是白的,白色内高光压在白卡片上等于没有 —— 所以厚度
+ *       只能靠「上沿内阴影 + 下沿内阴影 + 加重的双层外投影」来做。
+ *   inset 0 3px 10px  -  上沿内阴影(盘面厚度上缘)
+ *   inset 0 -3px 8px   -  下沿内阴影(盘面厚度下缘)
+ *   0 24px 48px        -  主投影(远)
+ *   0 8px 16px         -  接触投影(近)
+ *   0 0 0 1px          -  accent 微光描边
  * ============================================================ */
 .spinner {
   position: relative;
@@ -121,11 +122,11 @@ onMounted(() => {
   border-radius: 50%;
   background: var(--color-card);
   box-shadow:
-    inset 0 3px 10px rgba(0, 0, 0, 0.06),
-    inset 0 -2px 8px rgba(255, 255, 255, 0.6),
-    0 24px 48px rgba(0, 0, 0, 0.14),
-    0 8px 16px rgba(0, 0, 0, 0.08),
-    0 0 0 1px rgba(76, 175, 80, 0.1);
+    inset 0 3px 10px rgba(17, 25, 40, 0.10),
+    inset 0 -3px 8px rgba(17, 25, 40, 0.05),
+    0 24px 48px rgba(17, 25, 40, 0.20),
+    0 8px 16px rgba(17, 25, 40, 0.10),
+    0 0 0 1px rgba(76, 175, 80, 0.14);
 }
 
 :root[data-theme='dark'] .spinner {

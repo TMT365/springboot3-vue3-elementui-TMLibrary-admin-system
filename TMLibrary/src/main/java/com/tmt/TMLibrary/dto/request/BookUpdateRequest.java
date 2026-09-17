@@ -31,4 +31,7 @@ public class BookUpdateRequest {
 
     private LocalDate publishedDate;
 
+    /** 图书分类 id —— 传了就改分类(Service 会同步新旧两个分类的计数),不传保持原样 */
+    private Integer categoryId;
+
 }

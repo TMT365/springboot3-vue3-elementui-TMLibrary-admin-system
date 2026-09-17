@@ -32,9 +32,22 @@ import lombok.RequiredArgsConstructor;
 public class WebMvcConfig implements WebMvcConfigurer {
 
     /**
-     * 多个 origin 用逗号分隔,例如: "http://localhost:5173,https://admin.example.com"
+     * 多个 origin / origin-pattern 用逗号分隔。
+     *
+     * <p>支持两种写法(都用 {@code allowedOriginPatterns} 匹配,精确值也走同一 API):</p>
+     * <ul>
+     *   <li>精确 origin:{@code http://localhost:5173}</li>
+     *   <li>带通配符的 pattern:{@code http://localhost:[*]}(任意端口)、
+     *       {@code https://*.example.com}</li>
+     * </ul>
+     *
+     * <p><b>为什么用 pattern 而不是精确 origin</b>:vite dev server 端口会漂移
+     * (5173 被占用就自动换 5174、5175…),精确白名单每次都要改配置 + 重启后端,
+     * 表现为前端收到满屏 {@code 403 Invalid CORS request}。
+     * {@code localhost:[*]} 只匹配本机来源,网站域名永远匹配不上,dev 场景安全;
+     * <b>生产环境务必用 app.cors.origins 覆盖成精确域名</b>。</p>
      */
-    @Value("${app.cors.origins:http://localhost:5173}")
+    @Value("${app.cors.origins:http://localhost:[*]}")
     private String allowedOrigins;
 
     private final CurrentUserArgumentResolver currentUserArgumentResolver;
@@ -42,7 +55,8 @@ public class WebMvcConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOrigins(allowedOrigins.split(","))
+                // 用 allowedOriginPatterns:兼容精确 origin,同时支持 [*] 端口通配
+                .allowedOriginPatterns(allowedOrigins.split(","))
                 .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
                 .allowedHeaders("Authorization", "Content-Type")
                 .allowCredentials(false)

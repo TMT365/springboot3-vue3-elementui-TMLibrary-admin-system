@@ -20,6 +20,19 @@
 /* =============================================================
  * 1. CSS 变量(light + dark)
  * ============================================================= */
+/* -------------------------------------------------------------------------
+ * 关于「立体感」的取舍(2026-09 调整)
+ *
+ * 暗色下卡片显得有 3D:因为 border #2a2a2a 比卡片底 #1f1f1f 亮 —— 亮边 = 受光棱边。
+ * 亮色下这套不成立:border #e8e5dc 比卡片底 #fff 暗,只是一条描边,
+ * 而原来的 --color-shadow 只有 0.06 不透明度,几乎看不见 → 整体发平。
+ *
+ * 所以亮色的深度只能靠**阴影**,并且要用多层(环境光 + 直射光)才像实物:
+ *   第 1 层:小偏移 + 小模糊 = 贴地接触阴影(定义边缘)
+ *   第 2 层:大偏移 + 大模糊 = 环境投影(定义高度)
+ * 单层大模糊会糊成一团,单层小模糊又不够"浮起来"。
+ * 暗色沿用原值(本身已足够),只补语义变量保持 API 对称。
+ * ------------------------------------------------------------------------- */
 :root {
   --color-bg: #faf8f3;
   --color-bg-alt: #f5f5f5;
@@ -31,10 +44,23 @@
   --color-accent-hover: #43a047;
   --color-emphasis: #ffc107;
   --color-border: #e8e5dc;
-  --color-shadow: rgba(0, 0, 0, 0.06);
-  --color-shadow-strong: rgba(0, 0, 0, 0.12);
+  /* 亮色阴影加深:0.06 在白底上等于没有,0.10 才看得出层次 */
+  --color-shadow: rgba(17, 25, 40, 0.10);
+  --color-shadow-strong: rgba(17, 25, 40, 0.18);
   --color-footer-bg: #212121;
   --color-footer-text: #f5f5f5;
+
+  /* 语义化抬升阴影 —— 卡片默认态 / hover 态 */
+  --shadow-card:
+    0 1px 2px rgba(17, 25, 40, 0.06),
+    0 4px 12px rgba(17, 25, 40, 0.08);
+  --shadow-card-hover:
+    0 2px 4px rgba(17, 25, 40, 0.08),
+    0 14px 32px rgba(17, 25, 40, 0.16);
+  /* 顶部受光棱边 —— 亮色下白高光压在白面上几乎不可见,
+     所以数值给足(0.9),再配一条底部暗边形成"厚度" */
+  --edge-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --edge-shade: inset 0 -1px 0 rgba(17, 25, 40, 0.05);
 }
 
 :root[data-theme='dark'] {
@@ -52,6 +78,49 @@
   --color-shadow-strong: rgba(0, 0, 0, 0.5);
   --color-footer-bg: #0d0d0d;
   --color-footer-text: #f5f5f5;
+
+  /* 暗色:卡片底比背景亮,阴影主要用来"压住"边缘而不是造高,
+     数值比亮色大才在深底上可见 */
+  --shadow-card:
+    0 1px 2px rgba(0, 0, 0, 0.36),
+    0 4px 12px rgba(0, 0, 0, 0.28);
+  --shadow-card-hover:
+    0 2px 6px rgba(0, 0, 0, 0.44),
+    0 14px 32px rgba(0, 0, 0, 0.40);
+  /* 暗色下亮棱边本身就是 3D 的关键 —— 保持低不透明度防"发灰" */
+  --edge-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+  --edge-shade: inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* -------------------------------------------------------------------------
+ * 1.5 Element Plus 变量对齐(暗色)
+ *
+ * EP 的暗色包(element-plus/theme-chalk/dark/css-vars.css,在 main.ts 引入)
+ * 只提供了一套通用暗色值:底色 #141414 —— 比本项目的卡片色 #1f1f1f 更黑,
+ * 直接用会出现"表格比卡片黑一块"的割裂感。
+ *
+ * 这里把 EP 的界面色系拉齐到项目 token,并且顺便把 EP 的边框(#4c4d4f,
+ * 偏亮)换成项目自己的 #333 —— 深底上 #4c4d4f 的输入框描边太跳。
+ *
+ * 不改 --el-color-primary:EP 组件的主色(按钮/分页/开关)保持自己的蓝,
+ * 与项目的绿色 accent 并存 —— 换主色影响面太大,不在本次范围内。
+ * ------------------------------------------------------------------------- */
+:root[data-theme='dark'] {
+  --el-bg-color: var(--color-card);
+  --el-bg-color-page: var(--color-bg);
+  /* 弹层(下拉 / tooltip / 弹窗)比卡片亮一档,才有"浮起来"的层次 */
+  --el-bg-color-overlay: #262626;
+  --el-fill-color-blank: var(--color-card);
+  --el-fill-color: #2a2a2a;
+  --el-fill-color-light: #262626;
+  --el-border-color: #333333;
+  --el-border-color-light: #2f2f2f;
+  --el-border-color-lighter: var(--color-border);
+  --el-text-color-primary: var(--color-text);
+  --el-text-color-regular: var(--color-text);
+  --el-text-color-secondary: var(--color-text-muted);
+  --el-text-color-placeholder: var(--color-text-soft);
+  --el-text-color-disabled: var(--color-text-soft);
 }
 
 /* =============================================================
@@ -81,6 +150,85 @@ body {
  * 4. 全局动效减弱  -  尊重系统的 prefers-reduced-motion 设置
  *    覆盖所有动画 / 过渡,让减弱动态效果的用户立即看到最终态
  * ============================================================= */
+/* ============================================================
+ * 搜索候选词下拉(el-autocomplete 的 popper)
+ *
+ * el-autocomplete 的下拉是 teleport 到 body 的,组件的 scoped 样式够不着它,
+ * 所以候选条的样式放在这里做全局 —— 顶栏(MallLayout)和手机端(Mall)
+ * 两个搜索框共用同一套 `popper-class="book-suggest-popper"`。
+ * ============================================================ */
+.book-suggest-popper .el-autocomplete-suggestion__list li {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 9px 14px;
+  line-height: 1.35;
+}
+
+.book-suggest-popper .sug {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  min-width: 0;
+}
+
+.book-suggest-popper .sug-icon {
+  flex-shrink: 0;
+  font-size: 15px;
+  color: var(--color-text-soft);
+}
+
+.book-suggest-popper .sug-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 13.5px;
+  color: var(--color-text);
+}
+
+/* 命中的那段:加粗 + accent 色,扫一眼就知道为什么匹配上 */
+.book-suggest-popper .sug-hit {
+  font-style: normal;
+  font-weight: 700;
+  color: var(--color-accent);
+}
+
+.book-suggest-popper .sug-hot {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-soft);
+}
+
+/* 键盘上下键选中的那一条:淡绿底 + 左侧一道 accent 竖条 */
+.book-suggest-popper .el-autocomplete-suggestion__list li {
+  position: relative;
+}
+
+.book-suggest-popper .el-autocomplete-suggestion__list li:hover,
+.book-suggest-popper .el-autocomplete-suggestion__list li.highlighted {
+  background: rgba(76, 175, 80, 0.08);
+}
+
+.book-suggest-popper .el-autocomplete-suggestion__list li.highlighted::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: 3px;
+  border-radius: 0 2px 2px 0;
+  background: var(--color-accent);
+}
+
+.book-suggest-popper .el-autocomplete-suggestion__list li.highlighted .sug-icon {
+  color: var(--color-accent);
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

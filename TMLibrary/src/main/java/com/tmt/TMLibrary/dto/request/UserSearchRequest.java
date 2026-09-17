@@ -10,8 +10,10 @@ import lombok.Data;
 @Data
 public class UserSearchRequest {
     private String username; // LIKE 查询用户名
-    // role 不加 @NotBlank — 查询时不传 role 也合法,compact() 会兜底默认 USER
-    private Integer role; // 精确
+
+    /** 角色精确筛选。-1 = 全部(不加过滤);不传则 compact() 兜底为 USER(普通用户)。
+     *  仅 BOSS 生效,ADMIN 恒被钉死为 role=0(见 UserMapper.xml) */
+    private Integer role;
 
     private LocalDateTime createdTimeStart; // 区间查询
     private LocalDateTime createdTimeEnd; // 区间查询
@@ -28,7 +30,8 @@ public class UserSearchRequest {
     private LocalDateTime accountLockedUntilStart; // 区间查询
     private LocalDateTime accountLockedUntilEnd; // 区间查询
 
-    private Integer status; // 精确
+    /** 状态精确筛选。-1 = 全部;不传则 compact() 兜底为 ACTIVE(只查正常用户) */
+    private Integer status;
 
     private LocalDateTime deletedAtStart; // 区间查询
     private LocalDateTime deletedAtEnd; // 区间查询
@@ -85,11 +88,21 @@ public class UserSearchRequest {
         if (failedLoginAttempts != null && failedLoginAttempts < 0)
             failedLoginAttempts = null;
 
-        if (role == null)
-            role = UserRole.USER.getCode(); // 默认查询普通用户
+        // role / status 用负数哨兵表示"全部"(前端下拉选「全部」时传 -1):
+        // 置 null → mapper 的 <if test="... != null"> 会跳过该条件,等于不加过滤。
+        // 顺序要紧:先判哨兵,再判 null 兜底 —— 反过来会被默认值覆盖回 0。
+        // 完全不传该参数时仍维持原默认(只查普通用户 / 只查激活状态),不影响既有调用方。
+        if (role != null && role < 0) {
+            role = null;                        // -1 = 全部角色
+        } else if (role == null) {
+            role = UserRole.USER.getCode();     // 默认查询普通用户
+        }
 
-        if (status == null)
-            status = UserStatus.ACTIVE.getCode(); // 默认查询激活状态的用户
+        if (status != null && status < 0) {
+            status = null;                          // -1 = 全部状态
+        } else if (status == null) {
+            status = UserStatus.ACTIVE.getCode();   // 默认查询激活状态的用户
+        }
 
         // 如果 lastLoginIp 是空字符串，则将其置为 null，表示不进行该条件的查询
         if (lastLoginIp != null && lastLoginIp.isBlank())

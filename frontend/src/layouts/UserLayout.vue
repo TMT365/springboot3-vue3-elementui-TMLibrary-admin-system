@@ -13,10 +13,12 @@
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { useTheme } from '@/composables/useTheme'
 
 const route = useRoute()
 const router = useRouter()
 const userStore = useUserStore()
+const { theme, toggleTheme } = useTheme()
 const isCollapsed = ref(false)
 const isMobile = ref(false)
 const isMobileMenuOpen = ref(false)
@@ -60,6 +62,16 @@ function toggleSidebar(): void {
 
 function closeMobileMenu(): void {
   if (isMobile.value) isMobileMenuOpen.value = false
+}
+
+/** 下拉菜单分发:m 商城 / 其他交给注销 */
+async function handleCommand(command: string): Promise<void> {
+  if (command === 'mall') {
+    // push 而非 replace:保留历史,后退键能回用户区
+    await router.push('/mall')
+    return
+  }
+  await handleLogout()
 }
 
 async function handleLogout(): Promise<void> {
@@ -160,6 +172,19 @@ watch(isMobileMenuOpen, (open) => {
         </div>
         <div class="topbar-actions">
           <el-button
+            circle
+            text
+            class="menu-btn"
+            :title="theme === 'light' ? '切换到夜间模式' : '切换到日间模式'"
+            :aria-label="theme === 'light' ? '切换到夜间模式' : '切换到日间模式'"
+            @click="toggleTheme"
+          >
+            <el-icon>
+              <Moon v-if="theme === 'light'" />
+              <Sunny v-else />
+            </el-icon>
+          </el-button>
+          <el-button
             v-if="userStore.isAdmin"
             type="primary"
             size="small"
@@ -167,18 +192,25 @@ watch(isMobileMenuOpen, (open) => {
           >
             进入管理后台
           </el-button>
-          <el-dropdown trigger="click" @command="handleLogout">
+          <el-dropdown trigger="click" @command="handleCommand">
             <span class="user-trigger">
               <el-icon><UserFilled /></el-icon>
-              <span>{{ userStore.username || '游客' }}</span>
-              <el-tag size="small" type="success" effect="light">
+              <!-- 用户名和角色标签在窄屏会撑破顶栏(管理员 + 20 字符用户名 ≈ 440px > 375px),
+                   跟 AdminLayout 一样交给 CSS 隐藏,头像图标留着表明身份 -->
+              <span class="user-name">{{ userStore.username || '游客' }}</span>
+              <el-tag class="user-role-tag" size="small" type="success" effect="light">
                 {{ roleLabel }}
               </el-tag>
               <el-icon><ArrowDown /></el-icon>
             </span>
             <template #dropdown>
               <el-dropdown-menu>
-                <el-dropdown-item command="logout">
+                <!-- 回商城的入口(同 AdminLayout)—— 用户区没有别的路径通向 /mall -->
+                <el-dropdown-item command="mall">
+                  <el-icon><Shop /></el-icon>
+                  返回商城
+                </el-dropdown-item>
+                <el-dropdown-item command="logout" divided>
                   <el-icon><SwitchButton /></el-icon>
                   注销
                 </el-dropdown-item>
@@ -215,15 +247,17 @@ watch(isMobileMenuOpen, (open) => {
   width: var(--sidebar-width);
   z-index: 30;
   background: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(255, 255, 255, 0.42);
+  /* 亮色下白描边/白内高光都压在白底上,等于没有 —— 改成淡墨描边 + 双层投影
+     来定义轮廓;暗色由下方 [data-theme='dark'] 覆盖成亮描边(那边天然受光) */
+  border: 1px solid rgba(17, 25, 40, 0.07);
   backdrop-filter: blur(16px) saturate(135%);
   -webkit-backdrop-filter: blur(16px) saturate(135%);
   border-radius: 22px;
   display: flex;
   flex-direction: column;
   box-shadow:
-    0 22px 48px rgba(17, 25, 40, 0.14),
-    0 1px 0 rgba(255, 255, 255, 0.75) inset;
+    0 2px 4px rgba(17, 25, 40, 0.06),
+    0 22px 48px rgba(17, 25, 40, 0.16);
   transition:
     width 220ms cubic-bezier(0.2, 0, 0, 1),
     transform 220ms cubic-bezier(0.2, 0, 0, 1);
@@ -330,10 +364,13 @@ watch(isMobileMenuOpen, (open) => {
   padding: 0 16px;
   border-radius: 18px;
   background: rgba(255, 255, 255, 0.54);
-  border: 1px solid rgba(255, 255, 255, 0.5);
+  /* 同 .sidebar:亮色用淡墨描边 + 双层投影,白描边在白底上不可见 */
+  border: 1px solid rgba(17, 25, 40, 0.07);
   backdrop-filter: blur(12px) saturate(130%);
   -webkit-backdrop-filter: blur(12px) saturate(130%);
-  box-shadow: 0 10px 28px rgba(17, 25, 40, 0.09);
+  box-shadow:
+    0 2px 4px rgba(17, 25, 40, 0.05),
+    0 10px 28px rgba(17, 25, 40, 0.11);
   transition: margin-left 220ms cubic-bezier(0.2, 0, 0, 1);
 }
 
@@ -350,9 +387,12 @@ watch(isMobileMenuOpen, (open) => {
   color: var(--color-text);
   background: rgba(255, 255, 255, 0.88);
   border: 1px solid rgba(17, 25, 40, 0.12);
+  /* 亮色:白色内高光压在 0.88 白按钮上不可见 —— 用"外投影抬升 + 底部内阴影"
+     两层来表达厚度;暗色覆盖见文件末尾,那边靠亮棱边即可 */
   box-shadow:
-    0 6px 16px rgba(17, 25, 40, 0.16),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
+    0 1px 2px rgba(17, 25, 40, 0.08),
+    0 6px 16px rgba(17, 25, 40, 0.14),
+    inset 0 -1px 0 rgba(17, 25, 40, 0.06);
 }
 
 .menu-lines {
@@ -552,6 +592,16 @@ watch(isMobileMenuOpen, (open) => {
   .is-collapsed .main-content,
   .is-collapsed .topbar {
     margin-left: 12px;
+  }
+}
+
+/* 手机(≤600):顶栏右侧空间不够,收掉用户名和角色标签,只留图标 + 箭头。
+   原来一直留着 —— 管理员账号 + 长用户名时右侧 ≈440px,375px 屏必横向溢出。
+   (放在 600 而不是 900:平板宽度够,没必要提前把用户名藏起来) */
+@media (max-width: 600px) {
+  .user-trigger .user-name,
+  .user-trigger .user-role-tag {
+    display: none;
   }
 }
 

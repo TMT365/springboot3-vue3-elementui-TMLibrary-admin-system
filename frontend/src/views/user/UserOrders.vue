@@ -20,22 +20,32 @@ const bookMap = ref<Record<number, BookDto>>({})
 const loading = ref(true)
 const error = ref<string | null>(null)
 
+// 四个状态都要有 —— 漏掉 TIMEOUT 的话超时关单的订单不显示状态标签,
+// 时间轴上又只有一个"尚未支付"的灰节点,看起来像数据缺了
 const statusMeta = computed<
-  Record<string, { label: string; type: 'warning' | 'success' | 'info' }>
+  Record<string, { label: string; type: 'warning' | 'success' | 'info' | 'danger' }>
 >(() => ({
   PENDING: { label: '待支付', type: 'warning' },
   PAID: { label: '已支付', type: 'success' },
   CANCELLED: { label: '已取消', type: 'info' },
+  TIMEOUT: { label: '超时关闭', type: 'danger' },
 }))
 
-function formatPrice(s: string): string {
-  return `¥${Number(s).toFixed(2)}`
+function formatPrice(n: number): string {
+  return `¥${n.toFixed(2)}`
 }
 
-function formatDateTime(s: string | null | undefined): string {
-  if (!s) return '-'
-  return s.replace('T', ' ').slice(0, 19)
+/**
+ * 后端给的是 ISO 串 "2026-09-16T21:36:33"(已截到秒)。
+ * 拆成日期 + 时间两段分别排版:日期正常字重,时间用等宽数字 —— 一列订单扫下来
+ * 秒位是对齐的,比整串一个样式好读。
+ */
+function splitDateTime(s: string | null | undefined): { date: string; time: string } | null {
+  if (!s) return null
+  const [date, time] = s.replace('T', ' ').split(' ')
+  return { date: date ?? '', time: (time ?? '').slice(0, 8) }
 }
+
 
 function bookTitle(bookId: number): string {
   return bookMap.value[bookId]?.title ?? `图书 #${bookId}`
@@ -96,7 +106,12 @@ onMounted(fetchOrders)
     />
 
     <div v-else class="orders-list">
-      <article v-for="order in orders" :key="order.orderNumber" class="order-card">
+      <article
+        v-for="order in orders"
+        :key="order.orderNumber"
+        class="order-card"
+        :class="`is-${order.status.toLowerCase()}`"
+      >
         <header class="order-head">
           <div class="order-id">
             <span class="order-label">订单号</span>
@@ -111,6 +126,29 @@ onMounted(fetchOrders)
             {{ statusMeta[order.status].label }}
           </el-tag>
         </header>
+
+        <!-- 订单生命周期:下单 → 支付。未支付时第二个节点是灰的、连线断开 ——
+             一眼就能看出这单走到哪一步,不用去读状态标签 -->
+        <div class="timeline">
+          <div class="tl-node">
+            <span class="tl-dot" aria-hidden="true" />
+            <span class="tl-label">下单</span>
+            <span class="tl-value">
+              <span class="tl-date">{{ splitDateTime(order.createdTime)?.date ?? '-' }}</span>
+              <span class="tl-time">{{ splitDateTime(order.createdTime)?.time ?? '' }}</span>
+            </span>
+          </div>
+
+          <div class="tl-node" :class="{ 'is-empty': !order.paidTime }">
+            <span class="tl-dot" aria-hidden="true" />
+            <span class="tl-label">支付</span>
+            <span v-if="order.paidTime" class="tl-value">
+              <span class="tl-date">{{ splitDateTime(order.paidTime)?.date }}</span>
+              <span class="tl-time">{{ splitDateTime(order.paidTime)?.time }}</span>
+            </span>
+            <span v-else class="tl-value is-pending">尚未支付</span>
+          </div>
+        </div>
 
         <ul class="item-list">
           <li v-for="(item, i) in order.items" :key="i" class="item">
@@ -199,19 +237,74 @@ onMounted(fetchOrders)
   gap: 16px;
 }
 
+/* ============================================================
+ * 订单卡  -  3D 分层
+ *   近景 0 2px 6px  贴地接触阴影
+ *   中景 0 10px 24px 主投影
+ *   远景 0 24px 48px 大气投影(hover 才出现,制造"抬起来"的纵深)
+ *   inset 顶部 1px 高光 = 纸面受光,是这套 3D 语言的关键一笔
+ * 左侧 3px 状态色轨:一列订单扫下来,状态不用读标签就能分辨
+ * ============================================================ */
 .order-card {
+  --rail: var(--color-border);
+  position: relative;
   background: rgba(255, 255, 255, 0.56);
-  border: 1px solid rgba(255, 255, 255, 0.52);
+  /* 亮色下白描边压在浅底上不可见 —— 换淡墨描边定义轮廓(暗色由下方 dark 块覆盖) */
+  border: 1px solid rgba(17, 25, 40, 0.07);
   backdrop-filter: blur(14px) saturate(125%);
   -webkit-backdrop-filter: blur(14px) saturate(125%);
   border-radius: 18px;
   box-shadow:
     0 10px 24px rgba(17, 25, 40, 0.12),
-    0 2px 6px rgba(17, 25, 40, 0.07);
-  padding: 20px 24px;
+    0 2px 6px rgba(17, 25, 40, 0.07),
+    inset 0 1px 0 rgba(255, 255, 255, 0.6);
+  padding: 20px 24px 20px 26px;
   display: flex;
   flex-direction: column;
   gap: 14px;
+  overflow: hidden;
+  transition:
+    transform 260ms cubic-bezier(0.2, 0, 0, 1),
+    box-shadow 260ms cubic-bezier(0.2, 0, 0, 1),
+    border-color 260ms ease;
+}
+
+/* 状态轨 —— 用伪元素而不是 border-left:圆角卡片上 border 会被圆角切歪 */
+.order-card::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--rail);
+  transition: background-color 220ms ease;
+}
+
+.order-card.is-paid {
+  --rail: var(--color-accent);
+}
+
+.order-card.is-pending {
+  --rail: #e6a23c;
+}
+
+/* 超时关闭 = 系统替你取消了,给一档更重的颜色区别于"用户主动取消" */
+.order-card.is-timeout {
+  --rail: #f56c6c;
+}
+
+/* hover 抬起来:接触阴影收紧 + 大气阴影铺开,配合 1px 上浮 */
+@media (hover: hover) {
+  .order-card:hover {
+    transform: translateY(-3px);
+    border-color: rgba(76, 175, 80, 0.28);
+    box-shadow:
+      0 16px 32px rgba(17, 25, 40, 0.16),
+      0 2px 6px rgba(17, 25, 40, 0.06),
+      0 28px 56px rgba(17, 25, 40, 0.08),
+      inset 0 1px 0 rgba(255, 255, 255, 0.7);
+  }
 }
 
 .order-head {
@@ -219,6 +312,87 @@ onMounted(fetchOrders)
   align-items: center;
   justify-content: space-between;
   gap: 12px;
+}
+
+/* ============================================================
+ * 时间轴  -  下单 → 支付
+ * ============================================================ */
+.timeline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 28px;
+  padding: 10px 0 2px;
+  /* 时间轴和明细之间用极淡的分隔,避免和下方的虚线分隔打架 */
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 14px;
+}
+
+.tl-node {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.tl-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  background: var(--color-accent);
+  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.14);
+}
+
+/* 未支付:节点变灰、光晕收掉 */
+.tl-node.is-empty .tl-dot {
+  background: var(--color-text-soft);
+  box-shadow: none;
+}
+
+/* 两个节点之间的连线(只在下单节点后面画) */
+.tl-node:not(:last-child)::after {
+  content: '';
+  position: absolute;
+  left: 10px;
+  right: -28px;
+  top: 50%;
+  height: 1px;
+  background: var(--color-border);
+}
+
+.tl-label {
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--color-text-soft);
+  flex-shrink: 0;
+}
+
+.tl-value {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 6px;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--color-text);
+}
+
+/* 时刻用等宽数字 —— 一列订单扫下来秒位对齐 */
+.tl-time {
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.tl-date {
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+
+.tl-value.is-pending {
+  color: var(--color-text-soft);
+  font-style: italic;
 }
 
 .order-id {
@@ -237,11 +411,14 @@ onMounted(fetchOrders)
 }
 
 .order-number {
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
-  font-size: 13px;
+  /* 全站统一:数字类信息用 Inter + tabular-nums + 一点字距,
+     不用 ui-monospace —— 那套栈在不同系统上渲染差异大,和页面其它数字也对不齐 */
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-size: 13.5px;
   color: var(--color-text);
   font-weight: 600;
   font-variant-numeric: tabular-nums;
+  letter-spacing: 0.04em;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -302,12 +479,12 @@ onMounted(fetchOrders)
 }
 
 .item-qty {
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
 }
 
 .item-price {
-  font-family: ui-monospace, 'SF Mono', Menlo, monospace;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-variant-numeric: tabular-nums;
 }
 
@@ -345,6 +522,38 @@ onMounted(fetchOrders)
 :root[data-theme='dark'] .order-card {
   background: rgba(35, 35, 35, 0.62);
   border-color: rgba(255, 255, 255, 0.08);
+  /* 深底上白高光要压到 0.06,否则卡片上沿发白 */
+  box-shadow:
+    0 10px 24px rgba(0, 0, 0, 0.42),
+    0 2px 6px rgba(0, 0, 0, 0.3),
+    inset 0 1px 0 rgba(255, 255, 255, 0.06);
+}
+
+:root[data-theme='dark'] .order-card.is-paid {
+  --rail: #66bb6a;
+}
+
+:root[data-theme='dark'] .order-card.is-pending {
+  --rail: #e6a23c;
+}
+
+:root[data-theme='dark'] .order-card.is-timeout {
+  --rail: #f56c6c;
+}
+
+@media (hover: hover) {
+  :root[data-theme='dark'] .order-card:hover {
+    border-color: rgba(102, 187, 106, 0.32);
+    box-shadow:
+      0 16px 32px rgba(0, 0, 0, 0.5),
+      0 2px 6px rgba(0, 0, 0, 0.3),
+      0 28px 56px rgba(0, 0, 0, 0.36),
+      inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  }
+}
+
+:root[data-theme='dark'] .tl-time {
+  color: #f0f0f0;
 }
 
 @media (max-width: 768px) {
@@ -357,9 +566,33 @@ onMounted(fetchOrders)
     font-size: 24px;
   }
 
+  .orders-list {
+    gap: 12px;
+  }
+
   .order-card {
-    padding: 16px 18px;
-    border-radius: 12px;
+    padding: 15px 15px 15px 18px;
+    border-radius: 14px;
+  }
+
+  /* 手机上两段时间横排会挤成一行小字 —— 改成上下两行,连线改成竖的 */
+  .timeline {
+    flex-direction: column;
+    gap: 0;
+    padding: 8px 0 12px;
+  }
+
+  .tl-node {
+    padding: 5px 0;
+  }
+
+  .tl-node:not(:last-child)::after {
+    left: 3px;
+    right: auto;
+    top: 18px;
+    bottom: -5px;
+    width: 1px;
+    height: auto;
   }
 
   .item {
@@ -380,6 +613,37 @@ onMounted(fetchOrders)
 
   .total-amount {
     text-align: right;
+  }
+}
+
+/* 手机(≤600):字号和内边距再收一档,但时间值保持 13px ——
+   再小就开始糊,订单时间是要看清的信息 */
+@media (max-width: 600px) {
+  .order-number {
+    font-size: 12.5px;
+    letter-spacing: 0.02em;
+  }
+
+  .tl-label {
+    font-size: 11px;
+  }
+
+  .tl-value {
+    font-size: 12.5px;
+    gap: 5px;
+  }
+
+  .item-title {
+    font-size: 14px;
+  }
+
+  .item-meta {
+    gap: 12px;
+    font-size: 12.5px;
+  }
+
+  .total-amount {
+    font-size: 20px;
   }
 }
 </style>

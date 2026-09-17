@@ -27,15 +27,15 @@ const router = useRouter()
 const submitting = ref<boolean>(false)
 const checkoutError = ref<string | null>(null)
 
-function formatPrice(s: string): string {
-  return `¥${Number(s).toFixed(2)}`
+function formatPrice(n: number): string {
+  return `¥${n.toFixed(2)}`
 }
 
 /**
- * 单项小计 = price × quantity(BigDecimal 字符串 × 整数)
+ * 单项小计 = price × quantity(number × 整数)
  */
-function itemSubtotal(price: string, quantity: number): string {
-  return (Number(price) * quantity).toFixed(2)
+function itemSubtotal(price: number, quantity: number): number {
+  return price * quantity
 }
 
 /**
@@ -307,7 +307,8 @@ const itemCountLabel = computed<string>(() => {
   display: flex;
   flex-direction: column;
   background: rgba(255, 255, 255, 0.54);
-  border: 1px solid rgba(255, 255, 255, 0.52);
+  /* 亮色下白描边压在浅底上不可见 —— 换淡墨描边定义轮廓(暗色由下方 dark 块覆盖) */
+  border: 1px solid rgba(17, 25, 40, 0.07);
   backdrop-filter: blur(14px) saturate(125%);
   -webkit-backdrop-filter: blur(14px) saturate(125%);
   border-radius: 18px;

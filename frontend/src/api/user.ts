@@ -19,6 +19,7 @@ import type {
   UserRegisterRequest,
   UserSearchRequest,
   UserUpdatedRequest,
+  UserVoRaw,
 } from '@/types/api'
 
 export const userApi = {
@@ -38,9 +39,11 @@ export const userApi = {
       data: body,
     }),
 
-  /** GET /api/users/list  -  多条件查询 */
+  /** GET /api/users/list  -  多条件查询
+   *  后端响应是 UserVo(Integer role/status),先按 UserVoRaw 接,
+   *  再走 mapSafeUser() 翻译成 UI 层的 UserDto(字符串枚举)。 */
   list: (query: UserSearchRequest): Promise<PageResult<UserDto>> =>
-    http<PageResult<UserDto>>({
+    http<PageResult<UserVoRaw>>({
       method: 'GET',
       url: '/api/users/list',
       params: query,
@@ -49,9 +52,9 @@ export const userApi = {
       data: page.data.map(mapSafeUser),
     })),
 
-  /** GET /api/users/{id} */
+  /** GET /api/users/{id}  -  UserVo → UserDto */
   getById: (id: number): Promise<UserDto> =>
-    http<UserDto>({
+    http<UserVoRaw>({
       method: 'GET',
       url: `/api/users/${id}`,
     }).then(mapSafeUser),

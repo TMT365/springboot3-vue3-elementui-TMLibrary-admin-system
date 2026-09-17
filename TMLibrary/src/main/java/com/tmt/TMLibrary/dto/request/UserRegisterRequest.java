@@ -29,4 +29,11 @@ public class UserRegisterRequest {
     @NotBlank(message = "Username cannot be blank") // 添加非空验证注解
     @Size(min = 1, max = 50, message = "Username should be at least 3 characters and at most 50 characters") // 添加用户名长度验证注解
     private String username;
+
+    /* -------- 验证码字段(2026-09 加入) -------- */
+    @NotBlank(message = "验证码不能为空")
+    private String captcha;
+
+    @NotBlank(message = "uuid不能为空")
+    private String uuid;
 }

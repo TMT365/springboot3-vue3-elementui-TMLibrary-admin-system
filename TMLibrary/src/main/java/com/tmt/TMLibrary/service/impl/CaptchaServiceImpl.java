@@ -1,17 +1,20 @@
 package com.tmt.TMLibrary.service.impl;
 
+import com.tmt.TMLibrary.common.CaptchaType;
 import com.tmt.TMLibrary.common.redis.RedisKeys;
 import com.tmt.TMLibrary.common.utils.CaptchaUtil;
-import com.tmt.TMLibrary.dto.redis.LoginCaptchaRedis;
-import com.tmt.TMLibrary.dto.request.GetLoginCaptchaRequestByUsernameAndPassword;
+import com.tmt.TMLibrary.dto.redis.CaptchaRedis;
+import com.tmt.TMLibrary.dto.request.GetCaptchaRequest;
+import com.tmt.TMLibrary.dto.response.CaptchaResponse;
 import com.tmt.TMLibrary.exception.BusinessException;
 import com.tmt.TMLibrary.service.CaptchaService;
-import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.data.redis.core.types.Expiration;
 import org.springframework.stereotype.Service;
 import tools.jackson.core.JacksonException;
 import tools.jackson.databind.ObjectMapper;
+
+import java.util.Base64;
 import java.util.concurrent.TimeUnit;
 import com.tmt.TMLibrary.common.Result.ResultCode;
 
@@ -23,29 +26,63 @@ import lombok.extern.slf4j.Slf4j;
 @Service
 public class CaptchaServiceImpl implements CaptchaService {
 
-    // key 由 RedisKeys 统一管理
-    // 旧 REDIS_CAPTCHA_REGISTER_PATH = "tmlibrary:captcha:register:" 已删除(死代码,从未读写)
+    /** captcha 在 Redis 里的 TTL —— 跟前端倒计时一致,都是 3 分钟 */
+    public static final long CAPTCHA_TTL_MINUTES = 3;
+    public static final long CAPTCHA_TTL_MS = CAPTCHA_TTL_MINUTES * 60 * 1000;
 
     private final StringRedisTemplate stringRedisTemplate;
     private final ObjectMapper objectMapper;
 
     /**
-     * 请求登录验证码，设置 3 分钟的过期时间，同时保存请求时的 username，
-     * 做到"验证码和获取时的用户"一致性 — 防止 A 拿到的 captcha 被 B 拿去试密码。
-     *
-     * @param response     HttpServletResponse 写入验证码图片
-     * @param loginRequest 登录请求（仅含 username）
-     * @param uuid         前端传参的 uuid，验证码唯一标识符
+     * 生成 captcha 图片 + 存元数据到 Redis,返回 {@link CaptchaResponse}。
+     * <p>流程:
+     * <ol>
+     *   <li>{@link CaptchaUtil#generateCaptchaImage()} 生成文字 + JPEG 字节流</li>
+     *   <li>算 expiresAt = now + 3 分钟(给前端倒计时)</li>
+     *   <li>把"文字 + username + expiresAt"序列化成 JSON 写 Redis,TTL 3 分钟</li>
+     *   <li>把 JPEG 编码成 base64 data URI,跟 expiresAt 一起返回</li>
+     * </ol>
+     * <p>同一个 uuid 只能验证一次(登录/注册成功后由 AuthService/UserService 删除 Redis key)。
      */
     @Override
-    public void getLoginCaptchaService(HttpServletResponse response, GetLoginCaptchaRequestByUsernameAndPassword loginRequest, String uuid) {
-        String captcha = CaptchaUtil.CreateCaptchaImage(response);
-        LoginCaptchaRedis loginCaptchaRedis = LoginCaptchaRedis.fromLoginRequest(captcha, loginRequest);
-        String json = objectMapper.writeValueAsString(loginCaptchaRedis);
-        // 将 captcha 元数据放入 Redis — 不再含 password
-        String redisKey = RedisKeys.captchaLogin(uuid.trim());
-        stringRedisTemplate.opsForValue().set(redisKey, json, Expiration.from(3L, TimeUnit.MINUTES));
+    public CaptchaResponse generateCaptcha(CaptchaType type, GetCaptchaRequest request, String uuid) {
+        // 1. 校验 type
+        if (type == null) {
+            throw new BusinessException(ResultCode.BAD_REQUEST, "captcha 类型不能为空");
+        }
+
+        // 2. 生成图片 + 文字
+        CaptchaUtil.CaptchaImage ci = CaptchaUtil.generateCaptchaImage();
+        String captchaText = ci.text();
+        byte[] jpegBytes = ci.jpegBytes();
+
+        // 3. 算过期时间戳
+        long now = System.currentTimeMillis();
+        long expiresAt = now + CAPTCHA_TTL_MS;
+
+        // 4. 写 Redis,按 type 选路径(login:{username}:{uuid} 或 register:{username}:{uuid})
+        //    key 里带 username 是 2026-09 的安全改进 —— 见 RedisKeys.CAPTCHA_LOGIN 注释
+        String key = (type == CaptchaType.LOGIN)
+            ? RedisKeys.captchaLogin(request.getUsername().trim(), uuid.trim())
+            : RedisKeys.captchaRegister(request.getUsername().trim(), uuid.trim());
+
+        CaptchaRedis meta = CaptchaRedis.of(captchaText, request, expiresAt);
+        try {
+            String json = objectMapper.writeValueAsString(meta);
+            stringRedisTemplate.opsForValue().set(key, json,
+                Expiration.from(CAPTCHA_TTL_MS, TimeUnit.MILLISECONDS));
+        } catch (JacksonException e) {
+            log.error("captcha 元数据序列化失败: uuid={}, type={}", uuid, type, e);
+            throw new BusinessException(ResultCode.INTERNAL_ERROR, "验证码生成失败", e);
+        }
+
+        // 5. 拼 data URI 返回 —— 不要再写 HttpServletResponse
+        String dataUri = "data:image/jpeg;base64,"
+            + Base64.getEncoder().encodeToString(jpegBytes);
+
+        log.info("生成 {} 验证码: uuid={}, username={}, expiresAt={}",
+            type, uuid, request.getUsername(), expiresAt);
+        // expiresAt 序列化成 String —— 见 CaptchaResponse 类注释「string at the boundary」
+        return new CaptchaResponse(dataUri, String.valueOf(expiresAt));
     }
-
-
 }

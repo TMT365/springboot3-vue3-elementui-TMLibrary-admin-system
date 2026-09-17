@@ -1,9 +1,13 @@
 package com.tmt.TMLibrary.controller;
 
+import com.tmt.TMLibrary.common.Result.PageResult;
 import com.tmt.TMLibrary.common.Result.Result;
 import com.tmt.TMLibrary.common.Result.ResultCode;
+import com.tmt.TMLibrary.common.User.UserRole;
 import com.tmt.TMLibrary.dto.request.PurchaseRequest;
+import com.tmt.TMLibrary.dto.response.OrderListItem;
 import com.tmt.TMLibrary.dto.response.PurchaseResponse;
+import com.tmt.TMLibrary.entity.Order;
 import com.tmt.TMLibrary.entity.OrderWithItems;
 import com.tmt.TMLibrary.exception.AuthException;
 import com.tmt.TMLibrary.exception.BusinessException;
@@ -62,6 +66,34 @@ public class PurchaseController {
         log.info("前端请求/api/purchases, 参数={}", req);
         int orderId = purchaseService.createOrder(req, me.getId());
         return Result.success(orderId);
+    }
+
+    /**
+     * 订单列表(全量分页)— GET /api/purchases?page=1&amp;size=10
+     *
+     * <p>管理端专用:仅 ADMIN / BOSS 可调用。普通用户看自己的订单走
+     * {@code GET /api/users/{id}/purchases}。</p>
+     *
+     * <p>返回 {@code PageResult<OrderListItem>} —— 每行只有订单主体
+     * (订单号 / 状态 / 总额 / 下单时间),不带 items。</p>
+     */
+    @GetMapping
+    public Result<PageResult<OrderListItem>> list(
+            @RequestParam(name = "page", defaultValue = "1") int page,
+            @RequestParam(name = "size", defaultValue = "10") int size,
+            @CurrentUser UserView me) {
+        requireLogin(me);
+        if (!UserRole.ADMIN.getCode().equals(me.getRole())
+                && !UserRole.BOSS.getCode().equals(me.getRole())) {
+            throw new BusinessException(ResultCode.FORBIDDEN, "仅管理员可查看全部订单");
+        }
+        log.info("前端请求/api/purchases?page={}&size={}", page, size);
+
+        PageResult<Order> result = purchaseService.listAllOrders(page, size);
+        // 实体 → 响应 DTO 的映射放在 Controller(与 PurchaseResponse.from 一致)
+        return Result.success(new PageResult<>(
+                result.getTotal(),
+                result.getData().stream().map(OrderListItem::from).toList()));
     }
 
     /**

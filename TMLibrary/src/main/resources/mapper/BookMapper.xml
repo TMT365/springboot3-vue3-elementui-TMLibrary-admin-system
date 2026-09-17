@@ -20,6 +20,7 @@
         <result column="created_time" property="createdTime" />
         <result column="updated_time" property="updatedTime" />
         <result column="stock_quantity" property="stockQuantity" />
+        <result column="category_id" property="categoryId" />
     </resultMap>
     <!-- 如果设置了map-underscore-to-camel-case: true，那么下划线命名的列名会自动转换为驼峰命名的属性名，
     只有在字段名和属性名不一致时才会自定义<resultMap> -->
@@ -27,7 +28,7 @@
     <!-- id 必须包含:Book.id 是 int,不查出来就是 0,
          导致按主键操作(盘点调整 / 库存 Hash 失效)全部打到 id=0 -->
     <sql id="Base_Column_List">
-         id, title, author, isbn, price, published_date, created_time, updated_time, stock_quantity
+         id, title, author, isbn, price, published_date, created_time, updated_time, stock_quantity, category_id
     </sql>
     <!-- sql 标签用于定义可重用的SQL片段，定义后用 <include refid="Base_Column_List"/> 引用，避免每次 SELECT 都把列名抄一遍。 -->
 
@@ -36,8 +37,8 @@
     <!-- #{} 用于预编译，防止SQL注入 || ${} 用于直接替换，不安全，慎用 -->
 
     <insert id="insertBook" useGeneratedKeys="true" keyProperty="id">
-        INSERT INTO books (title, author, isbn, price, published_date,stock_quantity)
-        VALUES (#{title}, #{author}, #{isbn}, #{price}, #{publishedDate}, #{stockQuantity})
+        INSERT INTO books (title, author, isbn, price, published_date, stock_quantity, category_id)
+        VALUES (#{title}, #{author}, #{isbn}, #{price}, #{publishedDate}, #{stockQuantity}, #{categoryId})
     </insert>
     <!-- useGeneratedKeys="true" 执行完 insert 之后，传入的 book 对象`book.getId()`就可以拿到数据库生成的 id。 -->
 
@@ -56,6 +57,8 @@
             <if test="createdTime != null ">created_time = #{createdTime},</if>
             <if test="updatedTime != null ">updated_time = #{updatedTime},</if>
             <if test="stockQuantity != null ">stock_quantity = #{stockQuantity},</if>
+            <!-- 分类改判:与其它字段一样"传了才改";置空分类走 0 这个哨兵(前端传 0 表示清空) -->
+            <if test="categoryId != null and categoryId > 0 ">category_id = #{categoryId},</if>
         </set>
         WHERE isbn = #{isbn}
     </update>
@@ -94,8 +97,31 @@
             <if test="q.author != null and q.author != ''">
                 AND author LIKE CONCAT('%', #{q.author}, '%')
             </if>
+            <!-- 关键字:书名 / 作者 / ISBN 任一命中(OR)。
+                 商城搜索框只给一个输入框,用户不区分自己输的是书名还是作者,
+                 所以这里必须是 OR 而不是 AND —— 用 AND 的话「周志明」永远搜不到。
+                 注意:三个 LIKE 都是前后模糊,走不了索引;图书表量级小可以接受,
+                 真要上量得换全文索引或搜索引擎。 -->
+            <if test="q.keyword != null and q.keyword != ''">
+                AND (
+                    title LIKE CONCAT('%', #{q.keyword}, '%')
+                    OR author LIKE CONCAT('%', #{q.keyword}, '%')
+                    OR isbn LIKE CONCAT('%', #{q.keyword}, '%')
+                )
+            </if>
             <if test="q.publishedDate != null">
                 AND published_date >= #{q.publishedDate}
+            </if>
+            <!-- 按分类筛选(商城点分类):
+                 传小类 → 直接命中所属书;传大类 → 再带上它的所有子类。
+                 两个分支合在一个条件里,不用 Service 先查子类 id 列表。 -->
+            <if test="q.categoryId != null">
+                AND (
+                    category_id = #{q.categoryId}
+                    OR category_id IN (
+                        SELECT id FROM book_categories WHERE parent_id = #{q.categoryId}
+                    )
+                )
             </if>
             <if test="q.minPrice != null">
                 <![CDATA[ AND price >= #{q.minPrice} ]]>

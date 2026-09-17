@@ -1,0 +1,73 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.tmt.TMLibrary.mapper.StatsMapper">
+
+    <!--
+      仪表盘统计 —— 4 个聚合查询。
+
+      为什么 GROUP BY DATE(...) 在这里可以接受:
+        BookMapper 里"不用 YEAR()/MONTH()"的约定针对的是**点查**——对索引列套函数会让索引失效。
+        这里是**区间聚合**:WHERE created_time >= #{start} 仍然走索引做范围扫描,
+        GROUP BY 的表达式只作用于扫描出来的行,不影响索引使用。
+        分组必须下推到 SQL,否则要把整个区间的订单/用户拉回 JVM 再聚合。
+
+      索引依赖:
+        - users:  idx_users_created_time
+        - orders: idx_orders_status_created (order_status, created_time) ← 2026-09 新增
+        - order_items: idx_order_items_order_id / idx_order_items_book_id
+
+      半开区间 [start, now):start 由 Service 端算好传入,SQL 不做日期算术。
+    -->
+
+    <!-- 1. 新增用户趋势(排除软删用户 —— 软删账号不该算"新增") -->
+    <select id="countNewUsersByDay" resultType="com.tmt.TMLibrary.dto.response.DailyCountItem">
+        SELECT DATE(created_time) AS date,
+               COUNT(*)           AS count
+        FROM users
+        WHERE deleted_at IS NULL
+          AND created_time &gt;= #{start}
+        GROUP BY DATE(created_time)
+        ORDER BY date
+    </select>
+
+    <!-- 2. 销量趋势 —— 只算 PAID(order_status=1),待支付/取消/超时都不是成交 -->
+    <select id="sumSalesByDay" resultType="com.tmt.TMLibrary.dto.response.DailySalesItem">
+        SELECT DATE(created_time)  AS date,
+               COUNT(*)            AS orders,
+               COALESCE(SUM(total_amount), 0) AS amount
+        FROM orders
+        WHERE order_status = 1
+          AND created_time &gt;= #{start}
+        GROUP BY DATE(created_time)
+        ORDER BY date
+    </select>
+
+    <!-- 3. 每本书销量 Top N —— JOIN orders 过滤 PAID,金额用下单时的单价快照 × 数量 -->
+    <select id="topBookSales" resultType="com.tmt.TMLibrary.dto.response.BookSalesItem">
+        SELECT b.id                      AS book_id,
+               b.title                   AS title,
+               b.author                  AS author,
+               SUM(oi.quantity)          AS quantity,
+               SUM(oi.quantity * oi.price) AS amount
+        FROM order_items oi
+                 JOIN orders o ON o.id = oi.order_id
+                 JOIN books b ON b.id = oi.book_id
+        WHERE o.order_status = 1
+          AND o.created_time &gt;= #{start}
+        GROUP BY b.id, b.title, b.author
+        ORDER BY quantity DESC
+        LIMIT #{limit}
+    </select>
+
+    <!-- 4. 订单状态分布 —— 只返回有数据的状态,前端补齐 4 个状态的空位 -->
+    <select id="countOrdersByStatus" resultType="com.tmt.TMLibrary.dto.response.StatusCountItem">
+        SELECT order_status AS status,
+               COUNT(*)     AS count
+        FROM orders
+        WHERE created_time &gt;= #{start}
+        GROUP BY order_status
+        ORDER BY order_status
+    </select>
+
+</mapper>

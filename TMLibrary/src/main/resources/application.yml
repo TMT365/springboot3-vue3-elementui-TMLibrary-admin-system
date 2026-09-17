@@ -17,12 +17,23 @@ spring:
   #   ansi:
   #     enabled: ALWAYS
 
-# CORS 允许的 origin — 逗号分隔,默认 http://localhost:5173
-# WebMvcConfig 通过 @Value("${app.cors.origins:...}") 读取
-# 必须把前端实际访问的 origin 都加进来,否则浏览器报 403 "Invalid CORS request"
+# CORS 允许的 origin / origin-pattern — 逗号分隔
+# WebMvcConfig 通过 @Value("${app.cors.origins:...}") 读取,
+# 走 Spring 的 allowedOriginPatterns(精确值 + 通配符都支持)
+#
+# 写法:
+#   - 精确:http://localhost:5173
+#   - 通配端口:http://localhost:[*]  ← [*] 表示任意端口
+#
+# 为什么用 [*]:vite dev server 端口会漂移 —— 5173 被占用就自动换 5174、5175…
+# 精确白名单每次都要改配置 + 重启后端,否则前端满屏 "403 Invalid CORS request"。
+# localhost / 127.0.0.1 只可能是本机来源,别人网站域名匹配不上,dev 场景安全。
+#
+# ⚠️ 生产环境必须用环境变量覆盖成精确域名,不要保留 [*]:
+#   APP_CORS_ORIGINS=https://admin.example.com
 app:
   cors:
-    origins: http://localhost:5173,http://172.21.224.134:5173
+    origins: http://127.0.0.1:[*]
 
   # Snowflake 发号器标识 —— 多实例部署时每个实例必须不同,否则订单号会撞
   # (单实例可保持默认)
@@ -33,6 +44,25 @@ app:
   book:
     # SingleFlight 中 follower 等待 leader 查库的最长时间(毫秒)
     singleflight-timeout-ms: 5000
+
+  # IP 风控 —— 高频请求(脚本攻击)自动封禁
+  # 判定在 IpRiskControlFilter(每个 /api/* 请求),计数走 Redis,封禁记录落 ip_bans 表
+  security:
+    ip-ban:
+      # 总开关 —— 本地压测/调试时可以设 false 关掉
+      enabled: ${IP_BAN_ENABLED:true}
+      # 单个窗口内允许的最大请求数;超过即封禁
+      # 150 次的依据:正常用户一次页面加载约 5-10 个请求,1 分钟很难超过 150;
+      # 脚本扫描/爆破通常每秒几十次,几秒内就会触发
+      max-requests: ${IP_BAN_MAX_REQUESTS:150}
+      # 计数窗口长度(秒)
+      window-seconds: ${IP_BAN_WINDOW_SECONDS:60}
+      # 封禁时长(小时)
+      ban-hours: ${IP_BAN_HOURS:24}
+      # 是否信任回环/私网地址(127.0.0.1、10.x、192.168.x…),默认信任 = 不参与风控。
+      # 想在本机演示封禁弹窗:设 false,然后脚本高频刷接口即可触发
+      # (演示完记得改回 true,否则开发时自己会被封 24 小时)
+      trust-private-ips: ${IP_BAN_TRUST_PRIVATE_IPS:true}
 
 # Actuator / 指标
 # ⚠️ 注意:JwtAuthFilter 只注册在 /api/* 上,actuator 端点不走鉴权。

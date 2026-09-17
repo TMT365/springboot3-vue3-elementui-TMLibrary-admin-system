@@ -11,6 +11,7 @@
         <result property="createdTime" column="created_time" />
         <result property="updatedTime" column="updated_time" />
         <result property="expireTime" column="expire_time" />
+        <result property="paidTime" column="paid_time" />
     </resultMap>
 
     <resultMap id="OrderItemResultMap" type="com.tmt.TMLibrary.entity.OrderItem">
@@ -39,6 +40,7 @@
             <result property="orderStatus" column="order_status"/>
             <result property="createdTime" column="created_time"/>
             <result property="updatedTime" column="updated_time"/>
+            <result property="paidTime" column="paid_time"/>
         </association>
 
         <!-- collection：映射集合 private List<OrderItem> items; -->
@@ -54,7 +56,7 @@
 
     <!-- expire_time 一并查出:实体持有该字段,缺列会让 Order.expireTime 恒为 null -->
     <sql id="Order_Base_Column_List">
-        id, order_number, user_id, total_amount, order_status, expire_time, created_time, updated_time
+        id, order_number, user_id, total_amount, order_status, expire_time, paid_time, created_time, updated_time
     </sql>
 
     <sql id="OrderItem_Base_Column_List">
@@ -109,6 +111,7 @@
         o.order_status,
         o.created_time,
         o.updated_time,
+        o.paid_time,
 
         oi.id AS item_id,
         oi.order_id AS item_order_id,
@@ -133,6 +136,12 @@
     <update id="updateStatusByOrderNumberGuard">
         UPDATE orders
         SET order_status = #{toStatus}
+        <!-- toStatus = 1(PAID)才写支付时间 —— 同一个守卫语句也被取消/超时复用,
+             只有付款这一条路径该落 paid_time。1 是 OrderStatus.PAID 的 code,
+             与 orders 表 order_status 的注释一致。 -->
+        <if test="toStatus == 1">
+            , paid_time = NOW()
+        </if>
         WHERE order_number = #{orderNumber}
           AND order_status = #{fromStatus}
     </update>
@@ -160,6 +169,7 @@
         o.order_status,
         o.created_time,
         o.updated_time,
+        o.paid_time,
 
         oi.id AS item_id,
         oi.order_id AS item_order_id,
@@ -169,6 +179,24 @@
         FROM orders AS o
         LEFT JOIN order_items AS oi ON o.id = oi.order_id
         WHERE o.user_id = #{userId}
+    </select>
+
+    <!-- ============================================================
+         管理端订单列表(全量分页)
+         - 只查 orders 单表,不带明细:列表页不需要 items,
+           JOIN order_items 会让结果行数翻 N 倍,还要 MyBatis 合并,得不偿失
+         - ORDER BY id DESC = 最新订单在最前;无排序的 LIMIT 分页会重复/漏记录
+         ============================================================ -->
+    <select id="selectOrderPage" resultMap="OrderResultMap">
+        SELECT id, order_number, user_id, total_amount, order_status,
+               created_time, updated_time, expire_time
+        FROM orders
+        ORDER BY id DESC
+        LIMIT #{offset}, #{limit}
+    </select>
+
+    <select id="countAllOrders" resultType="int">
+        SELECT COUNT(*) FROM orders
     </select>
 
 </mapper>

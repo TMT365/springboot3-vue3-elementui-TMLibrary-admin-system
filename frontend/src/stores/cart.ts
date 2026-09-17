@@ -31,8 +31,8 @@ export interface CartItem {
   title: string
   author: string
   isbn: string
-  /** 加入时的价格快照(BigDecimal 字符串,跟 BookDto.price 一致) */
-  price: string
+  /** 加入时的价格快照(BigDecimal 序列化为 number,跟 BookDto.price 一致) */
+  price: number
   /** 封面首字母 mark(从 title 派生,跟 UserBooks 的 book-cover-mark 保持一致) */
   coverMark: string
   quantity: number
@@ -82,12 +82,11 @@ export const useCartStore = defineStore('cart', () => {
     items.value.reduce((sum, item) => sum + item.quantity, 0),
   )
 
-  /** 衍生量  -  总价(¥xxx.xx 字符串) */
-  const subtotal = computed<string>(() => {
-    const total = items.value.reduce((sum, item) => {
-      return sum + Number(item.price) * item.quantity
+  /** 衍生量  -  总价(number,UI 层用 formatPrice 渲染) */
+  const subtotal = computed<number>(() => {
+    return items.value.reduce((sum, item) => {
+      return sum + item.price * item.quantity
     }, 0)
-    return total.toFixed(2)
   })
 
   /** 衍生量  -  是否为空 */
