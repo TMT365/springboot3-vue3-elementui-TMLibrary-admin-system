@@ -235,4 +235,18 @@
         WHERE id = #{bookId}
           AND stock_quantity >= #{qty}
     </update>
+
+    <!--
+        每本书的已支付累计销量 —— 搜索候选词的热度来源。
+        口径与 SearchSuggestMapper 里那段 <sql id="PaidSalesByBook"> 完全一致
+        (order_status = 1 且按 quantity 求和,不是订单笔数),
+        两处要保持一致,否则"下拉里显示的热度"和"排序用的热度"会对不上。
+    -->
+    <select id="selectSalesCountByBook" resultType="java.util.Map">
+        SELECT oi.book_id          AS bookId,
+               SUM(oi.quantity)    AS sold
+        FROM order_items oi
+                 INNER JOIN orders o ON o.id = oi.order_id AND o.order_status = 1
+        GROUP BY oi.book_id
+    </select>
 </mapper>

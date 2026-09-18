@@ -1,33 +1,230 @@
 <?xml version="1.0" encoding="UTF-8" ?>
+<!--
+    ============================================================================
+    企业级日志配置
+    ============================================================================
+
+    与"能打日志"的版本比,这里的每一块都在解决一个具体问题:
+
+    1. traceId         每次请求一个 ID,把散落的日志行串成一条链路(见 TraceIdFilter)
+    2. 异步 appender    业务线程不阻塞在磁盘 I/O 上 —— 日志再全也不该拖慢接口
+    3. 分级落地         ERROR 单独一个文件,告警系统只盯这一个
+    4. 屏蔽框架噪音      Spring/Tomcat/Hikari 的 INFO 全是启动期一次性输出,
+                        混在业务日志里只会淹没真正有用的信息
+    5. 相对路径默认值    默认 logs/ 而不是 /opt/logs/ —— 后者需要 root 建目录,
+                        没配 LOG_FILE 时 logback 直接报错(实测踩过)
+    6. 日志注入防护      %msg 里的换行被转义,防止用户输入伪造日志行
+
+    输出目标:
+      logs/tmlibrary.log         全量(INFO 及以上)
+      logs/tmlibrary-error.log   仅 ERROR(告警只盯这个)
+      控制台                      带颜色的可读格式(开发用)
+    ============================================================================
+-->
 <configuration>
+
+    <!-- 从 application.yml / 环境变量读值,让日志路径和级别可外部覆盖 -->
+    <springProperty scope="context" name="LOG_FILE_PATH" source="logging.file.name"
+                    defaultValue="${LOG_FILE:-logs/tmlibrary.log}"/>
+    <!--
+        ERROR 文件单独一个属性,而不是从 LOG_FILE_PATH 去后缀。
+
+        原因:Logback 的 ${} 替换不是 bash —— 写 ${LOG_FILE_PATH%.log}
+        会被它当成格式化符,直接报错:
+        "Formatting string [.] should not end with '.'"(实测踩过)。
+        所以这里给它一个独立的属性,想改路径就设 LOG_ERROR_FILE。
+    -->
+    <springProperty scope="context" name="LOG_ERROR_FILE_PATH" source="logging.file.error-name"
+                    defaultValue="${LOG_ERROR_FILE:-logs/tmlibrary-error.log}"/>
+    <springProperty scope="context" name="LVL_SPRING" source="logging.level.org.springframework"
+                    defaultValue="WARN"/>
+
+    <!-- ============================================================
+         日志格式
+
+         traceId      %X{traceId: 后面跟两个短横} —— 缺失时(定时任务这种非请求线程)
+                      打一个短横占位。写法上有坑:logback 的 MDC 语法是
+                      %X{key: 冒号短横 默认值},那个"冒号短横"是**默认值分隔符**,
+                      所以只写一个短横的话默认值就成了空串,看着像没生效(实测踩过)。
+         %logger{40}  类名超长时从左侧缩略,保留最有辨识度的尾部
+         %replace     把消息里的换行转义 —— 防止用户输入伪造日志行
+                      (比如 isbn 参数里塞 \n 就能造出一行假日志)
+         ============================================================ -->
+    <property name="LOG_PATTERN"
+              value="%d{yyyy-MM-dd HH:mm:ss.SSS} %-5level [%X{traceId:--}] [%thread] %logger{40} - %replace(%msg){'[\r\n]+', ' | '}%n%ex"/>
+
+    <!-- 控制台用短格式 + 颜色;文件必须无颜色(否则日志文件里全是 ANSI 转义码) -->
+    <property name="CONSOLE_PATTERN"
+              value="%d{HH:mm:ss.SSS} %highlight(%-5level) [%cyan(%X{traceId:--})] %magenta(%logger{36}) - %replace(%msg){'[\r\n]+', ' | '}%n%ex"/>
+
+    <!-- ============================================================
+         控制台
+         ============================================================ -->
     <appender name="CONSOLE" class="ch.qos.logback.core.ConsoleAppender">
         <encoder>
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
-            <!-- <pattern>%d{HH:mm:ss.SSS} [%thread] %clr(%5p) %logger{36} - %msg%n</pattern> -->
+            <pattern>${CONSOLE_PATTERN}</pattern>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
+
+    <!-- ============================================================
+         全量文件 —— 按天 + 按大小滚动
+         ============================================================ -->
     <appender name="FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
-        <file>${LOG_FILE:-/opt/logs/tmlibrary.log}</file>
-        <!-- 只写这一个rollingPolicy，不要嵌套别的policy标签 -->
+        <file>${LOG_FILE_PATH}</file>
+
         <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
-             <!-- 归档日志文件名模板 -->
-            <fileNamePattern>${LOG_FILE:-/opt/logs/tmlibrary}.%d{yyyy-MM-dd}.%i.log</fileNamePattern>
-            <!-- 单文件最大，超过就切分，同一天内会增加%i序号 -->
-            <maxFileSize>10MB</maxFileSize>
-            <!-- 保留多少天历史日志，超过自动删除旧文件 -->
+            <!-- %d 按天,%i 同一天内的分片序号(超过 maxFileSize 就加一片)
+                 归档一律 .gz —— 日志文本压缩比很高,省下的磁盘很可观 -->
+            <fileNamePattern>${LOG_FILE_PATH}.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+            <maxFileSize>50MB</maxFileSize>
             <maxHistory>30</maxHistory>
-            <!-- 总日志磁盘上限，防止日志占满磁盘（可选） -->
             <totalSizeCap>5GB</totalSizeCap>
+            <!-- 启动时就把过期的清掉,别等下次滚动 -->
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
         </rollingPolicy>
 
         <encoder>
-            <!-- 文件写入不能带颜色 -->
-            <pattern>%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n</pattern>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
         </encoder>
     </appender>
-    <root level="INFO">
-        <appender-ref ref="CONSOLE" />
-        <appender-ref ref="FILE" />
+
+    <!-- ============================================================
+         ERROR 专用文件
+
+         为什么单独一份:告警系统(或 Logstash 采集)只需要盯一处。
+         在全量文件里捞 ERROR 要扫所有行;单独一个文件能让
+         "文件非空 = 有错误"直接成为一个可用的信号。
+
+         LevelFilter 精确匹配 ERROR:WARN 不进(那是提醒不是故障)。
+         ============================================================ -->
+    <appender name="ERROR_FILE" class="ch.qos.logback.core.rolling.RollingFileAppender">
+        <file>${LOG_ERROR_FILE_PATH}</file>
+
+        <filter class="ch.qos.logback.classic.filter.LevelFilter">
+            <level>ERROR</level>
+            <onMatch>ACCEPT</onMatch>
+            <onMismatch>DENY</onMismatch>
+        </filter>
+
+        <rollingPolicy class="ch.qos.logback.core.rolling.SizeAndTimeBasedRollingPolicy">
+            <fileNamePattern>${LOG_ERROR_FILE_PATH}.%d{yyyy-MM-dd}.%i.gz</fileNamePattern>
+            <maxFileSize>20MB</maxFileSize>
+            <!-- 错误日志留久一点:排查往往是事后做的 -->
+            <maxHistory>90</maxHistory>
+            <totalSizeCap>1GB</totalSizeCap>
+            <cleanHistoryOnStart>true</cleanHistoryOnStart>
+        </rollingPolicy>
+
+        <encoder>
+            <pattern>${LOG_PATTERN}</pattern>
+            <charset>UTF-8</charset>
+        </encoder>
+    </appender>
+
+    <!-- ============================================================
+         异步包装
+
+         写磁盘是同步 I/O,高并发下业务线程要排队等磁盘。
+         AsyncAppender 把写操作丢进内存队列交给后台线程。
+
+         queueSize 8192 + discardingThreshold 0 = **一条都不丢**:
+         队列满时宁可短暂阻塞业务线程,也不丢日志。
+         这是刻意的取舍(审计/金融场景常见);更在意响应延迟就调大
+         queueSize 并允许丢弃低级别日志。
+
+         traceId 不受异步影响:Logback 创建 LoggingEvent 时就把 MDC
+         快照进去了,后台线程拿到的是当时的副本。
+         ============================================================ -->
+    <appender name="ASYNC_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="FILE"/>
+        <queueSize>8192</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <includeCallerData>false</includeCallerData>
+    </appender>
+
+    <appender name="ASYNC_ERROR_FILE" class="ch.qos.logback.classic.AsyncAppender">
+        <appender-ref ref="ERROR_FILE"/>
+        <queueSize>2048</queueSize>
+        <discardingThreshold>0</discardingThreshold>
+        <includeCallerData>false</includeCallerData>
+    </appender>
+
+    <!-- ============================================================
+         屏蔽框架原生日志
+
+         这些 logger 的 INFO 基本都是"我启动了""我连上了"这类一次性噪音 ——
+         几百行里夹着几行自己的业务日志。全部压到 WARN。
+
+         注意是**压级不是关闭**:WARN/ERROR 仍然会打,而框架的报错
+         往往正是你最需要看到的那几行。
+         排查时可以用环境变量临时调回来:LOG_LEVEL_SPRING=INFO
+         ============================================================ -->
+
+    <!-- Spring 全家桶:容器启动、"Bean 已创建"这类输出全部闭嘴 -->
+    <logger name="org.springframework" level="${LVL_SPRING}"/>
+    <logger name="org.springframework.boot" level="${LVL_SPRING}"/>
+    <logger name="org.springframework.web" level="${LVL_SPRING}"/>
+
+    <!-- 内嵌容器 -->
+    <logger name="org.apache.catalina" level="WARN"/>
+    <logger name="org.apache.coyote" level="WARN"/>
+    <logger name="org.apache.tomcat" level="WARN"/>
+
+    <!-- 连接池:Hikari 启动时会打一屏配置详情 -->
+    <logger name="com.zaxxer.hikari" level="WARN"/>
+
+    <!-- MyBatis:SQL 日志由 MyBatisConfig 的 log-impl 控制(生产 NoLoggingImpl),
+         这里再压一层,防止它的内部 INFO 漏出来 -->
+    <logger name="org.mybatis" level="WARN"/>
+    <logger name="org.apache.ibatis" level="WARN"/>
+
+    <!-- ES 客户端:每次请求都打细节,生产上刷屏 -->
+    <logger name="co.elastic.clients" level="WARN"/>
+    <logger name="org.elasticsearch" level="WARN"/>
+
+    <!-- Redis 客户端 Lettuce / Netty -->
+    <logger name="io.lettuce" level="WARN"/>
+    <logger name="io.netty" level="WARN"/>
+
+    <!--
+        Hibernate Validator:启动时打一行 "HV000001: Hibernate Validator 9.1.0.Final",
+        和业务毫无关系,但在实测里它是**唯一**漏出来的框架日志
+        (这份名单是拿真实日志跑出来的,不是照着文档猜的)
+    -->
+    <logger name="org.hibernate" level="WARN"/>
+    <logger name="org.hibernate.validator" level="WARN"/>
+
+    <!-- ============================================================
+         自己的业务日志 —— 保持 INFO
+         ============================================================ -->
+    <logger name="com.tmt.TMLibrary" level="${LOG_LEVEL_APP:-INFO}"/>
+
+    <!-- ============================================================
+         根 logger
+         ============================================================ -->
+    <root level="${LOG_LEVEL_ROOT:-INFO}">
+        <appender-ref ref="CONSOLE"/>
+        <appender-ref ref="ASYNC_FILE"/>
+        <appender-ref ref="ASYNC_ERROR_FILE"/>
     </root>
+
+    <!-- ============================================================
+         开发:控制台开 DEBUG,业务包看得更细
+         ============================================================ -->
+    <springProfile name="dev">
+        <logger name="com.tmt.TMLibrary" level="${LOG_LEVEL_APP:-DEBUG}"/>
+    </springProfile>
+
+    <!-- ============================================================
+         生产:去掉控制台 —— 容器里没人看 stdout,双写白费 I/O
+         ============================================================ -->
+    <springProfile name="prod">
+        <root level="${LOG_LEVEL_ROOT:-INFO}">
+            <appender-ref ref="ASYNC_FILE"/>
+            <appender-ref ref="ASYNC_ERROR_FILE"/>
+        </root>
+    </springProfile>
+
 </configuration>
-<!-- 配置完成后，重启应用即可生效 -->

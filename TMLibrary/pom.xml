@@ -119,6 +119,33 @@
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-pool2</artifactId>
 		</dependency>
+
+		<!-- ============================================================
+		     Elasticsearch 客户端
+		   ============================================================
+		   Spring Boot 4 起官方不再把 ES 客户端纳入默认 dependency management —— 直接锁 9.5.4,
+		   跟本地 docker 集群同主版本(9.x 是当前 LTS 路径)。
+		   客户端与集群主版本不一致会出现 "no compatible version" 类错误。
+
+		   选了 Elasticsearch Java Client(9.x 取代 HLRC 的现代官方客户端)。
+		   从 9.x 起 elasticsearch-java 直接吃进了底层 transport,不再单独发布
+		   elasticsearch-rest-client 模块 —— 所以下面只声明这一个 artifact。
+		   HttpHost/RestClient 等类型就在这个 jar 里。 -->
+		<dependency>
+			<groupId>co.elastic.clients</groupId>
+			<artifactId>elasticsearch-java</artifactId>
+			<version>9.5.4</version>
+		</dependency>
+		<!--
+		     Apache HttpClient 5 —— rest5-client 的运行时依赖,pom 里虽然声明了但
+		     transitive 默认 scope 不是 compile,编译期找不到 org.apache.hc.*5.* 的类。
+		     必须显式声明,且不锁版本(rest5-client 9.5.4 会用 5.6.1,本地 Maven 缓存里就有)。
+		     想完全避坑可以锁 5.6.1,但有版本不匹配的风险 —— 等首跑通了再定。
+		-->
+		<dependency>
+			<groupId>org.apache.httpcomponents.client5</groupId>
+			<artifactId>httpclient5</artifactId>
+		</dependency>
 	</dependencies>
 
 	<build>

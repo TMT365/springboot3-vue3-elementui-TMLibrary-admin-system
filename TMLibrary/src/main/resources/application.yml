@@ -3,6 +3,15 @@ spring:
     name: TMLibrary
   profiles:
     active: dev
+
+  main:
+    # 关掉 Spring Boot 的 ASCII art banner —— 容器日志里那几行图案没有信息量,
+    # 只会把真正的启动日志顶出屏幕
+    banner-mode: off
+    # 关掉 "The following 1 profile is active: dev" 这类启动信息。
+    # 启动是否成功由我们自己的日志说(见 logback-spring.xml)
+    log-startup-info: false
+
   datasource:
     # URL / 用户名 / 密码一律从环境变量读，本地开发启动前请执行：
     #   export DB_URL='jdbc:mysql://localhost:3306/tmlibrary?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai'
@@ -45,6 +54,25 @@ app:
     # SingleFlight 中 follower 等待 leader 查库的最长时间(毫秒)
     singleflight-timeout-ms: 5000
 
+  # ============================================================
+  # Elasticsearch —— 搜索建议 / 关键字搜索走 ES
+  #
+  # 单机 docker dev 环境默认配置;生产改为主备集群 URL,用逗号分隔多 host。
+  # user/pass 从环境变量读,见 .env.example。
+  # ============================================================
+  search:
+    elasticsearch:
+      # 集群地址:localhost:9200 是 docker dev 起的容器
+      hosts: ${ES_HOSTS:http://localhost:9200}
+      username: ${ES_USERNAME:elastic}
+      password: ${ES_PASSWORD:}
+      # 索引名集中在这里,后续接 search profile 时按同一前缀建即可
+      suggest-index: ${ES_SUGGEST_INDEX:tmlibrary_books_suggest}
+      book-index:    ${ES_BOOK_INDEX:tmlibrary_books}
+      # 连接超时 / 请求超时(毫秒)—— 默认 1s,搜索是热路径,超时比打 DB 还慢就降级
+      connect-timeout-ms: ${ES_CONNECT_TIMEOUT_MS:1000}
+      socket-timeout-ms:  ${ES_SOCKET_TIMEOUT_MS:2000}
+
   # IP 风控 —— 高频请求(脚本攻击)自动封禁
   # 判定在 IpRiskControlFilter(每个 /api/* 请求),计数走 Redis,封禁记录落 ip_bans 表
   security:
@@ -62,7 +90,22 @@ app:
       # 是否信任回环/私网地址(127.0.0.1、10.x、192.168.x…),默认信任 = 不参与风控。
       # 想在本机演示封禁弹窗:设 false,然后脚本高频刷接口即可触发
       # (演示完记得改回 true,否则开发时自己会被封 24 小时)
+      # ⚠️ 生产挂在反向代理后面时必须设 false —— 否则所有请求的 remoteAddr
+      #    都是网关的内网 IP,一律被当成"可信"放行,风控形同虚设。
       trust-private-ips: ${IP_BAN_TRUST_PRIVATE_IPS:true}
+
+      # 可信反向代理地址(逗号分隔)。**默认空 = 不信任任何代理头。**
+      #
+      # X-Forwarded-For 是客户端可以随便写的:早期实现直接取它的第一段,
+      # 攻击者每次换一个值就能绕过计数封禁,甚至伪造别人的 IP 把人封掉。
+      # 现在只有当直连方(remoteAddr)在这个名单里,才会从 XFF 右侧往左
+      # 取第一个不可信地址(nginx realip 的算法)。
+      #
+      # 什么时候需要配:应用挂在 Nginx/网关后面,**且网关覆盖**(不是透传)
+      # X-Forwarded-For 时。例如网关在宿主机:
+      #   IP_BAN_TRUSTED_PROXIES=127.0.0.1
+      # 直连部署 / 容器直连 → 保持为空,这是最安全的默认值。
+      trusted-proxies: ${IP_BAN_TRUSTED_PROXIES:}
 
 # Actuator / 指标
 # ⚠️ 注意:JwtAuthFilter 只注册在 /api/* 上,actuator 端点不走鉴权。

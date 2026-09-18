@@ -42,6 +42,8 @@ const userNavItems = [
   { index: '/user/cart', title: '购物车', icon: 'ShoppingCart' },
   { index: '/user/profile', title: '个人信息', icon: 'UserFilled' },
   { index: '/user/my-orders', title: '我的订单', icon: 'List' },
+  // 反馈不在 /user 下(管理员也要看同一个详情页),但菜单照样能指过去
+  { index: '/feedback/mine', title: '我的反馈', icon: 'ChatDotRound' },
   { index: '/user/settings', title: '设置', icon: 'Setting' },
 ]
 

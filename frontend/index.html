@@ -38,17 +38,25 @@
     <!-- Microsoft tile -->
     <meta name="msapplication-TileColor" content="#4CAF50" />
 
-    <!-- 全站字体(Google Fonts,一次请求取三个字族)
+    <!-- 全站字体(Google Fonts,一次请求取四个字族)
          Inter       — 数字 / 代码类文本(订单号、金额、ISBN),tabular-nums 对齐
          Manrope     — 正文 sans(theme.css 的 body 字体)
          DM Serif Display — display 标题(页面大标题、卡片标题)
-         三个字族在项目 CSS 里被引用 88 次;之前只请求了 Inter,
-         另两个一直走 Georgia / system-ui 兜底 —— 设计字形根本没生效。 -->
+         IBM Plex Mono — 等宽(目录树、序号标签)
+         前三个字族在项目 CSS 里被引用 88 次;之前只请求了 Inter,
+         另两个一直走 Georgia / system-ui 兜底 —— 设计字形根本没生效。
+
+         IBM Plex Mono 是 2026-09 补的:目录树原来用
+         'SFMono-Regular', Menlo, Consolas, 'Liberation Mono', monospace ——
+         前两个是 macOS 专有,Windows 才轮到 Consolas,Linux 实际落到 Liberation Mono。
+         那是套 Courier 度量兼容字体,笔画细、字形旧,和 Manrope / DM Serif 摆在一起
+         明显不是一套东西。IBM Plex Mono 是为一套衬线+无衬线家族配的等宽,
+         放在这个 editorial 版面里最合,Box-drawing(├ └ │ ─)也齐。 -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap"
+      href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=IBM+Plex+Mono:wght@400;500;600&family=Inter:wght@400;500;600;700;800&family=Manrope:wght@400;500;600;700;800&display=swap"
     />
 
     <title>TMLibrary — 图书管理系统</title>

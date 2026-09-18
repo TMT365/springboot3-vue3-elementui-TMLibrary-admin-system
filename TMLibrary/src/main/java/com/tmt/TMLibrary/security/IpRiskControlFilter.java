@@ -12,6 +12,7 @@ import org.jspecify.annotations.NonNull;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import java.io.IOException;
+import java.util.Set;
 
 /**
  * IP 风控过滤器 —— 每个 {@code /api/*} 请求都过一遍。
@@ -47,11 +48,24 @@ public class IpRiskControlFilter extends OncePerRequestFilter {
      */
     private final boolean trustPrivateIps;
 
+    /**
+     * 可信反向代理的地址名单(精确匹配)。
+     *
+     * <p><b>默认为空 = 不信任任何代理头</b>,直接用 remoteAddr。这是安全的默认值:
+     * 直连部署、容器直连、内网调用都该走这条路径。</p>
+     *
+     * <p>只有当应用挂在 Nginx / 网关后面,且网关会<b>覆盖</b>(而不是透传)
+     * {@code X-Forwarded-For} 时,才把网关的地址填进来,例如
+     * {@code app.security.ip-ban.trusted-proxies=127.0.0.1,10.0.0.5}。</p>
+     */
+    private final Set<String> trustedProxies;
+
     public IpRiskControlFilter(IpBanService ipBanService, AuthErrorWriter errorWriter,
-                               boolean trustPrivateIps) {
+                               boolean trustPrivateIps, Set<String> trustedProxies) {
         this.ipBanService = ipBanService;
         this.errorWriter = errorWriter;
         this.trustPrivateIps = trustPrivateIps;
+        this.trustedProxies = trustedProxies == null ? Set.of() : trustedProxies;
     }
 
     @Override
@@ -98,22 +112,59 @@ public class IpRiskControlFilter extends OncePerRequestFilter {
     }
 
     /**
-     * 取客户端真实 IP。
-     * <p>优先读代理头(网关转发场景),都没有才用 remoteAddr。
-     * <b>注意</b>:这些头可被伪造,只有在可信反向代理后面才安全 ——
-     * 本项目的部署形态(单实例直连)下 remoteAddr 就是真实来源;
-     * 将来上网关时应在网关层覆盖 X-Forwarded-For,而不是透传客户端传的值。</p>
+     * 取客户端真实 IP —— <b>只在直连方是可信代理时才读代理头</b>。
+     *
+     * <h2>为什么不能无条件读 X-Forwarded-For</h2>
+     * <p>这个头是客户端可以随便写的。早期版本直接取它的第一段,等于:
+     * 攻击者只要每次请求换一个 {@code X-Forwarded-For: 1.2.3.4} 的值,
+     * 风控就永远按不同的 IP 计数 —— <b>封禁完全失效</b>。
+     * 更糟的是他还能伪造别人的 IP 把别人封掉。</p>
+     *
+     * <h2>正确做法</h2>
+     * <ol>
+     *   <li>直连方({@code remoteAddr})不在可信代理名单里 → 头一律不认,就用 remoteAddr。
+     *       默认名单为空 = 永远不认头,这是最安全的默认值(直连部署)。</li>
+     *   <li>直连方是可信代理 → 从 XFF <b>右侧往左</b>扫,跳过可信代理,
+     *       取第一个不可信的地址。这样客户端自己塞在左边的假地址会被忽略,
+     *       真正由我们代理追加的那一段才会被采信。</li>
+     * </ol>
+     *
+     * <p>例:客户端发 {@code X-Forwarded-For: 9.9.9.9},我们的 Nginx 追加真实来源后
+     * 变成 {@code 9.9.9.9, 203.0.113.7}。从右往左:203.0.113.7 不可信 → 采用它,
+     * 而 9.9.9.9 被跳过。这正是 nginx realip / Express {@code trust proxy} 的算法。</p>
      */
     private String resolveClientIp(HttpServletRequest req) {
+        String remoteAddr = req.getRemoteAddr();
+        if (!isTrustedProxy(remoteAddr)) {
+            // 直连部署 / 不可信来源:头是客户端可控的,不认
+            return remoteAddr;
+        }
         for (String header : IP_HEADERS) {
             String value = req.getHeader(header);
-            if (value != null && !value.isBlank() && !"unknown".equalsIgnoreCase(value)) {
-                // X-Forwarded-For 可能是 "client, proxy1, proxy2" —— 第一个是原始客户端
-                int comma = value.indexOf(',');
-                return (comma > 0 ? value.substring(0, comma) : value).trim();
+            if (value == null || value.isBlank() || "unknown".equalsIgnoreCase(value)) {
+                continue;
+            }
+            // XFF 形如 "client, proxy1, proxy2" —— 从右往左找第一个不可信的
+            String[] hops = value.split(",");
+            for (int i = hops.length - 1; i >= 0; i--) {
+                String hop = hops[i].trim();
+                if (hop.isEmpty()) {
+                    continue;
+                }
+                if (!isTrustedProxy(hop)) {
+                    return hop;
+                }
             }
         }
-        return req.getRemoteAddr();
+        return remoteAddr;
+    }
+
+    /** 直连方是否在可信代理名单里(见 {@code app.security.ip-ban.trusted-proxies}) */
+    private boolean isTrustedProxy(String ip) {
+        if (ip == null || ip.isBlank() || trustedProxies.isEmpty()) {
+            return false;
+        }
+        return trustedProxies.contains(ip);
     }
 
     /** 回环 / 私网地址 —— 不参与风控(trustPrivateIps=false 时关闭该保护,用于本地演示) */

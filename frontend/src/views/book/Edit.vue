@@ -149,12 +149,72 @@ async function onSubChange(value: unknown): Promise<void> {
     subModel.value = null
     return
   }
+  // 复用"新建小类"那条路径(含 loading / 报错 / 刷新 / 选中)
+  await createSubCategory(parentId, name)
+}
+
+/**
+ * 弹一个输入框问分类名。
+ *
+ * <p>用 ElMessageBox.prompt 而不是自己搭一个输入区:它自带校验、回车确认、Esc 取消、
+ * 点遮罩关闭,而且窄屏上宽度自适应 —— 手机上比行内输入框好用。</p>
+ *
+ * @return 用户输入的名字(已 trim);取消或留空返回 null
+ */
+async function promptCategoryName(title: string, placeholder: string): Promise<string | null> {
+  try {
+    const { value } = await ElMessageBox.prompt(`请输入${title}名称`, title, {
+      confirmButtonText: '创建',
+      cancelButtonText: '取消',
+      inputPlaceholder: placeholder,
+      // 与后端 CategoryCreateRequest 的 @Size(max = 50) 对齐 —— 前端先挡一道,
+      // 别让用户敲完 60 个字才被后端拒
+      inputValidator: (v: string) => {
+        const s = (v ?? '').trim()
+        if (!s) return '名称不能为空'
+        if (s.length > 50) return '名称不能超过 50 个字符'
+        return true
+      },
+    })
+    return value.trim()
+  } catch {
+    // 点取消 / 关闭 → ElMessageBox reject,这里当"用户放弃"
+    return null
+  }
+}
+
+/** 新建大类 —— 用于下拉里没有用户想要的大类时 */
+async function onCreateParent(): Promise<void> {
+  const name = await promptCategoryName('新建大类', '例如:自然科学')
+  if (!name) return
+
+  creatingCategory.value = true
+  try {
+    // parentId 传 0 = 新建顶层大类(后端约定,见 CategoryCreateRequest)
+    const created = await bookApi.createCategory({ parentId: 0, name })
+    await loadCategories()
+    form.parentId = created.id
+    // 新大类下面还没有小类,把小类清掉避免残留上一个选择
+    form.categoryId = null
+    subModel.value = null
+    ElMessage.success(`已新建大类「${created.name}」`)
+  } catch (e) {
+    ElMessage.error(e instanceof Error ? e.message : '新建大类失败')
+  } finally {
+    creatingCategory.value = false
+  }
+}
+
+/** 新建小类 —— 给"新建小类"按钮用;allow-create 现敲那条路径也复用这里 */
+async function createSubCategory(parentId: number, name: string): Promise<void> {
   creatingCategory.value = true
   try {
     const created = await bookApi.createCategory({ parentId, name })
     await loadCategories()
     form.categoryId = created.id
     subModel.value = created.id
+    // 重建 select:allow-create 会往选项列表里塞一个"字符串形态"的临时项,
+    // 刷新 options 后靠换 key 把它挤掉
     subKey.value += 1
     ElMessage.success(`已新建分类「${created.name}」`)
   } catch (e) {
@@ -164,6 +224,18 @@ async function onSubChange(value: unknown): Promise<void> {
   } finally {
     creatingCategory.value = false
   }
+}
+
+/** 「没有想要的小类?新建小类」按钮 */
+async function onCreateSub(): Promise<void> {
+  const parentId = form.parentId
+  if (!parentId) {
+    ElMessage.warning('请先选择大类,再新建小类')
+    return
+  }
+  const name = await promptCategoryName('新建小类', '例如:科普读物')
+  if (!name) return
+  await createSubCategory(parentId, name)
 }
 
 // ============================================================
@@ -379,6 +451,20 @@ onMounted(async () => {
                 <span class="opt-count">{{ c.bookCount }} 本</span>
               </el-option>
             </el-select>
+            <!-- 做成选择框下面的文字按钮,而不是藏在下拉最后一项:
+                 下拉里的"新建"要滚到底才看得见,手机上还容易被键盘挡住 -->
+            <p class="field-tip">
+              没有想要的大类?
+              <button
+                type="button"
+                class="link-btn"
+                :disabled="creatingCategory"
+                @click="onCreateParent"
+              >
+                <el-icon><Plus /></el-icon>
+                新建大类
+              </button>
+            </p>
           </el-form-item>
 
           <el-form-item label="小类">
@@ -400,6 +486,21 @@ onMounted(async () => {
                 <span class="opt-count">{{ c.bookCount }} 本</span>
               </el-option>
             </el-select>
+
+            <p class="field-tip">
+              没有想要的小类?
+              <button
+                type="button"
+                class="link-btn"
+                :disabled="creatingCategory || !form.parentId"
+                @click="onCreateSub"
+              >
+                <el-icon><Plus /></el-icon>
+                新建小类
+              </button>
+              <span v-if="!form.parentId" class="tip-hint">(先选大类)</span>
+            </p>
+
             <p v-if="categoryPath" class="field-tip is-ok">
               <el-icon><Collection /></el-icon>
               已选分类:{{ categoryPath }}
@@ -548,6 +649,43 @@ onMounted(async () => {
 .field-tip.is-ok {
   color: var(--color-accent);
   font-weight: 500;
+}
+
+/* 「新建大类 / 新建小类」文字按钮 —— 做成链接样式,别抢主按钮的注意力 */
+.link-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  /* 加大点击热区:文字只有 12.5px,手机上直接点很容易点空 */
+  padding: 4px 6px;
+  margin: -4px 0;
+  background: none;
+  border: none;
+  border-radius: 6px;
+  font-family: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  color: var(--color-accent);
+  cursor: pointer;
+  transition: background-color 180ms ease, color 180ms ease;
+}
+
+.link-btn:hover:not(:disabled) {
+  background: rgba(76, 175, 80, 0.10);
+}
+
+.link-btn:disabled {
+  color: var(--color-text-soft);
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.link-btn .el-icon {
+  font-size: 13px;
+}
+
+.tip-hint {
+  color: var(--color-text-soft);
 }
 
 /* 下拉项:名字靠左,数量靠右 */

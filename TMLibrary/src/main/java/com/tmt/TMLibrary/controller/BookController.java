@@ -2,6 +2,8 @@ package com.tmt.TMLibrary.controller;
 
 import com.tmt.TMLibrary.common.Result.PageResult;
 import com.tmt.TMLibrary.common.Result.Result;
+import com.tmt.TMLibrary.common.Result.ResultCode;
+import com.tmt.TMLibrary.common.User.UserRole;
 import com.tmt.TMLibrary.dto.request.BookSearchRequest;
 import com.tmt.TMLibrary.dto.request.BookPublishedDateByRequest;
 import com.tmt.TMLibrary.dto.request.BookDateTimeByRequest;
@@ -9,6 +11,10 @@ import com.tmt.TMLibrary.dto.request.BookUpdateRequest;
 import com.tmt.TMLibrary.dto.request.BookSaveRequest;
 import com.tmt.TMLibrary.dto.request.BookStockAdjustRequest;
 import com.tmt.TMLibrary.entity.Book;
+import com.tmt.TMLibrary.exception.AuthException;
+import com.tmt.TMLibrary.exception.BusinessException;
+import com.tmt.TMLibrary.security.context.CurrentUser;
+import com.tmt.TMLibrary.security.context.UserView;
 import com.tmt.TMLibrary.service.BookService;
 import jakarta.validation.Valid;
 
@@ -57,35 +63,45 @@ public class BookController {
 
     /**
      * url = /api/books/created
-     * @param req
-     * @return
+     *
+     * <p><b>仅 ADMIN / BOSS</b>。此前这里(以及下面三个写方法)没有任何角色检查 ——
+     * 任何已登录用户拿 token 直接打接口就能增删改图书、改库存。
+     * 前端把这些页面挂在 {@code meta: { admin: true }} 路由下,但
+     * <b>前端路由守卫不是安全边界</b>,绕过它只需要一个 curl。</p>
+     *
+     * <p>读写权限的分界:JwtAuthFilter 的白名单放行 {@code /api/books} 的
+     * 全部 GET(商城未登录可浏览),写操作靠这里兜底。</p>
      */
     @PostMapping("/created")
-    public Result<Void> create(@RequestBody @Valid BookSaveRequest req) {
+    public Result<Void> create(@RequestBody @Valid BookSaveRequest req, @CurrentUser UserView me) {
+        requireAdminOrBoss(me);
         log.info("前端请求/api/books/created, req={}", req);
         bookService.create(req);
         return Result.success();
     }
 
     /**
-     * url = /api/books/978-3-16-148410-0
-     * @param isbn
-     * @return
+     * url = /api/books/deleted/isbn/978-3-16-148410-0
+     * <p>仅 ADMIN / BOSS —— 见 {@link #create} 的说明。</p>
      */
     @DeleteMapping("/deleted/isbn/{isbn}")
-    public Result<Void> deleteByISBN(@PathVariable(name = "isbn", required = true) String isbn) {
+    public Result<Void> deleteByISBN(@PathVariable(name = "isbn", required = true) String isbn,
+                                     @CurrentUser UserView me) {
+        requireAdminOrBoss(me);
         log.info("前端请求/api/books/{}", isbn);
         bookService.deleteByISBN(isbn);
         return Result.success();
     }
+
     /**
      * url = /api/books/978-3-16-148410-0
-     * @param isbn
-     * @param req
-     * @return
+     * <p>仅 ADMIN / BOSS —— 见 {@link #create} 的说明。</p>
      */
     @PatchMapping("/{isbn}")
-    public Result<Void> updateByISBN(@PathVariable(name = "isbn", required = true) String isbn, @RequestBody @Valid BookUpdateRequest req) {
+    public Result<Void> updateByISBN(@PathVariable(name = "isbn", required = true) String isbn,
+                                     @RequestBody @Valid BookUpdateRequest req,
+                                     @CurrentUser UserView me) {
+        requireAdminOrBoss(me);
         log.info("前端请求/api/books/{}, 参数={}", isbn, req);
         bookService.updateByISBN(isbn, req);
         return Result.success();
@@ -95,10 +111,14 @@ public class BookController {
      * 调整库存(盘点语义,绝对值) — PATCH /api/books/978-3-16-148410-0/stock
      * <p>与「更新图书信息」分离:交易链路会持续改动可用库存,
      * 管理端盘点需要独立的语义、权限与审计。</p>
+     * <p>仅 ADMIN / BOSS —— 见 {@link #create} 的说明。库存被任意用户改写
+     * 会直接破坏超卖防线,这条尤其不能漏。</p>
      */
     @PatchMapping("/{isbn}/stock")
     public Result<Void> adjustStock(@PathVariable(name = "isbn", required = true) String isbn,
-                                    @RequestBody @Valid BookStockAdjustRequest req) {
+                                    @RequestBody @Valid BookStockAdjustRequest req,
+                                    @CurrentUser UserView me) {
+        requireAdminOrBoss(me);
         log.info("前端请求/api/books/{}/stock, 库存调整为 {}", isbn, req.getStockQuantity());
         bookService.adjustStock(isbn, req.getStockQuantity());
         return Result.success();
@@ -156,5 +176,30 @@ public class BookController {
     public Result<PageResult<Book>> searchByUpdatedTimeBy(@ModelAttribute BookDateTimeByRequest req) {
         log.info("前端请求/api/books/search/UpdatedTime/by, 参数={}", req);
         return Result.success(bookService.searchByUpdatedTimeBy(req));
+    }
+
+    // ============== 鉴权辅助 ==============
+
+    /**
+     * 要求当前用户是 ADMIN 或 BOSS。
+     *
+     * <p>写法与 {@code SecurityController.requireAdmin} /
+     * {@code PurchaseController} 内的角色判断保持一致:未登录抛
+     * {@link AuthException}(401),已登录但角色不够抛
+     * {@link BusinessException}(403)。</p>
+     *
+     * <p>注意 {@code me == null} 这一支在正常链路里到不了 ——
+     * 这 4 个写端点不在 {@code JwtAuthFilter} 的白名单里,没有合法 token
+     * 根本进不到 Controller。留着是为了防御性编程:万一以后有人改了白名单,
+     * 这里不会因为 NPE 变成一个 500。</p>
+     */
+    private void requireAdminOrBoss(UserView me) {
+        if (me == null) {
+            throw new AuthException(ResultCode.UNAUTHORIZED, "未登录");
+        }
+        Integer role = me.getRole();
+        if (!UserRole.ADMIN.getCode().equals(role) && !UserRole.BOSS.getCode().equals(role)) {
+            throw new BusinessException(ResultCode.FORBIDDEN, "仅管理员可操作图书");
+        }
     }
 }

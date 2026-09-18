@@ -35,6 +35,7 @@ const allItems: MenuItem[] = [
   { index: '/admin/books', title: '图书列表', icon: 'Reading' },
   { index: '/admin/purchases', title: '订单列表', icon: 'List' },
   { index: '/admin/users', title: '用户管理', icon: 'UserFilled', admin: true },
+  { index: '/admin/feedback', title: '反馈管理', icon: 'ChatDotRound', admin: true },
 ]
 
 const items = computed<MenuItem[]>(() =>

@@ -42,15 +42,10 @@ const navItems: NavItem[] = [
       { label: '用户管理', anchor: '#feature-users' },
     ],
   },
-  {
-    label: '使用方法',
-    children: [
-      { label: '快速开始', anchor: '#quick-start' },
-      { label: '常见问题', anchor: '#faq' },
-    ],
-  },
   { label: '联系方式', anchor: '#contact' },
   { label: '学习经历', anchor: '#learning-log' },
+  // 放最后 —— 这一项面向"想看代码 / 想参与"的人,是导航里最"深"的一层
+  { label: '项目结构', anchor: '#project-structure' },
 ]
 
 const mobileOpen = ref(false)
@@ -148,7 +143,6 @@ function moveSlider() {
   const newY = liRect.top - ulRect.top
   const newW = liRect.width
   const newH = liRect.height
-  console.log(newX, newY, newW, newH, newW, newH);
   sliderStyle.value = {
     transform: `translate(${newX}px, ${newY}px)`,
     width: `${newW}px`,

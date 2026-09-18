@@ -410,6 +410,86 @@ export interface PurchaseResponse {
   paidTime: string | null
 }
 
+// ------------------- 用户反馈 -------------------
+
+/** 反馈分类 —— 后端 FeedbackCreateRequest 的 @Pattern 白名单,前端只能传这 4 个之一 */
+export type FeedbackCategory = 'BUG' | 'FEATURE' | 'QUESTION' | 'OTHER'
+
+/** 反馈状态 —— 后端是 TINYINT(0..3),前端用数字常量保持和后端一致
+ *  0=OPEN 1=IN_PROGRESS 2=RESOLVED 3=CLOSED */
+export type FeedbackStatus = 0 | 1 | 2 | 3
+
+/** 反馈优先级 —— 0=LOW 1=NORMAL 2=HIGH 3=URGENT */
+export type FeedbackPriority = 0 | 1 | 2 | 3
+
+/** POST /api/feedbacks/mine 请求体 —— 见 backend FeedbackCreateRequest.java */
+export interface FeedbackCreateRequest {
+  category: FeedbackCategory
+  /** ≤ 120 字符(后端 @Size 与 SQL VARCHAR(120) 对齐) */
+  title: string
+  /** ≤ 5000 字符 */
+  body: string
+}
+
+/** POST /api/feedbacks/{id}/reply 请求体 —— 见 backend FeedbackReplyRequest.java
+ *  isInternal=true 仅管理员可生效;普通用户传了也会被后端强制当 false */
+export interface FeedbackReplyRequest {
+  body: string
+  isInternal?: boolean
+}
+
+/** PATCH /api/feedbacks/{id}/status 请求体 —— 见 backend FeedbackStatusRequest.java
+ *  两个字段至少传一个 */
+export interface FeedbackStatusRequest {
+  status?: FeedbackStatus
+  priority?: FeedbackPriority
+}
+
+/** GET /api/feedbacks/{id} 响应 —— 见 backend FeedbackView.java */
+export interface FeedbackView {
+  id: number
+  userId: number
+  /** 提交人用户名(联表取) */
+  username: string | null
+  category: FeedbackCategory
+  title: string
+  body: string
+  status: FeedbackStatus
+  priority: FeedbackPriority
+  createdTime: string
+  updatedTime: string
+  resolvedTime: string | null
+  replies: FeedbackReplyView[]
+}
+
+/** FeedbackView.replies 元素 —— 见 backend FeedbackReplyView.java */
+export interface FeedbackReplyView {
+  id: number
+  userId: number
+  username: string | null
+  /** 0=USER 1=ADMIN 2=BOSS —— 前端据此区分气泡样式 */
+  role: number
+  /** 1 = 内部备注(普通用户拿不到,后端已过滤) */
+  isInternal: number
+  body: string
+  createdTime: string
+}
+
+/** 反馈列表行 —— 见 backend FeedbackSummary.java(不含 body,点进详情才取) */
+export interface FeedbackSummary {
+  id: number
+  title: string
+  userId: number
+  username: string | null
+  category: FeedbackCategory
+  status: FeedbackStatus
+  priority: FeedbackPriority
+  hasReply: boolean
+  replyCount: number
+  createdTime: string
+  updatedTime: string
+}
+
 /** 搜索候选词类型 —— 见 backend BookSuggestion.java */
 export type BookSuggestionType = 'TITLE' | 'AUTHOR' | 'ISBN'
 

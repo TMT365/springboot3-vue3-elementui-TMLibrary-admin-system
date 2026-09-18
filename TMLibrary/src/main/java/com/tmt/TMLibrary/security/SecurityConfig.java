@@ -13,6 +13,10 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
+import java.util.Arrays;
+import java.util.Set;
+import java.util.stream.Collectors;
+
 
 /**
  * 安全相关 Bean 集中配置。
@@ -77,8 +81,27 @@ public class SecurityConfig {
     public IpRiskControlFilter ipRiskControlFilter(
             IpBanService ipBanService,
             AuthErrorWriter errorWriter,
-            @Value("${app.security.ip-ban.trust-private-ips:true}") boolean trustPrivateIps) {
-        return new IpRiskControlFilter(ipBanService, errorWriter, trustPrivateIps);
+            @Value("${app.security.ip-ban.trust-private-ips:true}") boolean trustPrivateIps,
+            @Value("${app.security.ip-ban.trusted-proxies:}") String trustedProxiesCsv) {
+        return new IpRiskControlFilter(ipBanService, errorWriter, trustPrivateIps,
+                parseTrustedProxies(trustedProxiesCsv));
+    }
+
+    /**
+     * 解析可信代理名单 —— 逗号分隔,空白项丢弃。
+     *
+     * <p>空串 → 空集合 = <b>不信任任何代理头</b>。这是刻意的默认值:
+     * 直连部署下 {@code remoteAddr} 就是真实来源,读 {@code X-Forwarded-For}
+     * 只会给伪造者可乘之机(见 {@code IpRiskControlFilter.resolveClientIp})。</p>
+     */
+    private static Set<String> parseTrustedProxies(String csv) {
+        if (csv == null || csv.isBlank()) {
+            return Set.of();
+        }
+        return Arrays.stream(csv.split(","))
+                .map(String::trim)
+                .filter(s -> !s.isEmpty())
+                .collect(Collectors.toUnmodifiableSet());
     }
 
     @Bean

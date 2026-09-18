@@ -1,13 +1,36 @@
 # TMLibrary 遗留问题清单
 
-> 更新时间:2026-09-13(第六轮修复后)
-> 状态:前两轮发现的逻辑问题**已全部修复**。本文件保留完整的修复记录供追溯。
+> 更新时间:2026-09-18(第七轮修复后)
+> 状态:历次发现的逻辑问题已全部修复。本文件保留完整修复记录供追溯,
+> 末尾的「当前未解决」列出**已知但仍未处理**的事项。
+
+---
+
+## 当前未解决
+
+按严重程度排。这些**没有修**,是留给后续处理的。
+
+| # | 问题 | 影响 | 建议处理方式 |
+|---|---|---|---|
+| 1 | **无自动化测试覆盖关键路径** | 库存并发、订单状态机、鉴权三块核心逻辑没有测试保护,改动靠人工回归 | 优先补 `PurchaseServiceImpl` 的状态机测试和 `BookInventoryServiceImpl` 的 Lua 并发测试(可用 Testcontainers) |
+| 2 | **`RedisConfig.java:18` 有一行被注释掉的明文口令** | 注释掉了不执行,但它已进入公开 git 历史(提交 `5daba7a`)。**实测该口令已失效**(`AUTH failed: WRONGPASS`),不构成泄漏 | 直接删掉那一行(连同整段被注释的旧 Bean 一起清掉) |
+| 3 | **IP 风控的第三方归属地查询是同步阻塞的** | `IpUtil` 调 ip-api.com / ipinfo.io,慢或超时会拖住封禁判定链路 | 加超时 + 本地缓存,或改成异步补充信息 |
+| 4 | **`config/MyUtilsConfig.java`、`config/RestConfig.java` 是空壳** | 无功能影响,但会让读代码的人困惑 | 删掉,或补上注释说明"预留给 X" |
+| 5 | **`testdata/README.md` 引用的 seeder 源码已不存在** | `src/main/java/com/tmt/TMLibrary/testdata/BookTestDataSeeder.java` 找不到,`load.sh` 里对它的调用可能失效 | 确认后修文档或补回源码 |
+| 6 | **`src/test/resources/db/schema.sql` 是 0 字节空文件** | 测试上下文若依赖它会失败 | 补齐内容或删除 |
 
 ---
 
 ## 附:已修复清单
 
-### 第六轮(本次)
+### 第七轮(本次,2026-09-18)
+
+| 编号 | 问题 | 修复方式 |
+|---|---|---|
+| **图书写操作完全没鉴权** | `BookController` 的 4 个写方法(`POST /created`、`PATCH /{isbn}`、`PATCH /{isbn}/stock`、`DELETE /deleted/isbn/{isbn}`)**一个角色检查都没有** —— 任何已登录用户拿 token 直接打接口就能增删改图书、改库存。前端把这些页面挂在 `meta: { admin: true }` 路由下,但**前端路由守卫不是安全边界**,绕过它只需要一个 curl。同期 `PurchaseController` / `StatsController` / `SecurityController` / `CategoryController` / `FeedbackController` 都有检查,**只有 BookController 漏了**,属于遗漏而非设计 | 照 `SecurityController.requireAdmin` 的既有写法加 `requireAdminOrBoss(me)`:未登录抛 `AuthException`(401),角色不够抛 `BusinessException`(403)。已端到端验证:USER 打 4 个写接口全部 403、读接口仍 200(未误伤商城)、ADMIN 正常通过、无 token 401 |
+| **`scripts/schema.sql` 建表不全的误判** | 曾认为它是"一键建库"脚本但只建 4 张表(缺 `book_categories`/`feedbacks`/`feedback_replies`/`ip_bans`)。**经确认它只是给人看的总体规划表,不用于建库** | 不修改内容。改为在 `README.md` 和 `docker-compose.yml` 里写明真正的建表路径(`db/*.sql` 四个文件按序执行),Docker 初始化按 `01~05` 前缀挂载 |
+
+### 第六轮
 
 | 编号 | 问题 | 修复方式 |
 |---|---|---|

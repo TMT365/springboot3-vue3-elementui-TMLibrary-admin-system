@@ -4,7 +4,10 @@
 >
 > Base URL: `http://localhost:8080`(开发环境)
 >
-> 所有请求和响应均使用 `application/json`(除验证码图片外)。
+> 所有请求和响应均使用 `application/json`。
+>
+> (2026-09 起验证码也是 JSON —— 返回 `{image: "data:image/png;base64,...", expiresAt}`,
+> 不再直接返回 image/png 二进制。老文档里"除验证码图片外"的说法已过时。)
 
 ---
 
@@ -787,7 +790,7 @@ HTTP/1.1 401 Unauthorized
 }
 ```
 
-- `status`: `OrderStatus` **枚举**,JSON 序列化为字符串(`"PENDING"` / `"PAID"` / `"CANCELLED"` / `"TIMEOUT"`,见 § 6.3 / § 1.6)
+- `status`: `OrderStatus` **枚举**,JSON 序列化为字符串(`"PENDING"` / `"PAID"` / `"CANCELLED"` / `"TIMEOUT"`,见 § 8.3 / § 1.6)
 - `totalAmount` / `price` / `subtotal` 是 `BigDecimal`,JSON 序列化为 **number**(见 § 1.6)
 - `price` 是下单时的**快照价**,不受后续 book 调价影响
 - `createdTime` = 下单时间(`orders.created_time`),`paidTime` = 支付时间(`orders.paid_time`)
@@ -802,9 +805,175 @@ HTTP/1.1 401 Unauthorized
 
 ---
 
-## 6. 数据字典(枚举)
+## 6. 反馈工单 `/api/feedbacks`
 
-### 6.1 `UserRole` — 用户角色
+> 2026-09 新增。全部端点**都要求登录** —— `/api/feedbacks/**` 不在 JWT 白名单里,
+> 未登录会被过滤器直接挡下返回 401。
+>
+> 权限模型:普通用户只能看/回**自己提的**工单;ADMIN / BOSS 能看全部、
+> 能改状态、能写**内部备注**(普通用户看不到)。
+
+### 6.1 提交反馈
+
+```
+POST /api/feedbacks/mine
+Auth: 需登录
+```
+
+**请求体** `FeedbackCreateRequest`
+
+| 字段 | 类型 | 必填 | 校验 |
+|---|---|:---:|---|
+| `category` | string | ✅ | 必须是 `BUG` / `FEATURE` / `QUESTION` / `OTHER` 之一 |
+| `title` | string | ✅ | ≤ 120 字符 |
+| `body` | string | ✅ | ≤ 5000 字符 |
+
+```json
+{ "category": "BUG", "title": "搜索「设计」搜不到设计模式", "body": "复现步骤:1. 打开商城 2. …" }
+```
+
+**响应 data**:新建工单的 `id`(`Long`),前端拿到后直接跳详情页。
+
+> `status` 固定初始化为 `0`(待处理),`priority` 固定 `1`(普通),都不由提交人指定。
+
+### 6.2 我的反馈列表
+
+```
+GET /api/feedbacks/mine?page=1&size=10
+Auth: 需登录
+```
+
+**响应 data** `PageResult<FeedbackSummary>` —— 每行只有摘要,**不含 `body`**
+(列表不需要正文,带上会让响应体膨胀几倍)。
+
+| 字段 | 类型 | 说明 |
+|---|---|---|
+| `id` | number | 工单 id |
+| `category` | string | `BUG` / `FEATURE` / `QUESTION` / `OTHER` |
+| `title` | string | 一句话概述 |
+| `status` | number | `0` 待处理 / `1` 处理中 / `2` 已解决 / `3` 已关闭 |
+| `priority` | number | `0` 低 / `1` 普通 / `2` 高 / `3` 紧急 |
+| `replyCount` | number | 回复条数(**不含内部备注**) |
+| `createdTime` / `updatedTime` | string | 时间戳 |
+
+### 6.3 全部反馈列表(管理端)
+
+```
+GET /api/feedbacks/all?status=0&category=BUG&page=1&size=10
+Auth: ADMIN / BOSS
+```
+
+比 6.2 多两个可选筛选参数 `status` / `category`,响应结构相同,但每行额外带
+`username`(提交人)。普通用户调用返回 `403`。
+
+### 6.4 反馈详情
+
+```
+GET /api/feedbacks/{id}
+Auth: 需登录(本人或 ADMIN/BOSS)
+```
+
+**响应 data** `FeedbackView` —— 工单主体 + `replies` 回复数组。
+
+**内部备注的可见性**:`isInternal = 1` 的回复**只有 ADMIN / BOSS 看得到**,
+普通用户拿到的响应里这些条目已被过滤。缓存也按视角分了 key(用户版 / 管理员版),
+不会串味。
+
+非本人且非管理员 → `403`;工单不存在 → `404`。
+
+### 6.5 追述 / 回复
+
+```
+POST /api/feedbacks/{id}/reply
+Auth: 需登录(本人或 ADMIN/BOSS)
+```
+
+**请求体** `FeedbackReplyRequest`
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|:---:|---|
+| `body` | string | ✅ | 回复内容 |
+| `isInternal` | boolean | ❌ | 默认 `false`。**仅 ADMIN/BOSS 有效** |
+
+> ⚠️ 普通用户传 `isInternal: true` 会被**强制当作 false** —— 否则任何人都能
+> 塞一条"管理员内部备注"进来伪装官方口径。
+
+### 6.6 改状态 / 优先级
+
+```
+PATCH /api/feedbacks/{id}/status
+Auth: ADMIN / BOSS
+```
+
+**请求体** `FeedbackStatusRequest` —— `status` 与 `priority` **至少传一个**。
+
+| 字段 | 类型 | 取值范围 |
+|---|---|---|
+| `status` | number | `0` 待处理 / `1` 处理中 / `2` 已解决 / `3` 已关闭 |
+| `priority` | number | `0` 低 / `1` 普通 / `2` 高 / `3` 紧急 |
+
+```json
+{ "status": 2, "priority": 2 }
+```
+
+> 状态改为 `2`(已解决)或 `3`(已关闭)时自动写 `resolved_time = NOW()`;
+> **改回 `0`/`1` 会把它清空为 NULL** —— 避免"重新打开后还留着上次的解决时间"
+> 这种自相矛盾的数据。
+
+---
+
+## 7. 统计与风控
+
+### 7.1 仪表盘统计
+
+```
+GET /api/stats/dashboard?days=30
+Auth: ADMIN / BOSS
+```
+
+**参数**:`days` 统计窗口天数,**夹到 `[7, 90]`**(传 1 按 7 算,传 365 按 90 算 ——
+防止有人用 `days=99999` 去打全表聚合)。
+
+**响应 data** `DashboardStatsResponse`,4 组数据:
+
+| 字段 | 说明 |
+|---|---|
+| `newUsersTrend` | 按天新增用户(`DailyCountItem[]`) |
+| `salesTrend` | 按天订单数 + 销售额(`DailySalesItem[]`) |
+| `topBooks` | 销量 Top N(`BookSalesItem[]`,**只统计已支付订单**) |
+| `orderStatusDistribution` | 订单状态分布(`StatusCountItem[]`) |
+
+> 整个响应体缓存到 Redis 单个 key,TTL 5 分钟。统计不是强一致场景,
+> 过期自动回源,不做主动失效。
+
+### 7.2 查看生效中的 IP 封禁
+
+```
+GET /api/security/ip-bans
+Auth: ADMIN / BOSS
+```
+
+**响应 data** `IpBanInfo[]` —— 当前生效(未过期)的封禁记录,
+含 IP / 封禁原因 / 封禁时刻 / 解封时刻。
+
+> 同一 IP 可能有多条历史记录(重复封禁是新增而不是覆盖,保留审计痕迹),
+> 这个接口按 IP 倒序取**最新一条**。
+
+### 7.3 人工解封
+
+```
+DELETE /api/security/ip-bans/{ip}
+Auth: ADMIN / BOSS
+```
+
+同时清 **MySQL 记录**和 **Redis 封禁标记** —— 只清一边的话,
+要么 Redis 里还封着(等于没解),要么 IP 风控过滤器每次都得查库(失去 Redis 的意义)。
+
+---
+
+## 8. 数据字典(枚举)
+
+### 8.1 `UserRole` — 用户角色
 
 | code | name | 描述 |
 |---:|---|---|
@@ -812,7 +981,7 @@ HTTP/1.1 401 Unauthorized
 | 1 | `ADMIN` | 管理员 |
 | 2 | `BOSS` | 老板 |
 
-### 6.2 `UserStatus` — 用户状态
+### 8.2 `UserStatus` — 用户状态
 
 | code | name | 描述 |
 |---:|---|---|
@@ -820,7 +989,7 @@ HTTP/1.1 401 Unauthorized
 | 1 | `INACTIVE` | 未激活 |
 | 2 | `SUSPENDED` | 已暂停/封号 |
 
-### 6.3 `OrderStatus` — 订单状态
+### 8.3 `OrderStatus` — 订单状态
 
 | code | name | 描述 |
 |---:|---|---|
@@ -829,7 +998,7 @@ HTTP/1.1 401 Unauthorized
 | 2 | `CANCELLED` | 已取消 |
 | 3 | `TIMEOUT` | 超时取消 |
 
-### 6.4 枚举在 DTO 中的两种序列化方式
+### 8.4 枚举在 DTO 中的两种序列化方式
 
 后端 DTO 字段**不一致地**使用 `Integer` 或 `Enum` 类型,导致 JSON 序列化结果有差异。
 具体到哪个 DTO 用哪种:
@@ -858,7 +1027,7 @@ HTTP/1.1 401 Unauthorized
 
 ---
 
-## 7. 端点速查表
+## 9. 端点速查表
 
 | Method | URL | Auth | 说明 |
 |---|---|:---:|---|
@@ -884,17 +1053,33 @@ HTTP/1.1 401 Unauthorized
 | GET | `/api/books/search/CreatedTime/by` | ❌ | 按创建时间粒度 |
 | GET | `/api/books/search/UpdatedTime/by` | ❌ | 按更新时间粒度 |
 | POST | `/api/purchases` | ✅ | 下单 |
+| GET | `/api/purchases` | ✅ | **全部订单分页(管理端,仅 ADMIN/BOSS)** |
 | GET | `/api/purchases/{orderNumber}` | ✅ | 订单详情 |
 | DELETE | `/api/purchases/{orderNumber}` | ✅ | 取消订单 |
 | PATCH | `/api/purchases/{orderNumber}/pay` | ✅ | 支付订单 |
+| GET | `/api/books/categories` | ❌ | 图书分类树(两级) |
+| POST | `/api/books/categories` | ✅ | 新建分类(仅 ADMIN/BOSS) |
+| GET | `/api/books/suggest` | ❌ | 搜索候选词(下拉建议) |
+| POST | `/api/feedbacks/mine` | ✅ | 提交反馈 |
+| GET | `/api/feedbacks/mine` | ✅ | 我的反馈列表 |
+| GET | `/api/feedbacks/all` | ✅ | 全部反馈(仅 ADMIN/BOSS) |
+| GET | `/api/feedbacks/{id}` | ✅ | 反馈详情(本人或管理员) |
+| POST | `/api/feedbacks/{id}/reply` | ✅ | 追述 / 回复 |
+| PATCH | `/api/feedbacks/{id}/status` | ✅ | 改状态/优先级(仅 ADMIN/BOSS) |
+| GET | `/api/stats/dashboard` | ✅ | 仪表盘统计(仅 ADMIN/BOSS) |
+| GET | `/api/security/ip-bans` | ✅ | 生效中的 IP 封禁列表(仅 ADMIN/BOSS) |
+| DELETE | `/api/security/ip-bans/{ip}` | ✅ | 人工解封(仅 ADMIN/BOSS) |
 
 > ❌ = 白名单(无需 token) / ✅ = 需要 `Authorization: Bearer <token>`
+>
+> ✅ 里带「仅 ADMIN/BOSS」的,除了要有合法 token,角色不够还会返回 `403`。
+> 其余 ✅ 端点普通用户也能调,但只能操作属于自己的数据(具体边界见各章节)。
 
 ---
 
-## 8. 附录
+## 10. 附录
 
-### 8.1 登录完整流程
+### 10.1 登录完整流程
 
 ```
 ┌─────────┐  POST /api/captcha/login?uuid=X   ┌────────┐
@@ -921,7 +1106,7 @@ HTTP/1.1 401 Unauthorized
 └─────────┘                                     └────────┘
 ```
 
-### 8.2 库存预占流程
+### 10.2 库存预占流程
 
 ```
 下单 → bookMapper.selectById(非锁读)→ 拿价格
@@ -941,7 +1126,7 @@ HTTP/1.1 401 Unauthorized
 30 分钟未支付 → `OrderExpireScheduler`(每 60s 扫描,Redis SETNX 分布式锁)→ 调 `cancelExpiredOrder`
 → 先 release 库存 → 状态守卫 UPDATE(`WHERE order_status='PENDING'`)→ 提交 → afterCommit 更新 Redis。
 
-### 8.3 运维端点(Actuator)
+### 10.3 运维端点(Actuator)
 
 | 端点 | 说明 |
 |---|---|
@@ -962,7 +1147,7 @@ HTTP/1.1 401 Unauthorized
 > 当前仅暴露 `health` 与 `metrics`;生产环境建议改用独立 management 端口,
 > 或在网关/反向代理层限制访问来源。
 
-### 8.4 关键设计
+### 10.4 关键设计
 
 - **JWT 黑名单**:登出时按 token 剩余 TTL 写入 `tmlibrary:auth:byJti:{jti}:blackList`,过期自动清。
 - **库存双轨**:

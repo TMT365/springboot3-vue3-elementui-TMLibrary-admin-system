@@ -5,6 +5,7 @@ import com.tmt.TMLibrary.dto.request.BookSearchRequest;
 import com.tmt.TMLibrary.entity.Book;
 import org.apache.ibatis.annotations.Param;
 import java.util.List;
+import java.util.Map;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -125,4 +126,17 @@ public interface BookMapper {
          * @return 1=成功,0=图书不存在
          */
         int updateStockById(@Param("bookId") int bookId, @Param("stock") int stock);
+
+        /**
+         * 每本书的累计销量(已支付订单口径)—— 搜索候选词的"热度"数据源。
+         *
+         * <p>与 {@code StatsMapper.topBookSales} 的区别:那个带时间窗口、还要金额,
+         * 是给仪表盘用的;搜索热度要的是<b>全时段</b>累计,且只有销量一个指标 ——
+         * 分开写比给旧查询加"传 null 表示不限时间"的开关干净。</p>
+         *
+         * <p>只返回有成交的书;调用方对缺失的按 0 处理。</p>
+         *
+         * @return 每行 {@code {bookId: Integer, sold: Long}}
+         */
+        List<Map<String, Object>> selectSalesCountByBook();
 }

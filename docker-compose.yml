@@ -1,0 +1,244 @@
+# ============================================================================
+# TMLibrary 一键部署
+#
+#   快速开始:
+#     cp .env.docker.example .env.docker     # 然后改里面的密码(★ 必须改)
+#     docker compose --env-file .env.docker up -d --build
+#
+#   启完:
+#     前端   http://localhost:8081
+#     后端   http://localhost:8080/actuator/health
+#     接口文档见 TMLibrary/API.md
+#
+#   带 Elasticsearch(中文搜索增强,可选):
+#     docker compose --env-file .env.docker --profile search up -d --build
+#
+#   停:
+#     docker compose --env-file .env.docker down          # 保留数据卷
+#     docker compose --env-file .env.docker down -v       # 连数据一起删
+#
+# ---------------------------------------------------------------------------
+# 为什么不把凭据写在这个文件里
+#
+# docker-compose.yml 是要提交进 git 的。所有密码都走 ${VAR} 从
+# --env-file 指定的文件读,那个文件在 .gitignore 里。
+# 没配的话 compose 会报 "variable is not set" 直接拒绝启动 —— 这是有意的,
+# 比用空密码静默起一个裸奔的数据库好。
+# ============================================================================
+
+name: tmlibrary
+
+services:
+
+  # -------------------------------------------------------------------------
+  # MySQL —— 业务主库
+  # -------------------------------------------------------------------------
+  mysql:
+    image: mysql:8.4
+    container_name: tmlibrary-mysql
+    restart: unless-stopped
+    command:
+      # 建库时就用 utf8mb4,否则中文书名/反馈内容会变问号。
+      # 排序规则用 unicode_ci 而不是 general_ci —— 后者对中文和多音字排序不准
+      - --character-set-server=utf8mb4
+      - --collation-server=utf8mb4_unicode_ci
+      # 时间戳统一走东八区,和 application.yml 里 serverTimezone=Asia/Shanghai 对齐
+      - --default-time-zone=+08:00
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?必须在 .env.docker 里设置 MYSQL_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-tmlibrary}
+    ports:
+      # 只绑回环:数据库不该对公网开放。需要外部访问时自己改成 "3306:3306"
+      - "127.0.0.1:3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      # ---------------------------------------------------------------------
+      # 建表脚本。这里的挂载顺序就是执行顺序 —— MySQL 官方镜像会按**文件名字典序**
+      # 依次执行 /docker-entrypoint-initdb.d/ 下的 .sql,所以前缀 01/02/03/04 不能乱。
+      #
+      # ⚠️ 注意:scripts/schema.sql **不在这里**。它是一份给人看的总体规划表,
+      #    只含 users/books/orders/order_items 四张核心表,**不能用来建库** ——
+      #    照它跑出来的库缺 book_categories / feedbacks / feedback_replies / ip_bans,
+      #    分类接口和反馈系统会直接 500。
+      #    真正完整的建表脚本是下面这四个(都在 src/main/resources/db/ 下)。
+      # ---------------------------------------------------------------------
+      - ./TMLibrary/scripts/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
+      - ./TMLibrary/src/main/resources/db/book_categories.sql:/docker-entrypoint-initdb.d/02-book-categories.sql:ro
+      - ./TMLibrary/src/main/resources/db/feedback.sql:/docker-entrypoint-initdb.d/03-feedback.sql:ro
+      - ./TMLibrary/src/main/resources/db/ip_bans.sql:/docker-entrypoint-initdb.d/04-ip-bans.sql:ro
+      # 演示数据(3 个 demo 账号 + 25 笔订单)。不需要就注释掉这行
+      - ./TMLibrary/src/main/resources/db/seed-demo-data.sql:/docker-entrypoint-initdb.d/05-seed-demo-data.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-p${MYSQL_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 40s
+    networks: [tmlibrary-net]
+
+  # -------------------------------------------------------------------------
+  # Redis —— 缓存 / 库存预占 / 验证码 / JWT 黑名单 / 分布式锁
+  # -------------------------------------------------------------------------
+  redis:
+    image: redis:7-alpine
+    container_name: tmlibrary-redis
+    restart: unless-stopped
+    command:
+      # 必须设密码。这个 Redis 存着库存预占状态和 JWT 黑名单,
+      # 裸奔意味着任何人都能改库存数、或者把登出的 token 从黑名单里删掉
+      - redis-server
+      - --requirepass
+      - ${REDIS_PASSWORD:?必须在 .env.docker 里设置 REDIS_PASSWORD}
+      - --appendonly
+      - "yes"
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "${REDIS_PASSWORD}", "--no-auth-warning", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
+    networks: [tmlibrary-net]
+
+  # -------------------------------------------------------------------------
+  # Elasticsearch —— 中文搜索候选词(可选)
+  #
+  # 放在 profile 里:默认不启动。后端有启动期健康检查 ——
+  # SearchSuggestServiceConfig 会打一个 1 秒超时的 ping,连不上就自动降级到
+  # MySQL 的 LIKE 实现,应用照常起来。所以小机器上完全可以不跑它。
+  #
+  # ⚠️ IK 中文分词器:官方镜像**不带**,不装的话中文会被拆成单个字
+  #    (搜「设计」会命中「计算机系统」)。装法见 TMLibrary/scripts/install-ik.sh。
+  #    要持久化分词器,建议基于官方镜像自己 build 一个:
+  #        FROM docker.elastic.co/elasticsearch/elasticsearch:9.5.4
+  #        RUN bin/elasticsearch-plugin install --batch \
+  #              https://get.infini.cloud/elasticsearch/analysis-ik/9.5.4
+  #    然后把下面的 image 换成你自己的。
+  # -------------------------------------------------------------------------
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:9.5.4
+    container_name: tmlibrary-es
+    profiles: [search]
+    restart: unless-stopped
+    environment:
+      discovery.type: single-node
+      xpack.security.enabled: "true"
+      # ⚠️ 这里**不能**用 ${ES_PASSWORD:?...} 的必填语法。
+      #    compose 的 ${VAR:?} 是在**解析配置阶段**求值的,和 profile 无关 ——
+      #    写了它,连不启用 search 的普通 `up` 都会因为"ES_PASSWORD 缺失"直接报错。
+      #    所以这里给空默认值:真启用 search 却没设密码时,
+      #    ES 容器会以"密码不能为空"启动失败,报错在 docker compose ps 里一眼可见。
+      ELASTIC_PASSWORD: ${ES_PASSWORD:-}
+      # 单节点 + 演示用途,堆给小一点;生产按数据量调
+      ES_JAVA_OPTS: "-Xms512m -Xmx512m"
+    ports:
+      - "127.0.0.1:9200:9200"
+    volumes:
+      - es-data:/usr/share/elasticsearch/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -s -u elastic:${ES_PASSWORD} http://localhost:9200/_cluster/health | grep -qE '\"status\":\"(green|yellow)\"'"]
+      interval: 15s
+      timeout: 5s
+      retries: 12
+      start_period: 60s
+    networks: [tmlibrary-net]
+
+  # -------------------------------------------------------------------------
+  # 后端 —— Spring Boot 4 + Java 25
+  # -------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./TMLibrary
+      dockerfile: Dockerfile
+    image: tmlibrary-backend:local
+    container_name: tmlibrary-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+
+      # 容器内用服务名连,不是 localhost
+      DB_URL: "jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-tmlibrary}?useUnicode=true&characterEncoding=UTF-8&serverTimezone=Asia/Shanghai&allowPublicKeyRetrieval=true&useSSL=false"
+      DB_USERNAME: root
+      DB_PASSWORD: ${MYSQL_ROOT_PASSWORD}
+
+      REDIS_HOST: redis
+      REDIS_PORT: "6379"
+      # 注意:compose 起的 Redis 没有建命名用户,认证走 default 用户。
+      # 所以这里留空,只给密码 —— 和本机开发时用命名用户的情况不同
+      REDIS_USERNAME: ""
+      REDIS_PASSWORD: ${REDIS_PASSWORD}
+
+      JWT_SECRET: ${JWT_SECRET:?必须在 .env.docker 里设置 JWT_SECRET}
+      JWT_EXPIRATION_SECONDS: ${JWT_EXPIRATION_SECONDS:-604800}
+
+      # ⚠️ prod profile 里这一项**没有默认值**,不配就启动失败(有意为之)。
+      #    值应该是**浏览器访问前端的地址**,不是后端地址。
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:8081}
+
+      # 日志落到挂载出来的卷里
+      LOG_FILE: /app/logs/tmlibrary.log
+
+      # ES:默认指向 compose 里的服务名。就算 search profile 没启用、
+      # 这个地址连不上,后端也会自动降级到 MySQL,不影响启动
+      ES_HOSTS: ${ES_HOSTS:-http://elasticsearch:9200}
+      ES_USERNAME: ${ES_USERNAME:-elastic}
+      ES_PASSWORD: ${ES_PASSWORD:-}
+
+      # IP 风控:X-Forwarded-For 只在来源可信时才采信。
+      # 前端 nginx 在同一个 compose 网络里,网段是动态的 ——
+      # 所以这里留空(默认不信任任何代理,拿 remoteAddr 当客户端 IP)。
+      # 后面挂了外部反向代理(ELB/Nginx),再把它的地址填进来
+      IP_BAN_TRUSTED_PROXIES: ${IP_BAN_TRUSTED_PROXIES:-}
+    ports:
+      # 直接暴露后端是为了方便调试 / 看 actuator。
+      # 真正对外只需要前端那一个端口,可以把这个 ports 整段删掉
+      - "127.0.0.1:8080:8080"
+    volumes:
+      - backend-logs:/app/logs
+    networks: [tmlibrary-net]
+
+  # -------------------------------------------------------------------------
+  # 前端 —— nginx 托管 SPA + 反向代理 /api
+  # -------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    image: tmlibrary-frontend:local
+    container_name: tmlibrary-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    environment:
+      # nginx.conf 是模板,启动时由 envsubst 替换这个值
+      BACKEND_UPSTREAM: backend:8080
+    ports:
+      # 唯一对外的入口
+      - "${FRONTEND_PORT:-8081}:80"
+    networks: [tmlibrary-net]
+
+# ---------------------------------------------------------------------------
+# 数据卷 —— 只有显式 down -v 才会删
+# ---------------------------------------------------------------------------
+volumes:
+  mysql-data:
+    name: tmlibrary-mysql-data
+  redis-data:
+    name: tmlibrary-redis-data
+  es-data:
+    name: tmlibrary-es-data
+  backend-logs:
+    name: tmlibrary-backend-logs
+
+networks:
+  tmlibrary-net:
+    name: tmlibrary-net
+    driver: bridge

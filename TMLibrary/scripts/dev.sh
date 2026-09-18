@@ -55,6 +55,20 @@ echo "   Redis_PASSWORD = *** (${#REDIS_PASSWORD} chars)"
 echo "   JWT_SECRET  = *** (${#JWT_SECRET} chars)"
 echo "   LOG_FILE     = ${LOG_FILE:-(/opt/logs/tmlibrary.log)}"
 echo "   JWT_EXPIRATION_SECONDS   = $JWT_EXPIRATION_SECONDS"
+
+# ES 是可选的(连不上会自动降级回 MySQL),所以不做必填校验 ——
+# 但**必须回显**,否则"密码写错了 → 静默降级"这种情况用户完全看不出来
+if [ -n "${ES_HOSTS:-}" ] || [ -n "${ES_PASSWORD:-}" ]; then
+    echo "   ES_HOSTS    = ${ES_HOSTS:-(未设置,应用默认 http://localhost:9200)}"
+    echo "   ES_USERNAME = ${ES_USERNAME:-elastic}"
+    if [ -n "${ES_PASSWORD:-}" ]; then
+        echo "   ES_PASSWORD = *** (${#ES_PASSWORD} chars)"
+    else
+        echo "   ⚠️  ES_PASSWORD 为空 —— 若 ES 启用了 security,搜索会静默降级回 MySQL"
+    fi
+else
+    echo "   ES_*        = (未配置,搜索走 MySQL 降级实现)"
+fi
 echo "================配置完成================="
 # ---------- 5. 启动后端 (exec 让 Ctrl-C 直接传给 Maven) ----------
 cd "$PROJECT_ROOT"

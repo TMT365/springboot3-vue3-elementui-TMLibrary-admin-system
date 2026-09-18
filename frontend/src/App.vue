@@ -14,6 +14,7 @@ import { useLoadingStore } from '@/stores/loading'
 import { useIpBanStore } from '@/stores/ipBan'
 import LoadingScreen from '@/components/LoadingScreen.vue'
 import IpBanDialog from '@/components/IpBanDialog.vue'
+import FeedbackFab from '@/components/FeedbackFab.vue'
 
 const loadingStore = useLoadingStore()
 const ipBanStore = useIpBanStore()
@@ -55,4 +56,11 @@ onMounted(() => {
 
   <!-- IP 风控封禁弹窗 —— 由 request.ts 收到 429 时触发,见 stores/ipBan.ts -->
   <IpBanDialog />
+
+  <!--
+    反馈入口 —— 挂全局而不是某个 layout 里:
+    用户遇到问题时可能在任何一页(商城 / 订单 / 后台),挂在这里就不用
+    "先找到反馈入口再描述问题"。未登录时点击会引导去登录并带回跳地址。
+  -->
+  <FeedbackFab />
 </template>

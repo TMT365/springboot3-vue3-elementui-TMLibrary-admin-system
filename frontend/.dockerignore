@@ -1,0 +1,29 @@
+# 构建上下文排除
+#
+# 没有这个的话,docker build 会把 node_modules(几百 MB)和 dist/
+# 一起传给 daemon —— 构建阶段本来就要重新 npm ci,传过去纯属浪费。
+# 实测:排除前后构建上下文从 ~400MB 降到 ~2MB。
+
+node_modules/
+dist/
+dist-ssr/
+
+# 版本控制 / IDE
+.git/
+.gitignore
+.idea/
+.vscode/
+*.local
+
+# 日志
+*.log
+npm-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# 测试 / 覆盖率
+coverage/
+*.lcov
+
+# 文档(运行镜像里不需要)
+*.md

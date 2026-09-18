@@ -1,8 +1,76 @@
-# Production overrides — all connection details must come from environment
-# variables. Never commit real credentials.
+# ============================================================================
+# 生产环境覆盖 —— 所有连接信息必须来自环境变量,绝不提交真实凭据
+#
+# 启用:--spring.profiles.active=prod
+# 本文件只放"与 dev 不同"的项;没写的沿用 application.yml 的值。
+# ============================================================================
+
 spring:
   datasource:
     url: ${DB_URL}
     username: ${DB_USERNAME}
     password: ${DB_PASSWORD}
     driver-class-name: com.mysql.cj.jdbc.Driver
+
+    # HikariCP —— 开发默认池大小(10)对生产偏小,且没有超时约束,
+    # 慢查询会把连接占死直到池耗尽
+    hikari:
+      maximum-pool-size: ${DB_POOL_MAX:20}
+      minimum-idle: ${DB_POOL_MIN_IDLE:5}
+      connection-timeout: 3000        # 拿不到连接 3 秒就失败,别让请求线程干等
+      validation-timeout: 3000
+      max-lifetime: 1200000           # 20 分钟,小于 MySQL 的 wait_timeout(默认 8h)但避开中间件断连
+      leak-detection-threshold: 20000 # 连接借出超过 20 秒没还 → 打日志,排查连接泄漏
+
+  # ---------------------------------------------------------------------------
+  # 生产不打印 SQL
+  #
+  # MyBatisConfig 的默认值是 StdOutImpl(把所有 SQL + 参数打到 stdout),
+  # 那是给开发看 SQL 用的。生产环境开着有三个问题:
+  #   1. 日志量爆炸 —— 每个请求几条 SQL,全量打出来会淹没真正的错误
+  #   2. 泄露数据 —— 登录/注册的 SQL 参数里带用户名、手机号
+  #   3. 性能 —— stdout 是同步写,高并发下会拖慢响应
+  # NoLoggingImpl 是 MyBatis 官方的"什么都不打"实现。
+  # ---------------------------------------------------------------------------
+mybatis:
+  log-impl: org.apache.ibatis.logging.nologging.NoLoggingImpl
+
+# ---------------------------------------------------------------------------
+# 日志级别:生产只留 INFO 以上;包级别调成 WARN 避免框架噪音
+# (logback-spring.xml 负责输出目标,这里只管级别)
+# ---------------------------------------------------------------------------
+logging:
+  level:
+    root: INFO
+    com.tmt.TMLibrary: INFO
+    org.springframework: WARN
+    org.mybatis: WARN
+    # ES 客户端在 INFO 下会打每次请求的细节,生产调到 WARN
+    co.elastic.clients: WARN
+
+# ---------------------------------------------------------------------------
+# CORS —— 生产必须显式列出前端域名
+#
+# application.yml 里是 dev 值(http://127.0.0.1:[*]),生产照搬的话
+# 真实域名会被拒。这里不写默认值:没配 CORS_ORIGINS 就直接启动失败,
+# 比"起得来但跨域全挂"好排查。
+# 多个域名用逗号分隔,例如 CORS_ORIGINS=https://a.com,https://www.a.com
+# ---------------------------------------------------------------------------
+app:
+  cors:
+    origins: ${CORS_ORIGINS}
+
+  # IP 风控:生产**不能**信任私网地址。
+  # trust-private-ips=true 是给本地演示用的(本机请求不计数);
+  # 生产挂在反向代理后面时,所有请求的 remoteAddr 都是网关的内网 IP,
+  # 开着这个开关等于风控完全失效。
+  security:
+    ip-ban:
+      trust-private-ips: false
+
+  # ES:生产把地址/凭据都走环境变量(application.yml 里已有占位符)
+  search:
+    elasticsearch:
+      hosts: ${ES_HOSTS}
+      username: ${ES_USERNAME}
+      password: ${ES_PASSWORD}

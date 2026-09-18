@@ -30,29 +30,72 @@ Change there if the backend runs elsewhere.
 ```
 src/
 ├── api/             Domain API modules — each wraps http<T>() and returns Promise<T>
-│                    (auth.ts, book.ts, purchase.ts, user.ts)
-├── components/      Reusable UI — Pager, FormDialog, SearchBar, SidebarMenu
-├── composables/     useTheme (singleton light/dark theme state)
-├── directives/      v-reveal (IntersectionObserver scroll-in animation)
+│   ├── auth.ts        login / register / captcha / logout
+│   ├── book.ts        book CRUD + multi-condition & time-granularity search
+│   ├── feedback.ts    feedback tickets (submit / list / detail / reply / status)
+│   ├── purchase.ts    orders (create / detail / cancel / pay)
+│   ├── stats.ts       dashboard snapshot (ADMIN/BOSS)
+│   └── user.ts        user management; strips sensitive fields via mapSafeUser()
+├── components/      Reusable UI
+│   ├── Captcha.vue        captcha input + image + countdown (login & register share it)
+│   ├── FeedbackFab.vue    global feedback entry — floating button + drawer, mounted in App.vue
+│   ├── FormDialog.vue     el-dialog + form wrapper
+│   ├── IpBanDialog.vue    "access restricted" dialog, driven by the ipBan store
+│   ├── LoadingScreen.vue  global loading gate
+│   ├── Pager.vue          el-pagination wrapper
+│   ├── SearchBar.vue      search bar container (slot for filter fields)
+│   ├── SidebarMenu.vue    admin sidebar (collapsible, longest-prefix highlight)
+│   └── charts/BaseChart.vue   Chart.js shell: header + skeleton/empty/fallback states
+├── composables/
+│   ├── useBookSuggest.ts   suggest fetching + race guard (topbar & mobile share it)
+│   ├── useChartPalette.ts  reads theme.css CSS vars into Chart.js colors, rebuilds on theme change
+│   ├── useFeedback.ts      status/category/priority → label + color metadata
+│   ├── useMediaQuery.ts    CSS media query as a reactive ref
+│   └── useTheme.ts         singleton light/dark theme state
+├── directives/      v-reveal — IntersectionObserver scroll-in animation
 ├── layouts/         Chrome shells — AdminLayout, MallLayout, UserLayout
 ├── router/          routes.ts (table) + index.ts (guard + title sync)
-├── stores/          Pinia — user (JWT), cart (mock localStorage), loading (global gate)
-├── styles/          theme.css (CSS vars + reduced-motion + reveal animations)
-├── types/           api.d.ts — hand-written backend DTO contracts
-├── utils/           request.ts (http + Result unwrap + 401), format.ts, safeUser.ts
-├── views/
-│   ├── auth/        Login, Register
-│   ├── book/        Admin book CRUD (List, Edit)
-│   ├── landing/     Public landing + LandingNav + LoadingScreen + BackToTop
-│   ├── mall/        Public book mall
-│   ├── purchase/    Admin purchase list/create
-│   └── user/        Manage (admin) + UserLayout children (Books, Cart, Profile, Orders, Settings)
-├── App.vue          Root — mounts <router-view />
-├── auto-imports.d.ts   Generated — DO NOT edit (auto-import)
-├── components.d.ts     Generated — DO NOT edit (auto-import)
-├── main.ts          createApp + Pinia + router + initTheme + mount
+├── stores/          Pinia — user (JWT), cart (mock localStorage), loading, ipBan
+├── styles/          theme.css (design tokens + reduced-motion) · style.css (resets)
+├── types/           api.d.ts (backend DTO contracts) · chartjs.d.ts
+├── utils/
+│   ├── request.ts        http + Result unwrap + 401 handling
+│   ├── format.ts         formatPrice / parsePrice / formatDate / formatDateTime
+│   ├── safeUser.ts       strips sensitive user fields + translates enums
+│   └── dashboardCharts.ts  builds the 4 dashboard Chart.js configs
+└── views/           (route in parentheses)
+    ├── auth/        Login (/login) · Register (/register)
+    ├── book/        List (/admin/books) · Edit (/admin/books/new, /admin/books/:isbn/edit)
+    ├── feedback/    MyList (/feedback/mine) · Detail (/feedback/:id) · AdminList (/admin/feedback)
+    ├── journey/     Index (/journey) + entries.ts (content data)
+    ├── landing/     Landing (/) + LandingNav · HeroTerminal · BackToTop · SpecialThanks
+    ├── mall/        Mall (/mall, /mall/category/:catId/:subId?)
+    ├── purchase/    List (/admin/purchases) · Create (/admin/purchases/new)
+    ├── user/        Manage (/admin/users) · UserBooks (/user/books) · UserCart (/user/cart)
+    │                UserOrders (/user/my-orders) · UserProfile (/user/profile)
+    │                UserSettings (/user/settings)
+    ├── Dashboard.vue  (/admin/dashboard)
+    └── NotFound.vue   (/:pathMatch(.*)*)
+├── App.vue          Root — LoadingScreen + router-view + IpBanDialog + FeedbackFab
+├── auto-imports.d.ts   Generated — DO NOT edit (unplugin-auto-import)
+├── components.d.ts     Generated — DO NOT edit (unplugin-vue-components)
+├── main.ts          createApp + Pinia + router + global icons + v-reveal + initTheme
 └── style.css        Global resets + box-sizing + color-scheme
 ```
+
+## Deployment
+
+Production serving is **not** `vite preview` — it's nginx. See:
+
+- `Dockerfile` — multi-stage: node 22 build → nginx 1.27 serving `dist/`
+- `nginx.conf` — SPA history fallback + `/api` reverse proxy + cache headers
+
+Key point: the frontend talks to the backend over **relative** `/api` paths, so
+there is nothing backend-specific baked into the bundle. Switching backends is an
+nginx config change, not a rebuild. `BACKEND_UPSTREAM` (env var, default
+`backend:8080`) is substituted into `nginx.conf` at container start via the
+official nginx image's `templates/` + `envsubst` mechanism.
+
 
 ## Architecture
 

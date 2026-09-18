@@ -1,0 +1,40 @@
+# 构建上下文排除 —— 少了这个,docker build 会把整个 target/ 和 .env 传给 daemon
+#
+# ⚠️ 尤其重要的一条:.env 里有真实的 DB/Redis/JWT 凭据。
+#    虽然 Dockerfile 只 COPY pom.xml 和 src,不会把它打进镜像,
+#    但它仍会被塞进构建上下文(慢,而且多一份暴露面)。这里直接排除。
+
+# ---- 机密 ----
+.env
+.env.local
+*.pem
+*.key
+
+# ---- 构建产物 ----
+target/
+*.jar
+*.war
+*.class
+
+# ---- 运行产物 ----
+logs/
+*.log
+
+# ---- 版本控制 / IDE ----
+.git/
+.gitignore
+.gitattributes
+.idea/
+*.iml
+.vscode/
+*.swp
+
+# ---- 文档(镜像里不需要)----
+*.md
+docs/
+
+# ---- 其它 ----
+.mvn/wrapper/maven-wrapper.jar
+mvnw
+mvnw.cmd
+.DS_Store

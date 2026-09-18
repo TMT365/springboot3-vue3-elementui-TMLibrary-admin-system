@@ -124,6 +124,48 @@ public final class RedisKeys {
      */
     public static final String BOOK_CATEGORY_TREE = "tmlibrary:book:byScope:categories:tree";
 
+    /**
+     * 反馈详情缓存 —— 同一份 FeedbackView 在不同人眼里**不一样**(内部备注过滤),
+     * 所以 key 加上当前用户 id,免得"用户查 → 缓存 → 管理员查 → 拿到用户那份被过滤的"
+     * 这种"缓存里其实是另一个人的视图"的串味问题。
+     *
+     * <p>路径模式:{@code tmlibrary:feedback:byId:{id}:byViewer:{userId}:view}</p>
+     */
+    public static final String FEEDBACK_DETAIL = "tmlibrary:feedback:byId:%d:byViewer:%d:view";
+
+    /**
+     * 反馈详情缓存(管理员视角,不过滤内部备注) —— 同一个 id 走不同的 key。
+     * 有了这个 + 上面那个,普通用户和管理员查同一条反馈会走两条独立的缓存条目,
+     * 互不污染。
+     */
+    public static final String FEEDBACK_DETAIL_ADMIN = "tmlibrary:feedback:byId:%d:byAdmin:view";
+
+    /**
+     * 失效反馈的**所有**详情缓存(所有视角)用的 SCAN 模式。
+     *
+     * <p>为什么需要它:详情缓存按 viewer 分了 N 条 key(每个看过这条反馈的用户一条),
+     * 改状态时如果只删管理员那份,普通用户那份还留着旧状态 —— 用户要等最多 5 分钟
+     * 才能看到"已解决"。实测确认过这个漏洞。</p>
+     *
+     * <p>用 SCAN 而不是 KEYS:KEYS 会阻塞 Redis 单线程(生产上是大忌),
+     * SCAN 是游标式分批遍历。反馈详情 key 数量 = 看过的人数,量级可控。</p>
+     */
+    public static final String FEEDBACK_DETAIL_PATTERN = "tmlibrary:feedback:byId:%d:*";
+
+    /**
+     * 搜索候选词缓存 —— 每个 (关键词, 条数) 一个 key。
+     * <br>路径模式:{@code tmlibrary:book:byScope:suggest:{q}:{limit}}
+     * <br>占位符 = 关键词, 条数
+     * <br><b>为什么加这一层</b>:候选词是"每敲一个字就打一次"的高频接口。
+     * 前排 Redis 之后,热门前缀(「计」「计算」)完全不碰 ES ——
+     * ES 的价值在分词和相关性排序,不在扛 QPS,让它做它擅长的事。
+     * <br><b>TTL 5 分钟,不做主动失效</b>:候选词的"失效条件"是任意图书变动,
+     * 逐个 key 追踪不现实(一个书名能出现在无数个前缀的结果里)。
+     * 5 分钟是"新鲜度 vs 命中率"的折中;真要求秒级新鲜就得上
+     * 版本号/代际 key(book 变更时把代际 +1,拼接进 key)。
+     */
+    public static final String BOOK_SUGGEST_CACHE = "tmlibrary:book:byScope:suggest:%s:%d";
+
     // ============================================================
     // 6. Stats — 仪表盘统计缓存
     // ============================================================
@@ -209,8 +251,33 @@ public final class RedisKeys {
         return String.format(BOOK_INFO_BY_ISBN, isbn);
     }
 
+    /**
+     * 搜索候选词缓存 key。
+     *
+     * <p>关键词统一 <b>trim + 转小写</b> 后再拼 key:「Java」和「java」是同一个查询,
+     * 不该各占一个 key。调用方已经 trim 过,这里做小写归一。</p>
+     */
+    public static String bookSuggestCache(String keyword, int limit) {
+        return String.format(BOOK_SUGGEST_CACHE, keyword.toLowerCase(), limit);
+    }
+
     public static String statsDashboard(int days) {
         return String.format(STATS_DASHBOARD, days);
+    }
+
+    /** 反馈详情缓存(普通用户视角,内部备注已过滤) */
+    public static String feedbackDetail(Long feedbackId, Integer viewerId) {
+        return String.format(FEEDBACK_DETAIL, feedbackId, viewerId);
+    }
+
+    /** 反馈详情缓存(管理员视角,不过滤内部备注) */
+    public static String feedbackDetailAdmin(Long feedbackId) {
+        return String.format(FEEDBACK_DETAIL_ADMIN, feedbackId);
+    }
+
+    /** 某条反馈所有视角的详情缓存 key 匹配模式 —— 供 SCAN 批量失效 */
+    public static String feedbackDetailPattern(Long feedbackId) {
+        return String.format(FEEDBACK_DETAIL_PATTERN, feedbackId);
     }
 
     public static String ipBan(String ip) {

@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.tmt.TMLibrary.mapper.FeedbackMapper">
+
+    <!--
+        ================================================================
+        基础结果映射
+        ================================================================
+        Feedback / FeedbackReply 都是简单 entity,字段一一对应,
+        不需要自定义 resultMap —— MyBatis 默认按列名(已驼峰转换)自动填。
+
+        但 FeedbackView 和 FeedbackSummary 是 DTO(不是 entity),
+        它们要带 username(来自联表 users),所以要单独写 resultMap。
+        ================================================================ -->
+
+    <resultMap id="FeedbackSummaryView" type="com.tmt.TMLibrary.dto.response.FeedbackSummary">
+        <id property="id" column="id"/>
+        <result property="title" column="title"/>
+        <result property="userId" column="user_id"/>
+        <result property="username" column="username"/>
+        <result property="category" column="category"/>
+        <result property="status" column="status"/>
+        <result property="priority" column="priority"/>
+        <result property="hasReply" column="has_reply"/>
+        <result property="replyCount" column="reply_count"/>
+        <result property="createdTime" column="created_time"/>
+        <result property="updatedTime" column="updated_time"/>
+    </resultMap>
+
+    <resultMap id="FeedbackReplyView" type="com.tmt.TMLibrary.dto.response.FeedbackReplyView">
+        <id property="id" column="id"/>
+        <result property="userId" column="user_id"/>
+        <result property="username" column="username"/>
+        <result property="role" column="role"/>
+        <result property="isInternal" column="is_internal"/>
+        <result property="body" column="body"/>
+        <result property="createdTime" column="created_time"/>
+    </resultMap>
+
+    <!-- ================================================================
+         插入
+         ================================================================ -->
+    <insert id="insertFeedback" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO feedbacks (user_id, category, title, body, status, priority)
+        VALUES (#{userId}, #{category}, #{title}, #{body},
+                COALESCE(#{status}, 0), COALESCE(#{priority}, 1))
+    </insert>
+
+    <insert id="insertReply" useGeneratedKeys="true" keyProperty="id">
+        INSERT INTO feedback_replies (feedback_id, user_id, role, is_internal, body)
+        VALUES (#{feedbackId}, #{userId}, #{role},
+                COALESCE(#{isInternal}, 0), #{body})
+    </insert>
+
+    <!-- ================================================================
+         单条主表
+         ================================================================ -->
+    <select id="selectFeedbackById" resultType="com.tmt.TMLibrary.entity.Feedback">
+        SELECT id, user_id, category, title, body, status, priority,
+               created_time, updated_time, resolved_time
+        FROM feedbacks
+        WHERE id = #{id}
+    </select>
+
+    <!--
+        详情带 username —— 返回 Map 因为用户名是冗余字段(只为前端展示),
+        凑一个 entity 出来会让 Feedback 多一个无意义字段,不值。
+        字段名以 user_username / id / category 等直接用列名 —— MyBatis
+        下划线转驼峰对 Map<String,Object> 不起作用,故意保留。
+    -->
+    <select id="selectFeedbackDetail" resultType="java.util.Map">
+        SELECT f.id            AS id,
+               f.user_id       AS user_id,
+               u.username      AS username,
+               f.category      AS category,
+               f.title         AS title,
+               f.body          AS body,
+               f.status        AS status,
+               f.priority      AS priority,
+               f.created_time  AS created_time,
+               f.updated_time  AS updated_time,
+               f.resolved_time AS resolved_time
+        FROM feedbacks f
+        LEFT JOIN users u ON u.id = f.user_id
+        WHERE f.id = #{id}
+    </select>
+
+    <!-- ================================================================
+         回复列表(带 username JOIN)
+         ================================================================ -->
+    <select id="selectRepliesByFeedbackId" resultMap="FeedbackReplyView">
+        SELECT r.id, r.user_id, u.username, r.role, r.is_internal, r.body, r.created_time
+        FROM feedback_replies r
+        LEFT JOIN users u ON u.id = r.user_id
+        WHERE r.feedback_id = #{feedbackId}
+        ORDER BY r.created_time ASC, r.id ASC
+    </select>
+
+    <!-- ================================================================
+         列表 —— 一条 SQL 取回汇总 + 联表算回复数
+
+         为什么用 LEFT JOIN 而不是子查询:
+         子查询每行跑一次,1000 条反馈 = 1000 次 replies 扫描;
+         一次 GROUP BY 把所有 feedback_id 的 count 算好 LEFT JOIN 回去,
+         MySQL 优化器会走 idx_replies_feedback,整体一次 IO。
+
+         has_reply 用 IF(reply_count > 0, 1, 0) —— 排序时这个字段能省一次判断。
+         ================================================================ -->
+    <select id="selectFeedbackSummaries" resultMap="FeedbackSummaryView">
+        SELECT
+            f.id, f.title, f.user_id, u.username,
+            f.category, f.status, f.priority,
+            f.created_time, f.updated_time,
+            IF(rc.reply_count > 0, 1, 0)         AS has_reply,
+            COALESCE(rc.reply_count, 0)           AS reply_count
+        FROM feedbacks f
+        LEFT JOIN users u
+              ON u.id = f.user_id
+        LEFT JOIN (
+            SELECT feedback_id, COUNT(*) AS reply_count
+            FROM feedback_replies
+            GROUP BY feedback_id
+        ) rc
+              ON rc.feedback_id = f.id
+        <where>
+            <if test="userId != null">f.user_id = #{userId}</if>
+            <if test="!includeAll">AND f.user_id = #{userId}</if>
+            <if test="status != null">AND f.status = #{status}</if>
+            <if test="category != null and category != ''">AND f.category = #{category}</if>
+        </where>
+        ORDER BY f.updated_time DESC, f.id DESC
+        LIMIT #{limit} OFFSET #{offset}
+    </select>
+
+    <select id="countFeedbacks" resultType="int">
+        SELECT COUNT(*)
+        FROM feedbacks f
+        <where>
+            <if test="userId != null">f.user_id = #{userId}</if>
+            <if test="!includeAll">AND f.user_id = #{userId}</if>
+            <if test="status != null">AND f.status = #{status}</if>
+            <if test="category != null and category != ''">AND f.category = #{category}</if>
+        </where>
+    </select>
+
+    <!--
+        ================================================================
+        改状态/优先级
+
+        touchResolvedTime 用一个动态 if 决定要不要在 UPDATE 里写 resolved_time:
+          * 改成 RESOLVED(2)或 CLOSED(3) → 写 NOW()
+          * 其它(包括改回 OPEN 1) → 写 NULL
+
+        为什么不直接用 IFNULL(resolved_time, NOW())?
+        那样"打开后又关上"会丢失"第一次解决时"的时间戳,
+        后续报表看不到完整生命周期。
+        ================================================================ -->
+    <update id="updateStatusAndPriority">
+        UPDATE feedbacks
+        <set>
+            <if test="status != null">status = #{status},</if>
+            <if test="priority != null">priority = #{priority},</if>
+            <choose>
+                <when test="touchResolvedTime">resolved_time = NOW(),</when>
+                <otherwise>resolved_time = NULL,</otherwise>
+            </choose>
+        </set>
+        WHERE id = #{id}
+    </update>
+
+</mapper>

@@ -14,3 +14,17 @@ TMLibrary/qodana.yaml
 
 # 运行日志
 logs/
+
+# ============================================================
+# 环境变量文件 —— 一律不提交
+#
+# docker compose 用的 .env.docker 里装着 MySQL root 密码、Redis 密码、
+# JWT 签名密钥。JWT_SECRET 泄露 = 任何人都能伪造任意用户(含 BOSS)
+# 的 token,等于整套鉴权失效。
+#
+# 只提交模板:.env.docker.example / TMLibrary/.env.example(纯占位符)
+# ============================================================
+.env
+.env.*
+!.env.example
+!.env.docker.example

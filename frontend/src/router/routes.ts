@@ -97,6 +97,12 @@ export const routes: RouteRecordRaw[] = [
         component: () => import('@/views/user/Manage.vue'),
         meta: { title: '用户管理', admin: true },
       },
+      {
+        path: 'feedback',
+        name: 'admin-feedback',
+        component: () => import('@/views/feedback/AdminList.vue'),
+        meta: { title: '反馈管理', admin: true },
+      },
     ],
   },
   {
@@ -136,6 +142,35 @@ export const routes: RouteRecordRaw[] = [
         meta: { title: '设置' },
       },
     ],
+  },
+  // ---------------------------------------------------------------
+  // 反馈 —— 详情和"我的反馈"都是独立路由,不挂在 /user 下。
+  // 原因:管理员也要打开同一个详情页,挂在 /user 下会让
+  // "管理员访问 /user/feedback/1" 看起来像越权,而且布局会跟着 UserLayout 走。
+  //
+  // 注意这两个路由**没有** meta.public —— 守卫里"没标 public 就是要登录",
+  // 正好对上"必须登录才能反馈"的需求。
+  // ---------------------------------------------------------------
+  {
+    path: '/feedback/mine',
+    name: 'feedback-mine',
+    component: () => import('@/views/feedback/MyList.vue'),
+    meta: { title: '我的反馈' },
+  },
+  {
+    path: '/feedback/:id',
+    name: 'feedback-detail',
+    component: () => import('@/views/feedback/Detail.vue'),
+    // 具体权限(提交人本人 or ADMIN/BOSS)由后端强制,前端不做路由级判断 ——
+    // 前端拦不住直接调接口,前面拦一道只会让人误以为"前端就是权限边界"
+    meta: { title: '反馈详情' },
+  },
+  {
+    path: '/journey',
+    name: 'journey',
+    component: () => import('@/views/journey/Index.vue'),
+    // 公开 —— 学习经历是给访客/面试官看的,不该要求登录
+    meta: { public: true, title: '学习经历' },
   },
   {
     path: '/:pathMatch(.*)*',

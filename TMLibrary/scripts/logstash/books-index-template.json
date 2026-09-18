@@ -1,0 +1,63 @@
+{
+  "index_patterns": ["tmlibrary_books"],
+  "priority": 200,
+  "template": {
+    "settings": {
+      "number_of_shards": 1,
+      "number_of_replicas": 0
+    },
+    "mappings": {
+      "properties": {
+        "isbn": {
+          "type": "keyword"
+        },
+        "title": {
+          "type": "text",
+          "analyzer": "ik_max_word",
+          "search_analyzer": "ik_smart",
+          "fields": {
+            "kw": { "type": "keyword", "ignore_above": 256 }
+          }
+        },
+        "author": {
+          "type": "text",
+          "analyzer": "ik_max_word",
+          "search_analyzer": "ik_smart",
+          "fields": {
+            "kw": { "type": "keyword", "ignore_above": 128 }
+          }
+        },
+        "categoryId": {
+          "type": "integer"
+        },
+        "categoryName": {
+          "type": "text",
+          "analyzer": "ik_max_word",
+          "search_analyzer": "ik_smart"
+        },
+        "price": {
+          "type": "scaled_float",
+          "scaling_factor": 100
+        },
+        "stockQuantity": {
+          "type": "integer"
+        },
+        "publishedDate": {
+          "type": "date",
+          "format": "yyyy-MM-dd"
+        },
+        "hot": {
+          "type": "integer"
+        },
+        "createdTime": {
+          "type": "date",
+          "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd'T'HH:mm:ss||epoch_millis"
+        },
+        "updatedTime": {
+          "type": "date",
+          "format": "yyyy-MM-dd HH:mm:ss||yyyy-MM-dd'T'HH:mm:ss||epoch_millis"
+        }
+      }
+    }
+  }
+}
