@@ -42,6 +42,43 @@ public interface UserMapper {
      * 按 username 查用户 — AuthService.login 用,JWT 明天接通时直接用
      */
     User selectUserByUsername(@Param("username") String username);
+
+    // ============================================================
+    // 密码重置(2026-09)
+    // ============================================================
+
+    /**
+     * 按邮箱查用户 —— 「忘记密码」入口用。
+     *
+     * <p><b>返回 List 而不是单个 User</b>:users 表的 email 列
+     * <b>没有唯一约束</b>(唯一键在建表脚本里是注释掉的)。真出现一个邮箱
+     * 对应多个账号时,调用方必须能察觉并拒绝 —— 返回单个 User 会让人
+     * 以为"就是它了",然后把重置链接发给一个共用邮箱,
+     * 等于把其中一个账号的重置权交到另一个账号的主人手里。</p>
+     */
+    List<User> selectUsersByEmail(@Param("email") String email);
+
+    /**
+     * 按「重置令牌的 SHA-256 十六进制」查用户。
+     *
+     * <p>库里存的是哈希不是明文 —— 明文只在邮件链接里出现一次。
+     * 这样即使库被拖走,也拿不到能直接用的重置令牌。</p>
+     */
+    User selectUserByResetToken(@Param("tokenHash") String tokenHash);
+
+    /** 写入重置令牌(存哈希)与过期时间 */
+    int setResetToken(@Param("id") int id,
+                      @Param("tokenHash") String tokenHash,
+                      @Param("expiration") LocalDateTime expiration);
+
+    /**
+     * 清空重置令牌 —— 重置成功后调用,保证**一次性**。
+     *
+     * <p>不能复用 {@link #updateUserById}:它的 SQL 是
+     * {@code <if test="xxx != null">} 拼的,null 字段会被跳过,
+     * 根本清不掉值。</p>
+     */
+    int clearResetToken(@Param("id") int id);
     //================模糊分页查询User======================
     // 这里可以定义一个方法用于模糊查询用户信息，并支持分页功能
     // 例如：

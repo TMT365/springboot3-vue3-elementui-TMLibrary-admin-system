@@ -54,6 +54,50 @@
         WHERE username = #{username}
     </select>
 
+    <!-- ==================== 密码重置(2026-09) ==================== -->
+
+    <!--
+      按邮箱查。返回 List 而不是单个:email 列没有唯一约束(唯一键在建表
+      脚本里是注释掉的),真实数据里可能一个邮箱对应多个账号 ——
+      调用方要能察觉并拒绝,见 UserMapper#selectUsersByEmail 的说明。
+      走 idx_users_email,不做全表扫描。
+    -->
+    <select id="selectUsersByEmail" resultMap="userResultMap" timeout="3">
+        SELECT <include refid="Base_Column_List" />
+        FROM users
+        WHERE email = #{email}
+          AND deleted_at IS NULL
+        ORDER BY id ASC
+    </select>
+
+    <!--
+      按令牌哈希查。明文令牌只在邮件链接里出现,库里只存 SHA-256。
+      过期判断放在 SQL 里而不是 Java 里:少一次"查到再判断"的往返,
+      也避免调用方忘了判过期。
+    -->
+    <select id="selectUserByResetToken" resultMap="userResultMap" timeout="3">
+        SELECT <include refid="Base_Column_List" />
+        FROM users
+        WHERE password_reset_token = #{tokenHash}
+          AND password_reset_token_expiration &gt; NOW()
+          AND deleted_at IS NULL
+    </select>
+
+    <update id="setResetToken" timeout="3">
+        UPDATE users
+        SET password_reset_token = #{tokenHash},
+            password_reset_token_expiration = #{expiration}
+        WHERE id = #{id}
+    </update>
+
+    <!-- 两个字段一起置 NULL —— 直接写死,不能用 <if> 拼,否则清不掉 -->
+    <update id="clearResetToken" timeout="3">
+        UPDATE users
+        SET password_reset_token = NULL,
+            password_reset_token_expiration = NULL
+        WHERE id = #{id}
+    </update>
+
     <update id="updateUserById" parameterType="com.tmt.TMLibrary.entity.User" timeout="3">
         UPDATE users
         <set>

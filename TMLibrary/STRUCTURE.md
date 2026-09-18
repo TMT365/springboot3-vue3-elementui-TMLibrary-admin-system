@@ -112,6 +112,7 @@
 | 路径 | 一句话职责 |
 |---|---|
 | `config/MyBatisConfig.java` | **手写 MyBatis 配置**,绕过 `mybatis-spring-boot-starter 3.0.5` 与 Spring Boot 4.x 的不兼容:① 自动配置的 `@AutoConfigureAfter` 引用了 3.x 的旧包路径,在 4.x 下静默跳过;② `MybatisProperties.applyTo()` 内部调了 4.x 已删的 `PropertyMapper.alwaysApplyingWhenNonNull()`。所以只用两个安全的 getter,`mybatis.configuration.*` 全靠手动 new。**SQL 日志也只能在这里 `setLogImpl`** —— yml 到生效的链路整个断了 |
+| `config/MailConfig.java` | **2026-09 新增**。选择邮件实现:容器里有 `JavaMailSender`(即配了 `spring.mail.host`)就用 `SmtpMailService`,否则用 `LoggingMailService`。用 `ObjectProvider` 而不是 `@ConditionalOnBean` —— 后者求值依赖自动配置的注册顺序,在自定义 `@Configuration` 里判断自动配置提供的 Bean 结果不确定(官方文档专门警告过) |
 | `config/RedisConfig.java` | 提供 `StringRedisTemplate` 与 `ObjectMapper` 两个 Bean。⚠️ **第 18 行有一处被注释掉的明文 Redis 口令**(凭据已失效,但建议删掉那行,别再留在仓库里) |
 | `config/ElasticsearchConfig.java` | 手搓 `ElasticsearchClient` Bean。不用 Boot 自动配置是因为 `spring.elasticsearch.*` 走的是已废弃的 transport-client,9.x 集群直接拒连;用高层稳定的 `ElasticsearchTransportConfig$Builder` 而不是 package-private 的 `Rest5ClientBuilder` |
 | `config/WebMvcConfig.java` | 注册 CORS,放行前端 dev server(Vite :5173)对 `/api/**` 的跨域;origin 从 `app.cors.origins` 读,生产要收敛成精确域名(用 `*` 会连 credentials 一起被禁掉) |
@@ -153,6 +154,8 @@
 |---|---|
 | `dto/request/LoginRequest.java` | 登录入参 |
 | `dto/request/GetCaptchaRequest.java` | 取验证码入参:username + uuid。**不能带密码** —— 验证码的目的就是"密码提交前的校验" |
+| `dto/request/ForgotPasswordRequest.java` | **2026-09 新增**。忘记密码入参,只有一个 `email`(不超过 100 字符)。用邮箱而不是用户名:重置链接要发到邮箱,让用户填邮箱省掉一次映射 |
+| `dto/request/ResetPasswordRequest.java` | **2026-09 新增**。凭令牌重置入参:`token` + `newPassword`(长度 6-20,与注册/改密一致) |
 | `dto/request/UserRegisterRequest.java` | 注册入参;`email`/`phoneNumber`/`password`/`username` 带校验注解,2026-09 加了 `captcha` + `uuid` 两个字段 |
 | `dto/request/UserSearchRequest.java` | 用户列表多条件筛选。`role` / `status` 用 `-1` 表示"全部",不传则 `compact()` 兜底为 USER / ACTIVE;`role` 筛选仅 BOSS 生效,ADMIN 恒被钉死为 role=0 |
 | `dto/request/UserUpdatedRequest.java` | 改用户信息。刻意**不含** password / salt / lastLoginTime / lastLoginIp / failedLoginAttempts / accountLockedUntil / deletedAt / updateTime / id —— 这些由 Service 内部维护,不暴露给前端 |
@@ -282,6 +285,8 @@
 | 路径 | 一句话职责 |
 |---|---|
 | `service/AuthService.java` | 登录 / 登出两个方法;登出把 token 的 jti 写入 Redis 黑名单(剩余 TTL) |
+| `service/MailService.java` | **2026-09 新增**。邮件发送门面。抽接口是为了让没配 SMTP 的环境也能跑通重置流程 —— 业务侧只认接口,实现由 `MailConfig` 选。约定:**发送失败必须内部消化**,否则调用方会因邮件服务器抖动而改变响应,变相泄露这个邮箱是否存在 |
+| `service/PasswordResetService.java` | **2026-09 新增**。密码重置接口。**单独拆出来而不是塞进 `UserManagementService`**:后者的方法全都要求操作者已登录(带 currentUserId / currentRole),而这两个是公开接口、没有操作者上下文,放一起会让要不要鉴权这件事变含糊 |
 | `service/UserManagementService.java` | 用户管理:注册(**强制 role=USER,屏蔽自选角色漏洞**)/ 软删 / 列表 / 更新 / 改密 / 查单个 |
 | `service/BookService.java` | 图书业务:CRUD + 分页 + 多条件搜索 + 4 种粒度查询 + **盘点语义**的 `adjustStock`(绝对值) |
 | `service/BookInventoryService.java` | **Redis 库存原子操作门面**。把所有库存变更收敛到这里,**业务代码不许直接拼 Redis key 或写 Lua**;每个 book 一个 Hash(`stock` 可用 / `reserved` 已预占);所有变更走 Lua,Redis 单线程串行执行 = 天然原子,不需要额外分布式锁 |
@@ -299,6 +304,9 @@
 | 路径 | 一句话职责 |
 |---|---|
 | `service/impl/AuthServiceImpl.java` | 登录实现:BCrypt 校验 + **失败 3 次锁 15 分钟** + 用户正/负缓存。负缓存用显式哨兵 JSON(`{"__negative__":true}`)而不是空串 —— 空串会与 `readValue("")` 抛 `JsonProcessingException` 的边界混淆 |
+| `service/impl/LoggingMailService.java` | **2026-09 新增**。不发邮件,把重置链接以 **WARN** 级别打进日志 —— 没配 SMTP 时的兜底。正常情况下日志里出现凭据是事故,这里是有意的例外:不这么做,本地开发和演示环境完全走不通忘记密码(收不到邮件就等于没有链接) |
+| `service/impl/SmtpMailService.java` | **2026-09 新增**。通过 SMTP 真发信,用 `SimpleMailMessage`(纯文本加一个链接,不需要 MIME 组装,也少了 HTML 邮件的头部注入风险)。发送失败只记 WARN 不抛 |
+| `service/impl/PasswordResetServiceImpl.java` | **2026-09 新增**。密码重置实现。令牌 `SecureRandom` 32 字节得到 Base64URL 43 字符,**库里只存 SHA-256**(明文只在邮件链接里出现一次);30 分钟有效、用完即焚。**重置成功必须清 `RedisKeys.userByUsername` 缓存** —— 不清的话登录仍拿缓存里的旧 `passwordHash` 校验,表现成新密码登不进去、旧密码还能用(实测踩到过) |
 | `service/impl/UserManagementServiceImpl.java` | 用户管理实现。改完名字会**清掉该用户名下所有 captcha**(login + register 两套),旧 username 的 pending 验证码立即失效 |
 | `service/impl/CaptchaServiceImpl.java` | 验证码实现:生成图片 → 算 `expiresAt = now + 3 分钟` → 把"文字 + username + expiresAt"序列化写 Redis(TTL 3 分钟)→ JPEG 编码成 base64 data URI 返回。同一个 uuid 只能验证一次(登录/注册成功后由 AuthService / UserService 删掉 Redis key) |
 | `service/impl/BookServiceImpl.java` | 图书实现。`getByISBN` 用 **SingleFlight**(进程内 `CompletableFuture` 表)防同一 isbn 的并发请求全部穿透打 DB,比分布式锁轻量但**只限单 JVM**;follower 等待超时 `app.book.singleflight-timeout-ms` 默认 5000ms |

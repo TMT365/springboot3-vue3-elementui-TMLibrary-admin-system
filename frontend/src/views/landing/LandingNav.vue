@@ -44,6 +44,9 @@ const navItems: NavItem[] = [
   },
   { label: '联系方式', anchor: '#contact' },
   { label: '学习经历', anchor: '#learning-log' },
+  // 登录 / 注册入口 —— ≤480px 时导航右侧的「注册」按钮会被隐藏,
+  // 这一项是窄屏访客在首页找到入口的路,所以排在「项目结构」之前
+  { label: '登录注册', anchor: '#get-started' },
   // 放最后 —— 这一项面向"想看代码 / 想参与"的人,是导航里最"深"的一层
   { label: '项目结构', anchor: '#project-structure' },
 ]

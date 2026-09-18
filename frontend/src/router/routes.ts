@@ -29,6 +29,21 @@ export const routes: RouteRecordRaw[] = [
     component: () => import('@/views/auth/Register.vue'),
     meta: { public: true, title: '注册' },
   },
+  // 忘记 / 重置密码都是公开页 —— 用户就是因为登不进来才走这两页,
+  // 标了 public 才能跳过守卫(没标的话会被弹回 /login,自己咬自己)
+  {
+    path: '/forgot-password',
+    name: 'forgot-password',
+    component: () => import('@/views/auth/ForgotPassword.vue'),
+    meta: { public: true, title: '忘记密码' },
+  },
+  {
+    // 令牌在 query 上:邮件链接 = /reset-password?token=<43字符 Base64URL>
+    path: '/reset-password',
+    name: 'reset-password',
+    component: () => import('@/views/auth/ResetPassword.vue'),
+    meta: { public: true, title: '重置密码' },
+  },
   {
     path: '/mall',
     component: () => import('@/layouts/MallLayout.vue'),

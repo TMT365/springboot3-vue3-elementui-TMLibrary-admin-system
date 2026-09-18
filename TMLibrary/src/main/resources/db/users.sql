@@ -56,8 +56,17 @@ CREATE TABLE IF NOT EXISTS `users` (
     --       而不划算 —— 未命中时走全表扫描,用户量级下可接受。
     --       若日后这些筛选变高频,再按需补索引。
     KEY `idx_users_role_status_created` (`role`, `status`, `created_time`),
-    KEY `idx_users_created_time`        (`created_time`)
+    KEY `idx_users_created_time`        (`created_time`),
+    -- 2026-09 新增。「忘记密码」是**未登录可调**的接口,要按 email 查用户;
+    -- 没有索引就是全表扫描 —— 一个公开端点能触发全表扫,是个现成的放大攻击面。
+    -- 用普通索引而非唯一索引:历史数据可能已有重复邮箱,加唯一约束会让建表失败;
+    -- 真要唯一也该先清洗数据,再单独走迁移。
+    KEY `idx_users_email`               (`email`)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci COMMENT='用户';
+
+-- 已有库补索引(2026-09,忘记密码功能需要):
+--   ALTER TABLE `users` ADD KEY `idx_users_email` (`email`);
+--   先确认没加过:SHOW INDEX FROM `users` WHERE Key_name = 'idx_users_email';
 
 -- 可选:若业务要求邮箱/手机号唯一,再放开下面两个约束
 -- (当前注册流程未做重复预检,直接加约束会让重复注册报 409 而非友好提示)

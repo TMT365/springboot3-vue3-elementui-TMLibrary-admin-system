@@ -5,6 +5,8 @@ import com.tmt.TMLibrary.common.Result.Result;
 import com.tmt.TMLibrary.common.Result.ResultCode;
 import com.tmt.TMLibrary.common.User.UserRole;
 import com.tmt.TMLibrary.common.utils.IpUtil;
+import com.tmt.TMLibrary.dto.request.ForgotPasswordRequest;
+import com.tmt.TMLibrary.dto.request.ResetPasswordRequest;
 import com.tmt.TMLibrary.dto.request.UserDeleteRequest;
 import com.tmt.TMLibrary.dto.request.UserPasswordRequest;
 import com.tmt.TMLibrary.dto.response.PurchaseResponse;
@@ -16,6 +18,7 @@ import com.tmt.TMLibrary.exception.AuthException;
 import com.tmt.TMLibrary.exception.BusinessException;
 import com.tmt.TMLibrary.security.context.CurrentUser;
 import com.tmt.TMLibrary.security.context.UserView;
+import com.tmt.TMLibrary.service.PasswordResetService;
 import com.tmt.TMLibrary.service.PurchaseService;
 import com.tmt.TMLibrary.service.UserManagementService;
 
@@ -51,6 +54,8 @@ import com.tmt.TMLibrary.dto.request.LoginRequest;
  *   POST   /api/users/register                  — 注册
  *   POST   /api/users/login                     — 登录
  *   POST   /api/users/logout                    — 登出
+ *   POST   /api/users/forgot-password           — 申请密码重置(公开,永远返回成功)
+ *   POST   /api/users/reset-password            — 凭令牌重置密码(公开)
  *   GET    /api/users/list                      — 列表查询(ADMIN/BOSS)
  *   GET    /api/users/{id}                      — 详情
  *   PATCH  /api/users/{id}                      — 更新用户信息
@@ -72,6 +77,7 @@ public class UserController {
     private final UserManagementService userManagementService;
     private final AuthService authService;
     private final PurchaseService purchaseService;
+    private final PasswordResetService passwordResetService;
 
     /** 注册 — POST /api/users */
     @PostMapping("/register")
@@ -80,6 +86,44 @@ public class UserController {
                 req.getUsername(), req.getEmail(), req.getPhoneNumber());
         int id = userManagementService.createUser(req);
         return Result.success(id);
+    }
+
+    // ============================================================
+    // 密码重置(2026-09)
+    //
+    // 两个都是**公开端点**(已加进 JwtAuthFilter 白名单)—— 用户正是
+    // 因为登不上去才要用它们,不可能要求先带 token。
+    // ============================================================
+
+    /**
+     * 申请密码重置 — POST /api/users/forgot-password
+     *
+     * <p><b>永远返回成功</b>,不管邮箱是否注册过。这是防用户枚举的关键:
+     * 一旦"该邮箱未注册"和"已发送"能被区分开,这个接口就成了批量探测
+     * 哪些邮箱在本站有账号的工具。Service 内部对三种情况(不存在 /
+     * 命中多个账号 / 正常)都做了静默处理,只在日志里区分。</p>
+     */
+    @PostMapping("/forgot-password")
+    public Result<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest req) {
+        // 邮箱是个人信息,日志里只记长度不记内容
+        log.info("前端请求/api/users/forgot-password, email 长度={}", req.getEmail().length());
+        passwordResetService.requestReset(req.getEmail());
+        return Result.success();
+    }
+
+    /**
+     * 凭令牌重置密码 — POST /api/users/reset-password
+     *
+     * <p>这个**会返回失败**:令牌无效/过期/用过,或者新密码与原密码相同,
+     * 都会返回 400 并带明确原因。用户必须知道改没改成,
+     * 否则他以为成功了、下次还用旧密码登录。</p>
+     */
+    @PostMapping("/reset-password")
+    public Result<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
+        // 令牌是凭据,不能进日志
+        log.info("前端请求/api/users/reset-password, token 长度={}", req.getToken().length());
+        passwordResetService.resetPassword(req.getToken(), req.getNewPassword());
+        return Result.success();
     }
 
     /** 登录 - POST /api/users/login */

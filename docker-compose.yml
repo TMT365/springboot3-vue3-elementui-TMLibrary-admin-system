@@ -186,6 +186,30 @@ services:
       # 日志落到挂载出来的卷里
       LOG_FILE: /app/logs/tmlibrary.log
 
+      # ⚠️ 密码重置邮件里的链接指向这个地址 —— 必须是**浏览器能访问到的前端地址**。
+      #    不配的话会用代码里的默认值 http://localhost:5173,而 compose 里
+      #    前端映射在 8081,用户收到的重置链接直接打不开。
+      #    默认值跟 FRONTEND_PORT 联动,改了端口这里自动跟着走。
+      FRONTEND_BASE_URL: ${FRONTEND_BASE_URL:-http://localhost:${FRONTEND_PORT:-8081}}
+      MAIL_FROM: ${MAIL_FROM:-no-reply@tmlibrary.local}
+
+      # SMTP —— 要真发邮件就把下面几行取消注释并填值。
+      #
+      # 这里**故意不写 `SPRING_MAIL_HOST: ${SPRING_MAIL_HOST:-}` 这种空默认值**:
+      # Spring Boot 的 MailSenderAutoConfiguration 带
+      # @ConditionalOnProperty("spring.mail.host"),空字符串也算"属性存在",
+      # 于是会去创建一个 host 为空的 JavaMailSender,把
+      # "没配 SMTP → 走日志兜底" 这条路堵死 —— 结果是本地跑起来
+      # 既收不到邮件、日志里也找不到重置链接,看起来像功能坏了。
+      # 与其留个坑,不如让它彻底不存在。
+      #
+      # SPRING_MAIL_HOST: smtp.example.com
+      # SPRING_MAIL_PORT: "587"
+      # SPRING_MAIL_USERNAME: no-reply@example.com
+      # SPRING_MAIL_PASSWORD: ${MAIL_PASSWORD:?填了 HOST 就要给密码}
+      # SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: "true"
+      # SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: "true"
+
       # ES:默认指向 compose 里的服务名。就算 search profile 没启用、
       # 这个地址连不上,后端也会自动降级到 MySQL,不影响启动
       ES_HOSTS: ${ES_HOSTS:-http://elasticsearch:9200}

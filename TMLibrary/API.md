@@ -59,8 +59,14 @@
   |---|---|---|
   | `/api/users/login` | `POST` | 登录 |
   | `/api/users/register` | `POST` | 注册 |
+  | `/api/users/forgot-password` | `POST` | 申请密码重置(2026-09 新增) |
+  | `/api/users/reset-password` | `POST` | 凭令牌重置密码(2026-09 新增) |
   | `/api/captcha/**` | `POST` | 验证码 |
   | `/api/books**` | **`GET`** | 图书展示:商城、列表、详情、三种粒度搜索 |
+
+  > 密码重置两条是**精确匹配**,不会有前缀放大
+  > (`/api/users/forgot-password/xxx` 这类路径不在白名单里)。
+  > 前四条都只放行 `POST`,同路径的其它方法仍要 token。
 
   > 图书模块**只有 GET 放行**。同一前缀下的 `POST /api/books/created`、
   > `PATCH /api/books/{isbn}`、`PATCH /api/books/{isbn}/stock`、
@@ -417,6 +423,67 @@ HTTP/1.1 401 Unauthorized
 
 - **权限**:自己看自己的;`BOSS` 看任意人;其他情况 `403 FORBIDDEN`。
 - **响应 data**:`List<PurchaseResponse>`,见 [§ 5.5](#55-订单响应-purchaseresponse)。
+
+### 3.7 申请密码重置(2026-09 新增)
+
+```
+POST /api/users/forgot-password
+Auth: ❌ 公开(登不上去才用它,不可能要求先带 token)
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|:---:|---|
+| `email` | string | ✅ | 注册时填的邮箱,≤100 字符 |
+
+**响应永远是 `200 成功`,不管这个邮箱是否注册过。**
+
+> ⚠️ **这是有意的,不要"改进"成失败提示。**
+> 一旦"该邮箱未注册"和"已发送"能被区分开,这个接口立刻变成
+> **用户枚举工具** —— 攻击者批量试邮箱就能确认哪些地址在本站有账号。
+> 三种情况(邮箱不存在 / 一个邮箱命中多个账号 / 正常发信)在服务端
+> 都只记日志,对外响应逐字节相同。
+
+**重置链接 30 分钟内有效,且只能用一次。**
+
+**邮件怎么发**:
+- 配了 `spring.mail.host` → 走 SMTP 真发
+- 没配(本地开发默认)→ 链接以 **WARN** 级别打进日志,去 `logs/tmlibrary.log` 里找
+
+> 链接指向 `${app.frontend.base-url}/reset-password?token=...`,所以那个配置
+> 必须是**浏览器能访问到的**地址,填后端地址的话用户点开是 404。
+
+### 3.8 凭令牌重置密码(2026-09 新增)
+
+```
+POST /api/users/reset-password
+Auth: ❌ 公开
+```
+
+| 字段 | 类型 | 必填 | 说明 |
+|---|---|:---:|---|
+| `token` | string | ✅ | 邮件链接里的令牌(43 字符 Base64URL) |
+| `newPassword` | string | ✅ | 长度 6-20,与注册/改密一致 |
+
+**这个接口会返回失败**,和 3.7 正好相反 —— 用户必须知道改没改成:
+
+| 情况 | 响应 |
+|---|---|
+| 令牌无效 / 过期 / 已被用过 | `400 重置链接无效或已过期,请重新申请` |
+| 新密码与原密码相同 | `400 新密码不能与原密码相同` |
+| 成功 | `200` 成功 |
+
+> **令牌在服务端只存 SHA-256 哈希**(64 位十六进制,占满 `VARCHAR(64)` 列),
+> 明文只在邮件链接里出现一次。库被拖走也拿不到能直接用的令牌。
+>
+> **重置成功后会清掉该用户的 Redis 缓存** —— 不清的话登录仍会拿到
+> 缓存里的旧 `passwordHash`,表现为"新密码登不进去、旧密码还能用",
+> 直到缓存 30 分钟过期。(这个坑实测踩到过。)
+
+### 3.9 未做:重置后失效已签发的 JWT
+
+重置密码**不会**让该用户已签发的 JWT 立即失效 —— 那些 token 在有效期
+(默认 7 天)内依然可用。要做到需要按用户维度追踪 jti(现有黑名单只按
+单个 jti 记),属于另一个量级的工作。
 
 ---
 
@@ -1036,6 +1103,8 @@ Auth: ADMIN / BOSS
 | POST | `/api/users/register` | ❌ | 注册(需 captcha + uuid) |
 | POST | `/api/users/login` | ❌ | 登录(需 captcha + uuid) |
 | POST | `/api/users/logout` | ✅ | 登出 |
+| POST | `/api/users/forgot-password` | ❌ | 申请密码重置(**永远返回成功**,防用户枚举) |
+| POST | `/api/users/reset-password` | ❌ | 凭令牌重置密码(令牌一次性,30 分钟有效) |
 | GET | `/api/users/list` | ✅ | 列表查询(分页+多条件) |
 | GET | `/api/users/{id}` | ✅ | 详情 |
 | PATCH | `/api/users/{id}` | ✅ | 更新 |

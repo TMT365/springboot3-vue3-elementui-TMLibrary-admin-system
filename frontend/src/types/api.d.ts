@@ -301,6 +301,24 @@ export interface UserPasswordRequest {
   newPassword: string
 }
 
+/**
+ * POST /api/users/forgot-password 请求体 —— 见 backend ForgotPasswordRequest.java
+ *
+ * 注意:这个接口**永远返回 200**,不管邮箱是否注册过(防用户枚举),
+ * 所以响应里没有任何字段能拿来判断"邮箱是否存在"。
+ */
+export interface ForgotPasswordRequest {
+  email: string
+}
+
+/** POST /api/users/reset-password 请求体 —— 见 backend ResetPasswordRequest.java
+ *  token 来自重置邮件链接的 query(`/reset-password?token=...`,43 字符 Base64URL);
+ *  长度 6-20 与注册 / 改密保持一致,后端也是同一套 @Size 校验。 */
+export interface ResetPasswordRequest {
+  token: string
+  newPassword: string
+}
+
 /** GET /api/users/list query —— 见 backend UserSearchRequest.java
  *  role/status 后端是 Integer code:
  *    role   0 USER / 1 ADMIN / 2 BOSS,  **-1 = 全部**

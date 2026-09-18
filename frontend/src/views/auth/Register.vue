@@ -16,6 +16,8 @@ import type { FormInstance, FormRules } from 'element-plus'
 import { authApi } from '@/api/auth'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import Captcha from '@/components/Captcha.vue'
+// 圆角卡片外壳(页面底 + 卡片 + 输入框 / 主按钮 / 社交按钮样式都收在里面)
+import AuthCard from '@/components/AuthCard.vue'
 
 const router = useRouter()
 
@@ -102,226 +104,95 @@ async function onSubmit(): Promise<void> {
 </script>
 
 <template>
-  <div class="register-page">
-    <div class="register-deco" aria-hidden="true">
-      <div class="deco-circle deco-circle-1" />
-      <div class="deco-circle deco-circle-2" />
-    </div>
+  <AuthCard title="注册新账号" subtitle="TMLibrary · Join Us">
+    <!-- 卡片外观 / 输入框 / 主按钮的样式都在 AuthCard 里,这里只管表单本身
+         (form 字段 / rules / 提交逻辑都没动)。
 
-    <el-card class="register-card">
-      <template #header>
-        <div class="register-header">
-          <span class="register-logo">T</span>
-          <div>
-            <div class="register-title">注册新账号</div>
-            <div class="register-subtitle">TMLibrary · Join Us</div>
-          </div>
-        </div>
-      </template>
+         标签统一放输入框上方:卡片按设计稿收窄到 350px 后,右侧标签会把内容
+         压到 350-70(内边距)-90(标签)= 190px,而验证码那一行
+         「图 130 + 间距 12 + 倒计时 82」≈ 226px —— 横向溢出。
+         原来只在 ≤600px 才切 top 的逻辑,在窄卡片上桌面上也得成立。 -->
+    <el-form
+      ref="formRef"
+      :model="form"
+      :rules="rules"
+      label-position="top"
+      @submit.prevent="onSubmit"
+    >
+      <el-form-item label="用户名" prop="username">
+        <el-input
+          v-model="form.username"
+          placeholder="3-20 位"
+          autocomplete="username"
+          clearable
+        />
+      </el-form-item>
+      <el-form-item label="密码" prop="password">
+        <el-input
+          v-model="form.password"
+          type="password"
+          placeholder="6-20 位"
+          show-password
+          autocomplete="new-password"
+        />
+      </el-form-item>
+      <el-form-item label="确认密码" prop="confirmPassword">
+        <el-input
+          v-model="form.confirmPassword"
+          type="password"
+          placeholder="再次输入密码"
+          show-password
+          autocomplete="new-password"
+        />
+      </el-form-item>
+      <el-form-item label="邮箱" prop="email">
+        <el-input
+          v-model="form.email"
+          placeholder="example@domain.com"
+          autocomplete="email"
+          clearable
+        />
+      </el-form-item>
+      <el-form-item label="手机号" prop="phoneNumber">
+        <el-input
+          v-model="form.phoneNumber"
+          placeholder="11 位数字"
+          autocomplete="tel"
+          clearable
+        />
+      </el-form-item>
+      <el-form-item label="验证码" prop="captcha">
+        <Captcha
+          ref="captchaRef"
+          v-model="form.captcha"
+          :username="form.username"
+          type="register"
+        />
+      </el-form-item>
+      <el-form-item>
+        <el-button
+          type="primary"
+          native-type="submit"
+          :loading="loading"
+          class="auth-submit"
+        >
+          注册
+        </el-button>
+      </el-form-item>
+    </el-form>
 
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        :label-position="isNarrow ? 'top' : 'right'"
-        label-width="90px"
-        @submit.prevent="onSubmit"
-      >
-        <el-form-item label="用户名" prop="username">
-          <el-input
-            v-model="form.username"
-            placeholder="3-20 位"
-            autocomplete="username"
-            clearable
-          />
-        </el-form-item>
-        <el-form-item label="密码" prop="password">
-          <el-input
-            v-model="form.password"
-            type="password"
-            placeholder="6-20 位"
-            show-password
-            autocomplete="new-password"
-          />
-        </el-form-item>
-        <el-form-item label="确认密码" prop="confirmPassword">
-          <el-input
-            v-model="form.confirmPassword"
-            type="password"
-            placeholder="再次输入密码"
-            show-password
-            autocomplete="new-password"
-          />
-        </el-form-item>
-        <el-form-item label="邮箱" prop="email">
-          <el-input
-            v-model="form.email"
-            placeholder="example@domain.com"
-            autocomplete="email"
-            clearable
-          />
-        </el-form-item>
-        <el-form-item label="手机号" prop="phoneNumber">
-          <el-input
-            v-model="form.phoneNumber"
-            placeholder="11 位数字"
-            autocomplete="tel"
-            clearable
-          />
-        </el-form-item>
-        <el-form-item label="验证码" prop="captcha">
-          <Captcha
-            ref="captchaRef"
-            v-model="form.captcha"
-            :username="form.username"
-            type="register"
-          />
-        </el-form-item>
-        <el-form-item>
-          <el-button
-            type="primary"
-            native-type="submit"
-            :loading="loading"
-            class="register-submit"
-          >
-            注册
-          </el-button>
-        </el-form-item>
-        <div class="register-footer">
-          已有账号?<router-link to="/login" replace class="footer-link">去登录</router-link>
-        </div>
-      </el-form>
-    </el-card>
-  </div>
+    <!-- 底部一行:卡片页脚插槽(不在 form 内,避免回车误触提交) -->
+    <template #footer>
+      已有账号?<router-link to="/login" replace class="footer-link">去登录</router-link>
+    </template>
+  </AuthCard>
 </template>
 
+<!--
+  卡片 / 输入框 / 主按钮 / 页面底的样式都在 src/components/AuthCard.vue。
+  这里只挂注册页独有的东西:页脚那行的链接(插槽内容仍属本组件作用域)。
+-->
 <style scoped>
-.register-page {
-  position: relative;
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  background: var(--color-bg);
-  color: var(--color-text);
-  overflow: hidden;
-  padding: 24px;
-}
-
-/* 窄屏收紧内边距 —— 卡片能多拿 16px 宽度 */
-@media (max-width: 480px) {
-  .register-page {
-    padding: 16px;
-  }
-
-  .register-card :deep(.el-card__body) {
-    padding: 16px;
-  }
-}
-
-.register-deco {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.deco-circle {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(76, 175, 80, 0.14) 0%,
-    transparent 70%
-  );
-}
-
-.deco-circle-1 {
-  width: 480px;
-  height: 480px;
-  top: -160px;
-  right: -180px;
-}
-
-.deco-circle-2 {
-  width: 360px;
-  height: 360px;
-  bottom: -120px;
-  left: -140px;
-}
-
-.register-card {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  max-width: 460px;
-  background: var(--color-card);
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  box-shadow: 0 12px 40px var(--color-shadow-strong);
-}
-
-.register-card :deep(.el-card__header) {
-  padding: 24px 24px 16px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.register-card :deep(.el-card__body) {
-  padding: 24px;
-}
-
-.register-header {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.register-logo {
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  background: var(--color-accent);
-  color: #fff;
-  font-family: 'DM Serif Display', Georgia, serif;
-  font-weight: 400;
-  font-size: 22px;
-  border-radius: 10px;
-}
-
-.register-title {
-  font-family: 'DM Serif Display', Georgia, serif;
-  font-size: 20px;
-  font-weight: 400;
-  letter-spacing: -0.01em;
-  color: var(--color-text);
-}
-
-.register-subtitle {
-  font-size: 12px;
-  color: var(--color-text-muted);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  margin-top: 2px;
-}
-
-.register-submit {
-  width: 100%;
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-}
-
-.register-submit:hover {
-  background: var(--color-accent-hover);
-  border-color: var(--color-accent-hover);
-}
-
-.register-footer {
-  margin-top: 4px;
-  text-align: center;
-  font-size: 13px;
-  color: var(--color-text-muted);
-}
-
 .footer-link {
   color: var(--color-accent);
   text-decoration: none;

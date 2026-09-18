@@ -44,6 +44,30 @@ app:
   cors:
     origins: http://127.0.0.1:[*]
 
+  # ============================================================
+  # 前端地址 —— 目前只用于拼「密码重置」邮件里的链接
+  #
+  # 必须是**浏览器能访问到的**地址,不是后端地址。填错用户收到的链接
+  # 就打不开。生产改成真实域名,例如 https://library.example.com
+  # ============================================================
+  frontend:
+    base-url: ${FRONTEND_BASE_URL:http://localhost:5173}
+
+  # ============================================================
+  # 邮件 —— 目前只服务于「忘记密码」
+  #
+  # 发件人地址。多数 SMTP 服务要求 From 与认证账号同域,
+  # 否则会被拒信或进垃圾箱。
+  #
+  # SMTP 服务器本身配在 spring.mail.* 下(Spring Boot 标准键):
+  #   spring.mail.host / port / username / password
+  # **没配 spring.mail.host 就不会创建 JavaMailSender Bean**,
+  # 邮件实现自动退回 LoggingMailService(把重置链接打进日志)——
+  # 本地开发不装任何邮件服务也能走通整个流程。
+  # ============================================================
+  mail:
+    from: ${MAIL_FROM:no-reply@tmlibrary.local}
+
   # Snowflake 发号器标识 —— 多实例部署时每个实例必须不同,否则订单号会撞
   # (单实例可保持默认)
   snowflake:

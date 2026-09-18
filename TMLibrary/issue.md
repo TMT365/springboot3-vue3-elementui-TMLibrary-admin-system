@@ -28,6 +28,7 @@
 | 编号 | 问题 | 修复方式 |
 |---|---|---|
 | **图书写操作完全没鉴权** | `BookController` 的 4 个写方法(`POST /created`、`PATCH /{isbn}`、`PATCH /{isbn}/stock`、`DELETE /deleted/isbn/{isbn}`)**一个角色检查都没有** —— 任何已登录用户拿 token 直接打接口就能增删改图书、改库存。前端把这些页面挂在 `meta: { admin: true }` 路由下,但**前端路由守卫不是安全边界**,绕过它只需要一个 curl。同期 `PurchaseController` / `StatsController` / `SecurityController` / `CategoryController` / `FeedbackController` 都有检查,**只有 BookController 漏了**,属于遗漏而非设计 | 照 `SecurityController.requireAdmin` 的既有写法加 `requireAdminOrBoss(me)`:未登录抛 `AuthException`(401),角色不够抛 `BusinessException`(403)。已端到端验证:USER 打 4 个写接口全部 403、读接口仍 200(未误伤商城)、ADMIN 正常通过、无 token 401 |
+| **重置密码后新密码登不进去(缓存未失效)** | 新增「忘记密码」时,`resetPassword` 只写了库没清 Redis 里的 `RedisKeys.userByUsername` 缓存。而 `AuthServiceImpl` 登录时**先读缓存**(命中就不再查库),于是校验用的还是旧 `passwordHash` —— 表现成"新密码 401、旧密码反而 200"。**这不是理论风险,是实测踩到的**(新密码 401 / 旧密码 200,同时库里哈希已更新、缓存里还是旧的)。修复:重置成功后 `evictUserCache(username)`,与 `UserManagementServiceImpl` 里改密/改资料/软删的 5 处处理保持一致 |
 | **`scripts/schema.sql` 建表不全的误判** | 曾认为它是"一键建库"脚本但只建 4 张表(缺 `book_categories`/`feedbacks`/`feedback_replies`/`ip_bans`)。**经确认它只是给人看的总体规划表,不用于建库** | 不修改内容。改为在 `README.md` 和 `docker-compose.yml` 里写明真正的建表路径(`db/*.sql` 四个文件按序执行),Docker 初始化按 `01~05` 前缀挂载 |
 
 ### 第六轮

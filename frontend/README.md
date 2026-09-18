@@ -37,6 +37,8 @@ src/
 │   ├── stats.ts       dashboard snapshot (ADMIN/BOSS)
 │   └── user.ts        user management; strips sensitive fields via mapSafeUser()
 ├── components/      Reusable UI
+│   ├── AuthCard.vue       shared auth-page shell: rounded card + glow bg + form-control styles
+│   │                      (slots: default = form, footer = bottom row). All 4 auth pages use it
 │   ├── Captcha.vue        captcha input + image + countdown (login & register share it)
 │   ├── FeedbackFab.vue    global feedback entry — floating button + drawer, mounted in App.vue
 │   ├── FormDialog.vue     el-dialog + form wrapper
@@ -65,6 +67,7 @@ src/
 │   └── dashboardCharts.ts  builds the 4 dashboard Chart.js configs
 └── views/           (route in parentheses)
     ├── auth/        Login (/login) · Register (/register)
+    │                ForgotPassword (/forgot-password) · ResetPassword (/reset-password?token=…)
     ├── book/        List (/admin/books) · Edit (/admin/books/new, /admin/books/:isbn/edit)
     ├── feedback/    MyList (/feedback/mine) · Detail (/feedback/:id) · AdminList (/admin/feedback)
     ├── journey/     Index (/journey) + entries.ts (content data)
@@ -133,6 +136,18 @@ Single `http<T>(config)` wrapper used by every domain module:
 Path constants for case-sensitive backend routes live at the top of each `src/api/*.ts`
 module (e.g. `BOOK_PATH.SEARCH_AUTHOR = '/api/books/search/Author'`) — backend camelCase
 paths are pinned once so typos don't propagate.
+
+### Auth flow
+
+- `POST /api/users/forgot-password` returns **200 regardless of whether the email is registered**
+  (anti user-enumeration). Never branch the UI on the response — the backend deliberately cannot
+  tell you either. See `TMLibrary/API.md` §3.7.
+- `POST /api/users/reset-password` **does** fail with a reason (invalid/expired/already-used token,
+  or new password identical to the old one) — show the returned message.
+- The reset link is `${FRONTEND_BASE_URL}/reset-password?token=…`. That env var must point at a
+  **browser-reachable frontend** address, not the backend.
+- All four auth pages share `AuthCard.vue`, which also renders the "返回首页" link in the
+  top-left corner.
 
 ### Theme (`src/composables/useTheme.ts` + `src/styles/theme.css`)
 

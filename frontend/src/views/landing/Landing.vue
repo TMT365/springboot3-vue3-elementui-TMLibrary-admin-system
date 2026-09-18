@@ -26,6 +26,7 @@
  */
 import { computed, ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useUserStore } from '@/stores/user'
 import LandingNav from './LandingNav.vue'
 import BackToTop from './BackToTop.vue'
 import SpecialThanks from './SpecialThanks.vue'
@@ -36,6 +37,16 @@ import { CATEGORY_META, JOURNEY_ENTRIES } from '@/views/journey/entries'
 import type { JourneyCategory } from '@/views/journey/entries'
 
 const router = useRouter()
+
+/**
+ * 导航栏在 ≤480px 会把「注册」按钮收起来(一行放不下,不收就裁掉汉堡按钮),
+ * 首页这个区块是窄屏唯一的登录 / 注册入口,顺带在宽屏也把入口说清楚。
+ * 已登录时换成一张「进入我的空间」—— 让已登录的人不用眯着眼找右上角头像。
+ */
+const userStore = useUserStore()
+
+/** 已登录卡里带上用户名;解不出名字(老 token)就退回空串,不留半句话 */
+const usernameHint = computed(() => (userStore.username ? `为 ${userStore.username}` : ''))
 
 /** 三类经历的条数 —— 从真实数据算,不写死(加一条经历首页自动跟着变) */
 const journeyStats = computed(() =>
@@ -506,6 +517,69 @@ onUnmounted(pauseShowcase)
             </div>
           </div>
         </article>
+      </div>
+    </section>
+
+    <!-- ============== Get Started  -  登录 / 注册入口 ==============
+         为什么需要这一块:导航栏 ≤480px 时会把「注册」按钮隐藏(一行放不下,
+         不收就裁掉汉堡按钮),窄屏访客在首页就找不到注册入口了。
+         已登录时两张卡合并成一张「进入我的空间」,不显示"登录/注册"
+         (他已经在里面了,再看到"登录"只会怀疑自己是不是掉线了)。 -->
+    <section id="get-started" class="get-started" v-reveal>
+      <header class="section-head">
+        <h2 class="section-title">开始使用</h2>
+        <p class="section-sub">登录后即可浏览图书、下单购买,管理员还能进入后台</p>
+      </header>
+
+      <div class="gs-grid" :class="{ 'is-single': userStore.isAuthenticated }">
+        <template v-if="userStore.isAuthenticated">
+          <router-link to="/user/books" class="gs-card">
+            <span class="gs-card-icon" aria-hidden="true">
+              <el-icon><Notebook /></el-icon>
+            </span>
+            <span class="gs-card-label">My Space</span>
+            <h3 class="gs-card-title">进入我的空间</h3>
+            <p class="gs-card-desc">
+              你已经登录{{ usernameHint }},继续浏览书目、管理购物车与订单。
+            </p>
+            <span class="gs-card-go">
+              前往图书浏览
+              <el-icon><ArrowRight /></el-icon>
+            </span>
+          </router-link>
+        </template>
+
+        <template v-else>
+          <router-link to="/login" class="gs-card">
+            <span class="gs-card-icon" aria-hidden="true">
+              <el-icon><Key /></el-icon>
+            </span>
+            <span class="gs-card-label">Log In</span>
+            <h3 class="gs-card-title">登录</h3>
+            <p class="gs-card-desc">
+              已有账号?用用户名和密码直接进入,继续上次的书架和未付的订单。
+            </p>
+            <span class="gs-card-go">
+              前往登录
+              <el-icon><ArrowRight /></el-icon>
+            </span>
+          </router-link>
+
+          <router-link to="/register" class="gs-card">
+            <span class="gs-card-icon" aria-hidden="true">
+              <el-icon><UserFilled /></el-icon>
+            </span>
+            <span class="gs-card-label">Sign Up</span>
+            <h3 class="gs-card-title">注册</h3>
+            <p class="gs-card-desc">
+              还没有账号?注册一个,几十秒的事 —— 之后就能下单、收藏、查订单。
+            </p>
+            <span class="gs-card-go">
+              注册新账号
+              <el-icon><ArrowRight /></el-icon>
+            </span>
+          </router-link>
+        </template>
       </div>
     </section>
 
@@ -1479,6 +1553,125 @@ onUnmounted(pauseShowcase)
   letter-spacing: 0.12em;
   font-weight: 600;
   margin-bottom: 16px;
+}
+
+/* =============================================================
+ * Get Started  -  登录 / 注册入口
+ *
+ * 视觉沿用本页既有的卡片语言(和 .ps-entry / .ps-next-card 同一套):
+ *   var(--color-card) 底 + var(--color-border) 描边 + var(--shadow-card)
+ *   hover:translateY(-3px) + 描边转 accent
+ * 不引入新颜色 —— 这一块是"导流入口",抢了 hero 的注意力反而不好。
+ * ============================================================= */
+.get-started {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: clamp(60px, 10vw, 100px) 24px;
+}
+
+.gs-grid {
+  display: grid;
+  /* minmax(0, 1fr) 而不是 1fr:1fr 的最小宽度是 min-content,
+     卡片里长邮箱 / 长用户名会把列撑破,grid 不收窄 */
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+  margin-top: 48px;
+}
+
+/* 已登录:只剩一张卡,别再拉满整行 —— 居中收在 520px 里 */
+.gs-grid.is-single {
+  grid-template-columns: minmax(0, 520px);
+  justify-content: center;
+}
+
+.gs-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 30px 26px;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 16px;
+  /* 同 AuthCard:近景阴影 + 顶部受光棱边。棱边在亮色下几乎看不见,
+     暗色下是卡片"浮起来"的那一点点光 */
+  box-shadow: var(--shadow-card), var(--edge-highlight);
+  text-decoration: none;
+  color: inherit;
+  transition: transform 220ms ease, border-color 220ms ease, box-shadow 220ms ease;
+}
+
+.gs-card:hover {
+  transform: translateY(-3px);
+  border-color: var(--color-accent);
+  box-shadow: var(--shadow-card-hover), var(--edge-highlight);
+}
+
+.gs-card:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--color-accent);
+}
+
+.gs-card-icon {
+  display: inline-grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  background: rgba(76, 175, 80, 0.1);
+  color: var(--color-accent);
+  border-radius: 12px;
+  font-size: 23px;
+  line-height: 1;
+}
+
+.gs-card-label {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--color-text-soft);
+}
+
+.gs-card-title {
+  margin: 0;
+  font-family: 'DM Serif Display', Georgia, serif;
+  font-size: 21px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: var(--color-text);
+}
+
+.gs-card-desc {
+  margin: 0;
+  font-size: 14px;
+  line-height: 1.7;
+  color: var(--color-text-muted);
+}
+
+.gs-card-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 6px;
+  padding-top: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-accent);
+}
+
+.gs-card-go .el-icon {
+  transition: transform 200ms ease;
+}
+
+/* 箭头 hover 时右移 —— 和 .ps-entry 一致,暗示"会跳走" */
+.gs-card:hover .gs-card-go .el-icon {
+  transform: translateX(3px);
+}
+
+@media (max-width: 900px) {
+  .gs-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 /* =============================================================

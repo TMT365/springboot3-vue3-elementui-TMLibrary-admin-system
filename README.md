@@ -158,6 +158,7 @@ mysql -u root -p < src/main/resources/db/seed-demo-data.sql
 │   ├── src/main/java/com/tmt/TMLibrary/
 │   │   ├── controller/         REST 入口 —— 参数校验 + 权限判定
 │   │   ├── service/            业务逻辑(impl/ 实现,search/ 搜索与缓存装饰器)
+│   │   │                       └ 密码重置:PasswordResetService + MailService(有 SMTP 发信 / 无则打日志)
 │   │   ├── mapper/             MyBatis 接口(XML 在 resources/mapper/)
 │   │   ├── entity/ dto/ vo/    三层数据模型,互不串用
 │   │   ├── security/           JWT 过滤器 · IP 风控 · 当前用户解析
@@ -178,8 +179,9 @@ mysql -u root -p < src/main/resources/db/seed-demo-data.sql
 │   ├── src/
 │   │   ├── api/                按领域封装的请求函数
 │   │   ├── views/              页面(auth/book/mall/purchase/user/feedback/journey/landing)
+│   │   │                       auth/ 含 Login · Register · ForgotPassword · ResetPassword
 │   │   ├── layouts/            三套外壳:Admin / Mall / User
-│   │   ├── components/         可复用组件(Pager / FormDialog / FeedbackFab / LoadingScreen)
+│   │   ├── components/         可复用组件(Pager / FormDialog / FeedbackFab / LoadingScreen / AuthCard)
 │   │   ├── composables/        useTheme · useFeedback · useBookSuggest · useChartPalette
 │   │   ├── router/             路由表 + 守卫(登录态 / admin 角色 / 标题同步)
 │   │   ├── stores/             Pinia:user(JWT) · cart · loading · ipBan
@@ -235,6 +237,17 @@ Redis 缓存  →  Elasticsearch  →  MySQL LIKE
 
 `TraceIdFilter` 是最高优先级过滤器,给每个请求生成 traceId 写进 MDC。logback 用异步 appender,ERROR 单独落文件,框架日志(Spring/Tomcat/Hikari/MyBatis/ES)全部降噪到 WARN。生产关掉 MyBatis 的 `StdOutImpl`,避免 SQL 参数里的用户名手机号被打出来。
 
+### 密码重置(忘记密码)
+
+`POST /api/users/forgot-password` + `POST /api/users/reset-password`,两个都是公开端点。
+
+- 令牌 `SecureRandom` 32 字节 → Base64URL 43 字符,**库里只存 SHA-256**(不存明文),30 分钟有效、用完即焚
+- **防用户枚举**:邮箱不存在 / 命中多个账号 / 正常发信,三种情况响应逐字节相同
+- 邮件:配了 `spring.mail.host` 走 SMTP,没配就以 WARN 打进日志 —— 本地开发不装邮件服务也能走通
+
+> 这里踩过一个坑:重置成功后如果**不清 Redis 里的用户缓存**,登录仍会拿缓存里的旧
+> `passwordHash` 校验,表现成「新密码登不进去、旧密码还能用」。见 `issue.md`。
+
 ### 安全
 
 - JWT(HS256)+ BCrypt,登出写 Redis 黑名单
@@ -259,6 +272,9 @@ Redis 缓存  →  Elasticsearch  →  MySQL LIKE
 | `CORS_ORIGINS` | ✅(prod) | 允许的前端地址。prod 下没有默认值,不配直接启动失败 |
 | `ES_HOSTS` / `ES_PASSWORD` | ❌ | 不配则搜索走 MySQL 降级 |
 | `IP_BAN_TRUSTED_PROXIES` | ❌ | 可信代理列表。**不要填 `*`** |
+| `FRONTEND_BASE_URL` | ❌ | 密码重置邮件里的链接前缀。**必须是浏览器能访问到的前端地址**;默认 `http://localhost:5173`,Docker 下 compose 会自动设成前端端口 |
+| `MAIL_FROM` | ❌ | 重置邮件的发件人。多数 SMTP 要求与认证账号同域 |
+| `SPRING_MAIL_HOST` 等 | ❌ | SMTP 服务器。**留空 = 不发邮件**,重置链接打进日志,流程照样走通 |
 
 > prod profile 故意让 `CORS_ORIGINS` 失败即停 —— 配置缺失时"起不来"比"起来了但跨域全挂"好排查得多。
 

@@ -30,6 +30,20 @@
 			<artifactId>spring-boot-starter-validation</artifactId>
 		</dependency>
 
+		<!--
+		  邮件 —— 目前只服务于「忘记密码」的重置链接。
+
+		  加了 starter 不等于就会发邮件:Spring Boot 的
+		  MailSenderAutoConfiguration 带 @ConditionalOnProperty(spring.mail.host),
+		  没配 SMTP 主机时**根本不会创建 JavaMailSender Bean**,
+		  于是邮件服务的实现自动退回 LoggingMailService(把重置链接打进日志)。
+		  所以本地开发不配 SMTP 也能跑通整个重置流程。
+		-->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-mail</artifactId>
+		</dependency>
+
 		<!-- MyBatis (Spring Boot 3+ Jakarta-aware starter; no MyBatis-Plus) -->
 		<dependency>
 			<groupId>org.mybatis.spring.boot</groupId>

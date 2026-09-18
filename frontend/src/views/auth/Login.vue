@@ -22,6 +22,8 @@ import { authApi } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import Captcha from '@/components/Captcha.vue'
+// 圆角卡片外壳(页面底 + 卡片 + 输入框 / 主按钮 / 社交按钮样式都收在里面)
+import AuthCard from '@/components/AuthCard.vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -90,187 +92,85 @@ async function onSubmit(): Promise<void> {
 </script>
 
 <template>
-  <div class="login-page">
-    <div class="login-deco" aria-hidden="true">
-      <div class="deco-circle deco-circle-1" />
-      <div class="deco-circle deco-circle-2" />
-    </div>
+  <AuthCard title="TMLibrary" subtitle="后台管理系统">
+    <!-- 卡片外观 / 输入框 / 主按钮的样式都在 AuthCard 里,这里只管表单本身
+         (form 字段 / rules / 提交逻辑都没动)。
 
-    <el-card class="login-card">
-      <template #header>
-        <div class="login-header">
-          <span class="login-logo">T</span>
-          <div>
-            <div class="login-title">TMLibrary</div>
-            <div class="login-subtitle">后台管理系统</div>
-          </div>
-        </div>
-      </template>
+         标签统一放输入框上方:卡片按设计稿收窄到 350px 后,右侧标签会把内容
+         压到 350-70(内边距)-80(标签)= 200px,而验证码那一行
+         「图 130 + 间距 12 + 倒计时 82」≈ 226px —— 横向溢出。
+         原来只在 ≤600px 才切 top 的逻辑,在窄卡片上桌面上也得成立。 -->
+    <el-form
+      ref="formRef"
+      :model="form"
+      :rules="rules"
+      label-position="top"
+      @submit.prevent="onSubmit"
+    >
+      <el-form-item label="用户名" prop="username">
+        <el-input
+          v-model="form.username"
+          placeholder="请输入用户名"
+          autocomplete="username"
+          clearable
+        />
+      </el-form-item>
 
-      <el-form
-        ref="formRef"
-        :model="form"
-        :rules="rules"
-        :label-position="isNarrow ? 'top' : 'right'"
-        label-width="80px"
-        @submit.prevent="onSubmit"
-      >
-        <el-form-item label="用户名" prop="username">
-          <el-input
-            v-model="form.username"
-            placeholder="请输入用户名"
-            autocomplete="username"
-            clearable
-          />
-        </el-form-item>
+      <el-form-item label="密码" prop="password">
+        <el-input
+          v-model="form.password"
+          type="password"
+          placeholder="请输入密码"
+          show-password
+          autocomplete="current-password"
+        />
+      </el-form-item>
 
-        <el-form-item label="密码" prop="password">
-          <el-input
-            v-model="form.password"
-            type="password"
-            placeholder="请输入密码"
-            show-password
-            autocomplete="current-password"
-          />
-        </el-form-item>
+      <el-form-item label="验证码" prop="captcha">
+        <Captcha
+          ref="captchaRef"
+          v-model="form.captcha"
+          :username="form.username"
+          type="login"
+        />
+      </el-form-item>
 
-        <el-form-item label="验证码" prop="captcha">
-          <Captcha
-            ref="captchaRef"
-            v-model="form.captcha"
-            :username="form.username"
-            type="login"
-          />
-        </el-form-item>
+      <el-form-item>
+        <el-button
+          type="primary"
+          native-type="submit"
+          :loading="loading"
+          class="auth-submit"
+        >
+          登录
+        </el-button>
+      </el-form-item>
+    </el-form>
 
-        <el-form-item>
-          <el-button
-            type="primary"
-            native-type="submit"
-            :loading="loading"
-            class="login-submit"
-          >
-            登录
-          </el-button>
-        </el-form-item>
-      </el-form>
-    </el-card>
-  </div>
+    <!--
+      忘记密码入口 —— 放在卡片页脚插槽里,和注册页的「去登录」同一位置、同一套样式。
+      注意它在 el-form **外面**:放表单里的话回车提交会被当成表单的一部分。
+    -->
+    <template #footer>
+      <router-link to="/forgot-password" class="footer-link">忘记密码?</router-link>
+    </template>
+  </AuthCard>
 </template>
 
+<!--
+  卡片 / 输入框 / 主按钮 / 页面底的样式都在 src/components/AuthCard.vue。
+  这里只挂登录页独有的东西:页脚那行的链接(插槽内容仍属本组件作用域),
+  与 Register.vue 的 .footer-link 保持一致。
+-->
 <style scoped>
-.login-page {
-  position: relative;
-  min-height: 100vh;
-  display: grid;
-  place-items: center;
-  background: var(--color-bg);
-  color: var(--color-text);
-  overflow: hidden;
-  padding: 24px;
+.footer-link {
+  color: var(--color-accent);
+  text-decoration: none;
+  font-weight: 500;
 }
 
-/* 窄屏收紧内边距 —— 卡片能多拿 16px 宽度 */
-@media (max-width: 480px) {
-  .login-page {
-    padding: 16px;
-  }
-}
-
-.login-deco {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.deco-circle {
-  position: absolute;
-  border-radius: 50%;
-  background: radial-gradient(
-    circle,
-    rgba(76, 175, 80, 0.14) 0%,
-    transparent 70%
-  );
-}
-
-.deco-circle-1 {
-  width: 480px;
-  height: 480px;
-  top: -160px;
-  right: -180px;
-}
-
-.deco-circle-2 {
-  width: 360px;
-  height: 360px;
-  bottom: -120px;
-  left: -140px;
-}
-
-.login-card {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  max-width: 420px;
-  background: var(--color-card);
-  border: 1px solid var(--color-border);
-  border-radius: 16px;
-  box-shadow: 0 12px 40px var(--color-shadow-strong);
-}
-
-.login-card :deep(.el-card__header) {
-  padding: 24px 24px 16px;
-  border-bottom: 1px solid var(--color-border);
-}
-
-.login-card :deep(.el-card__body) {
-  padding: 24px;
-}
-
-.login-header {
-  display: flex;
-  align-items: center;
-  gap: 14px;
-}
-
-.login-logo {
-  width: 44px;
-  height: 44px;
-  display: grid;
-  place-items: center;
-  background: var(--color-accent);
-  color: #fff;
-  font-family: 'DM Serif Display', Georgia, serif;
-  font-weight: 400;
-  font-size: 22px;
-  border-radius: 10px;
-}
-
-.login-title {
-  font-family: 'DM Serif Display', Georgia, serif;
-  font-size: 20px;
-  font-weight: 400;
-  letter-spacing: -0.01em;
-  color: var(--color-text);
-}
-
-.login-subtitle {
-  font-size: 12px;
-  color: var(--color-text-muted);
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  margin-top: 2px;
-}
-
-.login-submit {
-  width: 100%;
-  background: var(--color-accent);
-  border-color: var(--color-accent);
-}
-
-.login-submit:hover {
-  background: var(--color-accent-hover);
-  border-color: var(--color-accent-hover);
+.footer-link:hover {
+  text-decoration: underline;
 }
 </style>
+
