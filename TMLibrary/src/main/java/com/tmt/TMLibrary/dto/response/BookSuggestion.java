@@ -3,7 +3,7 @@ package com.tmt.TMLibrary.dto.response;
 import lombok.Data;
 
 /**
- * 搜索候选词 —— GET /api/books/suggest 的响应元素。
+ * 搜索候选词 —— GET /books/suggest 的响应元素。
  *
  * <p>下拉列表的一个条目。前端按 {@code type} 决定图标和次要文案,
  * 按 {@code hot} 决定右侧要不要显示热度。</p>

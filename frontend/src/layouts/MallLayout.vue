@@ -23,6 +23,7 @@ import { useUserStore } from '@/stores/user'
 import { useTheme } from '@/composables/useTheme'
 import { bookApi } from '@/api/book'
 import { highlightParts, useBookSuggest } from '@/composables/useBookSuggest'
+import { initialOf } from '@/utils/format'
 import type { BookCategoryNode, BookSuggestion } from '@/types/api'
 
 const router = useRouter()
@@ -307,7 +308,7 @@ function onSearchEnter(): void {
           <el-dropdown trigger="click" @command="handleCommand">
             <span class="user-trigger">
               <span class="avatar-mini">
-                {{ userStore.username.slice(0, 1).toUpperCase() }}
+                {{ initialOf(userStore.username) }}
               </span>
               <span class="user-name">{{ userStore.username }}</span>
               <el-icon><ArrowDown /></el-icon>

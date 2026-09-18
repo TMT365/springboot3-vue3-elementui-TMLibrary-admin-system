@@ -33,6 +33,7 @@ import com.tmt.TMLibrary.exception.OrderAutoCancelledException;
 import java.math.BigDecimal;
 import com.tmt.TMLibrary.exception.BusinessException;
 import com.tmt.TMLibrary.common.Order.OrderStatus;
+import com.tmt.TMLibrary.common.Order.PaymentMethod;
 import com.tmt.TMLibrary.common.Result.ResultCode;
 import com.tmt.TMLibrary.common.metrics.InventoryMetrics;
 import com.tmt.TMLibrary.common.redis.RedisKeys;
@@ -357,7 +358,7 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         // 状态守卫 UPDATE — 只有 PENDING 才能被用户主动取消
         int rows = orderMapper.updateStatusByOrderNumberGuard(
-            orderNumber, OrderStatus.PENDING.getCode(), OrderStatus.CANCELLED.getCode());
+            orderNumber, OrderStatus.PENDING.getCode(), OrderStatus.CANCELLED.getCode(), null);
         if (rows == 0) {
             // 已经被 cancel/expire/pay 抢先 — checkOrder 已挡住 PAID/CANCELLED,这里防御性兜底
             throw new BusinessException(ResultCode.CONFLICT, "Order already processed: " + orderNumber);
@@ -398,9 +399,20 @@ public class PurchaseServiceImpl implements PurchaseService {
      */
     @Override
     @Transactional(rollbackFor = Exception.class, noRollbackFor = OrderAutoCancelledException.class)
-    public int payOrder(Long orderNumber, Integer currentUserId, String paymentMethod) {
+    public int payOrder(Long orderNumber, Integer currentUserId, String paymentMethodRaw) {
 
-        // 支付方式还未做(预留字段,接网关时验签后再调本方法)
+        /*
+         * 支付方式:入口处就收敛成枚举。
+         *
+         * 这一步必须在**任何写操作之前** —— 传了不认识的值直接 400,
+         * 不能等订单状态都翻成 PAID 了才发现方式非法(那会留下
+         * "已支付但方式是脏值"的半成品记录)。
+         *
+         * ⚠️ 这里只是**记录用户选了什么**,并没有真的调支付网关。
+         * 接真实网关时要在扣库存 / 翻状态之前插一步"调网关 + 验签",
+         * 验签通过才允许继续 —— 否则任何人直接 PATCH 这个接口就能把订单改成已支付。
+         */
+        PaymentMethod paymentMethod = PaymentMethod.from(paymentMethodRaw);
 
         if (checkUser(currentUserId)) {
             throw new AuthException(ResultCode.UNAUTHORIZED, "User is not authorized to pay order");
@@ -444,12 +456,14 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         // DB 扣减成功 → 翻状态(状态守卫:只有 PENDING 才能转 PAID)
         int paidRows = orderMapper.updateStatusByOrderNumberGuard(
-            orderNumber, OrderStatus.PENDING.getCode(), OrderStatus.PAID.getCode());
+            orderNumber, OrderStatus.PENDING.getCode(), OrderStatus.PAID.getCode(), paymentMethod.name());
         if (paidRows == 0) {
             throw new BusinessException(ResultCode.CONFLICT,
                 "Order status changed concurrently: " + orderNumber);
         }
         order.setOrderStatus(OrderStatus.PAID.getCode());
+        // 内存里的 order 也同步一份,和 DB 刚写入的 payment_method 保持一致
+        order.setPaymentMethod(paymentMethod.name());
 
         if (orderItems != null && !orderItems.isEmpty()) {
             for (OrderItem orderItem : orderItems) {
@@ -474,7 +488,7 @@ public class PurchaseServiceImpl implements PurchaseService {
      */
     private void autoCancelBecauseOutOfStock(Order order, List<OrderItem> orderItems, Integer currentUserId) {
         int rows = orderMapper.updateStatusByOrderNumberGuard(
-            order.getOrderNumber(), OrderStatus.PENDING.getCode(), OrderStatus.CANCELLED.getCode());
+            order.getOrderNumber(), OrderStatus.PENDING.getCode(), OrderStatus.CANCELLED.getCode(), null);
         if (rows == 0) {
             log.warn("auto-cancel skipped, order {} status changed concurrently", order.getOrderNumber());
             return;
@@ -542,7 +556,7 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         // 步骤 4:状态守卫的 UPDATE — 只有 PENDING 才能转 CANCELLED
         int rows = orderMapper.updateStatusByOrderNumberGuard(
-            orderNumber, OrderStatus.PENDING.getCode(), OrderStatus.CANCELLED.getCode());
+            orderNumber, OrderStatus.PENDING.getCode(), OrderStatus.CANCELLED.getCode(), null);
         if (rows == 0) {
             // 别人抢先改了状态(Paid 或 Cancelled)— 我们的 release 多减一次,但 Lua -2 静默处理
             log.warn("cancelExpiredOrder: order {} status changed concurrently, release may double-count", orderNumber);

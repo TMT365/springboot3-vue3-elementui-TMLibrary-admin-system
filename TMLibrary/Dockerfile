@@ -75,7 +75,7 @@ ENV SPRING_PROFILES_ACTIVE=prod
 ENV JAVA_OPTS="-XX:MaxRAMPercentage=75 -XX:+UseContainerSupport"
 
 # actuator health 已在 application.yml 里暴露(include: health,metrics),
-# 且不在 /api/* 下 → 不走 JWT 过滤器,可以直接探
+# 且不在 /* 下 → 不走 JWT 过滤器,可以直接探
 HEALTHCHECK --interval=15s --timeout=3s --start-period=60s --retries=5 \
     CMD wget -qO- http://localhost:8080/actuator/health | grep -q '"status":"UP"' || exit 1
 

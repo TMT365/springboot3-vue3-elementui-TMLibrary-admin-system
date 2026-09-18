@@ -16,7 +16,7 @@ import lombok.RequiredArgsConstructor;
  * Spring MVC 通用配置。
  *
  * <p>
- * 当前仅注册 CORS：放行前端 dev server (Vue Vite, 默认 :5173) 对 {@code /api/**}
+ * 当前仅注册 CORS：放行前端 dev server (Vue Vite, 默认 :5173) 对 {@code /**}
  * 的跨域请求。Spring Security 等拦截器未引入，所以直接用 {@code WebMvcConfigurer}
  * 即可，不需要 filter chain。
  * </p>
@@ -54,10 +54,14 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/**")
+        registry.addMapping("/**")
                 // 用 allowedOriginPatterns:兼容精确 origin,同时支持 [*] 端口通配
                 .allowedOriginPatterns(allowedOrigins.split(","))
-                .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                // ⚠️ PATCH 必须在这里 —— 全项目有 6 个 @PatchMapping(改图书/改库存/改用户/
+                // 改密码/改反馈状态/支付),漏掉它的话,跨域场景下这些请求的预检
+                // (OPTIONS)会被 Spring 判为 "Invalid CORS request" 直接 403,
+                // 而 GET/POST 一切正常 —— 表现成"只有支付用不了"这种极难查的症状。
+                .allowedMethods("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS")
                 .allowedHeaders("Authorization", "Content-Type")
                 .allowCredentials(false)
                 .maxAge(3600);

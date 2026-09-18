@@ -10,7 +10,7 @@ import java.util.List;
  *
  * <h2>判定链路</h2>
  * <pre>
- *   每个 /api/* 请求
+ *   每个 /* 请求
  *     → Redis 查封禁标记(1 次 GET,不碰 DB)
  *       命中 → 429 + 封禁详情
  *       未命中 → Redis 计数 +1(固定窗口)

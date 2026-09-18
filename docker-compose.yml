@@ -77,10 +77,27 @@ services:
     networks: [tmlibrary-net]
 
   # -------------------------------------------------------------------------
-  # Redis —— 缓存 / 库存预占 / 验证码 / JWT 黑名单 / 分布式锁
+  # Redis 协议缓存 —— 缓存 / 库存预占 / 验证码 / JWT 黑名单 / 分布式锁
+  #
+  # 用的是 **Valkey**(Linux Foundation 从 Redis 7.2.4 fork 的 BSD-3 分支),
+  # 不是 Redis 本身。原因只有一个:许可证。
+  #   Redis ≤7.2.4  → BSD-3
+  #   Redis 7.4     → RSALv2 / SSPLv1(都不是 OSI 开源)
+  #   Redis 8.x     → 上面两个 + AGPLv3 三选一
+  # AGPLv3 是强 copyleft 带网络条款,很多公司对它是**一刀切禁止**。
+  # 本项目 README 面向的是"拿去写简历 / 给公司看"的场景,平白多一个 AGPL
+  # 依赖不划算;而 Valkey 是 BSD-3,这个问题直接不存在。
+  #
+  # 换过来零成本:命令与 wire 协议兼容,而且这个镜像自带
+  # redis-cli / redis-server 兼容软链 —— 下面的 command 和 healthcheck
+  # 一个字都不用改(实测 valkey/valkey:8-alpine 里这两个名字都能用)。
+  #
+  # ⚠️ 本项目只用 GET/SET/DEL/TTL/SETNX/HSETNX/SCAN/ZSET + Lua + ACL,
+  #    **一个 Redis Stack 模块都没用** —— 兼容性缺口恰好全在那些模块上,
+  #    所以能这么换。将来要是引入 RediSearch/RedisJSON 之类,得重新评估。
   # -------------------------------------------------------------------------
   redis:
-    image: redis:7-alpine
+    image: valkey/valkey:8-alpine
     container_name: tmlibrary-redis
     restart: unless-stopped
     command:

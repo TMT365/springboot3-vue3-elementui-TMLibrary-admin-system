@@ -4,6 +4,13 @@
 >
 > Base URL: `http://localhost:8080`(开发环境)
 >
+> **⚠️ 路径前缀(2026-09 变更)**:本文列出的路径是**后端服务的真实路由**,
+> 一律不带 `/api` 前缀(例如 `POST /users/login`)。
+> 对外访问由反向代理(nginx)暴露 `/api` 并在转发时**剥掉前缀** ——
+> 即浏览器请求 `/api/users/login`,后端实际收到 `/users/login`。
+> 前端代码中请求的仍是 `/api/...`(见 `frontend/src/api/*.ts`),这部分未改动,
+> 剥前缀完全由代理层完成。
+>
 > 所有请求和响应均使用 `application/json`。
 >
 > (2026-09 起验证码也是 JSON —— 返回 `{image: "data:image/png;base64,...", expiresAt}`,
@@ -57,24 +64,24 @@
 
   | 路径 | 方法 | 说明 |
   |---|---|---|
-  | `/api/users/login` | `POST` | 登录 |
-  | `/api/users/register` | `POST` | 注册 |
-  | `/api/users/forgot-password` | `POST` | 申请密码重置(2026-09 新增) |
-  | `/api/users/reset-password` | `POST` | 凭令牌重置密码(2026-09 新增) |
-  | `/api/captcha/**` | `POST` | 验证码 |
-  | `/api/books**` | **`GET`** | 图书展示:商城、列表、详情、三种粒度搜索 |
+  | `/users/login` | `POST` | 登录 |
+  | `/users/register` | `POST` | 注册 |
+  | `/users/forgot-password` | `POST` | 申请密码重置(2026-09 新增) |
+  | `/users/reset-password` | `POST` | 凭令牌重置密码(2026-09 新增) |
+  | `/captcha/**` | `POST` | 验证码 |
+  | `/books**` | **`GET`** | 图书展示:商城、列表、详情、三种粒度搜索 |
 
   > 密码重置两条是**精确匹配**,不会有前缀放大
-  > (`/api/users/forgot-password/xxx` 这类路径不在白名单里)。
+  > (`/users/forgot-password/xxx` 这类路径不在白名单里)。
   > 前四条都只放行 `POST`,同路径的其它方法仍要 token。
 
-  > 图书模块**只有 GET 放行**。同一前缀下的 `POST /api/books/created`、
-  > `PATCH /api/books/{isbn}`、`PATCH /api/books/{isbn}/stock`、
-  > `DELETE /api/books/deleted/isbn/{isbn}` 仍**必须**携带 token。
+  > 图书模块**只有 GET 放行**。同一前缀下的 `POST /books/created`、
+  > `PATCH /books/{isbn}`、`PATCH /books/{isbn}/stock`、
+  > `DELETE /books/deleted/isbn/{isbn}` 仍**必须**携带 token。
 
-- 其余接口(含 `GET /api/users/**`、`GET /api/purchases/**`)一律要求
+- 其余接口(含 `GET /users/**`、`GET /purchases/**`)一律要求
   `Authorization: Bearer <token>`。
-- token 由 `POST /api/users/login` 返回,前端保存到 localStorage。
+- token 由 `POST /users/login` 返回,前端保存到 localStorage。
 - token 过期 / 被登出 / 缺失 → **HTTP 401**,`code=401`,`msg` 为 `缺少 Authorization 头` / `令牌无效` / `Token已登出作废，请重新登录` 之一。
 - 当前用户信息由 JwtAuthFilter 解析后写入 request attribute `CURRENT_USER`(内部机制,客户端无感)。
 
@@ -142,11 +149,11 @@ HTTP/1.1 401 Unauthorized
 
 ---
 
-## 2. 鉴权模块 `/api`
+## 2. 鉴权模块 `/users` + `/captcha`
 
 ### 2.1 获取登录验证码
 
-`POST /api/captcha/login?uuid=<uuid>`
+`POST /captcha/login?uuid=<uuid>`
 
 - **请求体**：
   ```json
@@ -185,7 +192,7 @@ HTTP/1.1 401 Unauthorized
 
 ### 2.2 获取注册验证码(2026-09 新增)
 
-`POST /api/captcha/register?uuid=<uuid>`
+`POST /captcha/register?uuid=<uuid>`
 
 - **请求体**:
   ```json
@@ -200,7 +207,7 @@ HTTP/1.1 401 Unauthorized
 
 ### 2.3 注册
 
-`POST /api/users/register`
+`POST /users/register`
 
 - **白名单**:无需 token。
 - **请求体** `UserRegisterRequest`:
@@ -233,7 +240,7 @@ HTTP/1.1 401 Unauthorized
 
 ### 2.4 登录
 
-`POST /api/users/login`
+`POST /users/login`
 
 - **白名单**:无需 token。
 - **请求体** `LoginRequest`:
@@ -275,7 +282,7 @@ HTTP/1.1 401 Unauthorized
 
 ### 2.4 登出
 
-`POST /api/users/logout`
+`POST /users/logout`
 
 - **请求头**:`Authorization: Bearer <token>`
 - **请求体**:无
@@ -302,13 +309,13 @@ HTTP/1.1 401 Unauthorized
 
 ---
 
-## 3. 用户管理 `/api/users`
+## 3. 用户管理 `/users`
 
 所有接口需要 `Authorization: Bearer <token>`。
 
 ### 3.1 列表查询(分页 + 多条件)
 
-`GET /api/users/list?username=&role=&page=1&size=10`
+`GET /users/list?username=&role=&page=1&size=10`
 
 - **权限**:仅 `ADMIN` / `BOSS` 可看全量列表,普通用户只看到自己。
 - **Query 参数** `UserSearchRequest`(全部可选):
@@ -332,7 +339,7 @@ HTTP/1.1 401 Unauthorized
 
 ### 3.2 详情
 
-`GET /api/users/{id}`
+`GET /users/{id}`
 
 - **路径**:`id` int
 - **权限**:自己 / `ADMIN` / `BOSS` 可看,其他角色 `403 FORBIDDEN`。
@@ -369,7 +376,7 @@ HTTP/1.1 401 Unauthorized
 
 ### 3.3 更新用户信息
 
-`PATCH /api/users/{id}`
+`PATCH /users/{id}`
 
 - **路径**:`id` int
 - **权限**:
@@ -392,7 +399,7 @@ HTTP/1.1 401 Unauthorized
 
 ### 3.4 软删(需密码确认)
 
-`DELETE /api/users/{id}`
+`DELETE /users/{id}`
 
 - **权限**:自己可软删自己;`BOSS` 可软删任何人。
 - **请求体** `UserDeleteRequest`:
@@ -402,7 +409,7 @@ HTTP/1.1 401 Unauthorized
 
 ### 3.5 修改密码
 
-`PATCH /api/users/{id}/password`
+`PATCH /users/{id}/password`
 
 - **权限**:`currentUserId == id`(只能改自己的密码)
 - **请求体** `UserPasswordRequest`:
@@ -419,7 +426,7 @@ HTTP/1.1 401 Unauthorized
 
 ### 3.6 看订单
 
-`GET /api/users/{id}/purchases`
+`GET /users/{id}/purchases`
 
 - **权限**:自己看自己的;`BOSS` 看任意人;其他情况 `403 FORBIDDEN`。
 - **响应 data**:`List<PurchaseResponse>`,见 [§ 5.5](#55-订单响应-purchaseresponse)。
@@ -427,7 +434,7 @@ HTTP/1.1 401 Unauthorized
 ### 3.7 申请密码重置(2026-09 新增)
 
 ```
-POST /api/users/forgot-password
+POST /users/forgot-password
 Auth: ❌ 公开(登不上去才用它,不可能要求先带 token)
 ```
 
@@ -455,7 +462,7 @@ Auth: ❌ 公开(登不上去才用它,不可能要求先带 token)
 ### 3.8 凭令牌重置密码(2026-09 新增)
 
 ```
-POST /api/users/reset-password
+POST /users/reset-password
 Auth: ❌ 公开
 ```
 
@@ -487,7 +494,7 @@ Auth: ❌ 公开
 
 ---
 
-## 4. 图书管理 `/api/books`
+## 4. 图书管理 `/books`
 
 `Book` 实体字段:
 ```json
@@ -510,7 +517,7 @@ Auth: ❌ 公开
 
 ### 4.1 简单分页列表
 
-`GET /api/books/list?page=1&size=10`
+`GET /books/list?page=1&size=10`
 
 - **Query**:
   | 字段 | 类型 | 默认 | 说明 |
@@ -521,7 +528,7 @@ Auth: ❌ 公开
 
 ### 4.2 新建图书
 
-`POST /api/books/created`
+`POST /books/created`
 
 - **请求体** `BookSaveRequest`:
   ```json
@@ -549,13 +556,13 @@ Auth: ❌ 公开
 
 ### 4.3 按 ISBN 查询
 
-`GET /api/books/{isbn}`
+`GET /books/{isbn}`
 
 - **响应 data**:`Book`(不存在时 `data=null`,code=200)
 
 ### 4.4 按 ISBN 修改
 
-`PATCH /api/books/{isbn}`
+`PATCH /books/{isbn}`
 
 - **请求体** `BookUpdateRequest`(字段全可选):
   ```json
@@ -581,7 +588,7 @@ Auth: ❌ 公开
 
 ### 4.5 调整库存(盘点语义)
 
-`PATCH /api/books/{isbn}/stock`
+`PATCH /books/{isbn}/stock`
 
 - **请求体** `BookStockAdjustRequest`:
   ```json
@@ -597,11 +604,11 @@ Auth: ❌ 公开
 
 ### 4.6 按 ISBN 删除
 
-`DELETE /api/books/deleted/isbn/{isbn}`
+`DELETE /books/deleted/isbn/{isbn}`
 
 ### 4.7 多条件组合搜索
 
-`GET /api/books?title=&author=&keyword=&minPrice=&maxPrice=&minStock=&maxStock=&publishedDate=&categoryId=&page=1&size=10`
+`GET /books?title=&author=&keyword=&minPrice=&maxPrice=&minStock=&maxStock=&publishedDate=&categoryId=&page=1&size=10`
 
 - **Query 参数** `BookSearchRequest`(全部可选,空串 = 不参与):
   | 字段 | 类型 | 说明 |
@@ -628,30 +635,30 @@ Auth: ❌ 公开
 
 ### 4.8 按出版日期粒度查询
 
-`GET /api/books/search/publishedDate/by?year=2024&month=6&day=15&page=1&size=10`
+`GET /books/search/publishedDate/by?year=2024&month=6&day=15&page=1&size=10`
 
 - **粒度**:3 级 — `year` / `year+month` / `year+month+day`
 - **校验**:`year` 必填(1900-2100);`month` / `day` 可选但必须**从大到小连续**(`month=6&day=15` 合法,`day=15&hour=10` 跳级 → 400)。
 
 ### 4.9 按创建时间粒度查询
 
-`GET /api/books/search/CreatedTime/by?year=2024&month=6&day=15&hour=10&minute=30&page=1&size=10`
+`GET /books/search/CreatedTime/by?year=2024&month=6&day=15&hour=10&minute=30&page=1&size=10`
 
 - **粒度**:5 级 — `year` / `year+month` / `year+month+day` / `year+month+day+hour` / `year+month+day+hour+minute`
 - 校验同上。
 
 ### 4.10 按更新时间粒度查询
 
-`GET /api/books/search/UpdatedTime/by?year=...&...`
+`GET /books/search/UpdatedTime/by?year=...&...`
 
 - 同 § 4.8,字段语义换成 `updatedTime`。
 
 ### 4.11 图书分类树
 
-`GET /api/books/categories`
+`GET /books/categories`
 
 - **鉴权**:❌ **免登录**(商城侧栏、分类 chips、后台表单都要读)。
-  挂在 `/api/books` 前缀下是为了命中 `JwtAuthFilter` 里 `("/api/books", GET)` 的白名单;
+  挂在 `/books` 前缀下是为了命中 `JwtAuthFilter` 里 `("/books", GET)` 的白名单;
   字面量段 `categories` 的匹配优先级高于变量段 `{isbn}`,不会和 § 4.3 撞车。
 - **响应 data**:`List<BookCategoryNode>`,只有两级(大类 → 小类):
   ```json
@@ -688,7 +695,7 @@ Auth: ❌ 公开
 
 ### 4.12 新建分类
 
-`POST /api/books/categories`
+`POST /books/categories`
 
 - **鉴权**:✅ 需要 `ADMIN` / `BOSS`(后端二次校验角色,普通用户 `403`)。
 - **请求体** `CategoryCreateRequest`:
@@ -712,10 +719,10 @@ Auth: ❌ 公开
 
 ### 4.13 搜索候选词(下拉建议)
 
-`GET /api/books/suggest?q=计算&limit=8`
+`GET /books/suggest?q=计算&limit=8`
 
 - **鉴权**:❌ **免登录**(商城搜索框未登录也要能用)。
-  同样挂在 `/api/books` 前缀下蹭白名单;字面量段 `suggest` 优先于 `{isbn}`。
+  同样挂在 `/books` 前缀下蹭白名单;字面量段 `suggest` 优先于 `{isbn}`。
 - **Query**:
   | 字段 | 类型 | 默认 | 说明 |
   |---|---|---|---|
@@ -750,13 +757,13 @@ Auth: ❌ 公开
 
 ---
 
-## 5. 订单管理 `/api/purchases`
+## 5. 订单管理 `/purchases`
 
 所有接口需要登录,订单按 `orderNumber`(Snowflake ID, Long)索引。
 
 ### 5.1 下单
 
-`POST /api/purchases`
+`POST /purchases`
 
 - **请求体** `PurchaseRequest`:
   ```json
@@ -800,7 +807,7 @@ Auth: ❌ 公开
 
 ### 5.2 订单详情
 
-`GET /api/purchases/{orderNumber}`
+`GET /purchases/{orderNumber}`
 
 - **路径**:`orderNumber` long
 - **权限**:仅订单所有者可看(Controller 校验)。
@@ -808,14 +815,14 @@ Auth: ❌ 公开
 
 ### 5.3 取消订单
 
-`DELETE /api/purchases/{orderNumber}`
+`DELETE /purchases/{orderNumber}`
 
 - **权限**:仅订单所有者。
 - **机制**:状态 → `CANCELLED`,Redis 释放库存预占。
 
 ### 5.4 支付订单
 
-`PATCH /api/purchases/{orderNumber}/pay?paymentMethod=ALIPAY`
+`PATCH /purchases/{orderNumber}/pay?paymentMethod=ALIPAY`
 
 - **Query**:
   | 字段 | 类型 | 默认 | 说明 |
@@ -872,9 +879,9 @@ Auth: ❌ 公开
 
 ---
 
-## 6. 反馈工单 `/api/feedbacks`
+## 6. 反馈工单 `/feedbacks`
 
-> 2026-09 新增。全部端点**都要求登录** —— `/api/feedbacks/**` 不在 JWT 白名单里,
+> 2026-09 新增。全部端点**都要求登录** —— `/feedbacks/**` 不在 JWT 白名单里,
 > 未登录会被过滤器直接挡下返回 401。
 >
 > 权限模型:普通用户只能看/回**自己提的**工单;ADMIN / BOSS 能看全部、
@@ -883,7 +890,7 @@ Auth: ❌ 公开
 ### 6.1 提交反馈
 
 ```
-POST /api/feedbacks/mine
+POST /feedbacks/mine
 Auth: 需登录
 ```
 
@@ -906,7 +913,7 @@ Auth: 需登录
 ### 6.2 我的反馈列表
 
 ```
-GET /api/feedbacks/mine?page=1&size=10
+GET /feedbacks/mine?page=1&size=10
 Auth: 需登录
 ```
 
@@ -926,7 +933,7 @@ Auth: 需登录
 ### 6.3 全部反馈列表(管理端)
 
 ```
-GET /api/feedbacks/all?status=0&category=BUG&page=1&size=10
+GET /feedbacks/all?status=0&category=BUG&page=1&size=10
 Auth: ADMIN / BOSS
 ```
 
@@ -936,7 +943,7 @@ Auth: ADMIN / BOSS
 ### 6.4 反馈详情
 
 ```
-GET /api/feedbacks/{id}
+GET /feedbacks/{id}
 Auth: 需登录(本人或 ADMIN/BOSS)
 ```
 
@@ -951,7 +958,7 @@ Auth: 需登录(本人或 ADMIN/BOSS)
 ### 6.5 追述 / 回复
 
 ```
-POST /api/feedbacks/{id}/reply
+POST /feedbacks/{id}/reply
 Auth: 需登录(本人或 ADMIN/BOSS)
 ```
 
@@ -968,7 +975,7 @@ Auth: 需登录(本人或 ADMIN/BOSS)
 ### 6.6 改状态 / 优先级
 
 ```
-PATCH /api/feedbacks/{id}/status
+PATCH /feedbacks/{id}/status
 Auth: ADMIN / BOSS
 ```
 
@@ -994,7 +1001,7 @@ Auth: ADMIN / BOSS
 ### 7.1 仪表盘统计
 
 ```
-GET /api/stats/dashboard?days=30
+GET /stats/dashboard?days=30
 Auth: ADMIN / BOSS
 ```
 
@@ -1016,7 +1023,7 @@ Auth: ADMIN / BOSS
 ### 7.2 查看生效中的 IP 封禁
 
 ```
-GET /api/security/ip-bans
+GET /security/ip-bans
 Auth: ADMIN / BOSS
 ```
 
@@ -1029,7 +1036,7 @@ Auth: ADMIN / BOSS
 ### 7.3 人工解封
 
 ```
-DELETE /api/security/ip-bans/{ip}
+DELETE /security/ip-bans/{ip}
 Auth: ADMIN / BOSS
 ```
 
@@ -1098,46 +1105,46 @@ Auth: ADMIN / BOSS
 
 | Method | URL | Auth | 说明 |
 |---|---|:---:|---|
-| POST | `/api/captcha/login` | ❌ | 获取登录验证码(返回 JSON `{image, expiresAt}`) |
-| POST | `/api/captcha/register` | ❌ | 获取注册验证码(2026-09 新增) |
-| POST | `/api/users/register` | ❌ | 注册(需 captcha + uuid) |
-| POST | `/api/users/login` | ❌ | 登录(需 captcha + uuid) |
-| POST | `/api/users/logout` | ✅ | 登出 |
-| POST | `/api/users/forgot-password` | ❌ | 申请密码重置(**永远返回成功**,防用户枚举) |
-| POST | `/api/users/reset-password` | ❌ | 凭令牌重置密码(令牌一次性,30 分钟有效) |
-| GET | `/api/users/list` | ✅ | 列表查询(分页+多条件) |
-| GET | `/api/users/{id}` | ✅ | 详情 |
-| PATCH | `/api/users/{id}` | ✅ | 更新 |
-| DELETE | `/api/users/{id}` | ✅ | 软删(需密码) |
-| PATCH | `/api/users/{id}/password` | ✅ | 改密 |
-| GET | `/api/users/{id}/purchases` | ✅ | 看订单 |
-| GET | `/api/books/list` | ❌ | 简单分页 |
-| POST | `/api/books/created` | ✅ | 新建 |
-| GET | `/api/books/{isbn}` | ❌ | 详情 |
-| PATCH | `/api/books/{isbn}` | ✅ | 修改 |
-| PATCH | `/api/books/{isbn}/stock` | ✅ | 调整库存(盘点) |
-| DELETE | `/api/books/deleted/isbn/{isbn}` | ✅ | 删除 |
-| GET | `/api/books` | ❌ | 多条件搜索 |
-| GET | `/api/books/search/publishedDate/by` | ❌ | 按出版日期粒度 |
-| GET | `/api/books/search/CreatedTime/by` | ❌ | 按创建时间粒度 |
-| GET | `/api/books/search/UpdatedTime/by` | ❌ | 按更新时间粒度 |
-| POST | `/api/purchases` | ✅ | 下单 |
-| GET | `/api/purchases` | ✅ | **全部订单分页(管理端,仅 ADMIN/BOSS)** |
-| GET | `/api/purchases/{orderNumber}` | ✅ | 订单详情 |
-| DELETE | `/api/purchases/{orderNumber}` | ✅ | 取消订单 |
-| PATCH | `/api/purchases/{orderNumber}/pay` | ✅ | 支付订单 |
-| GET | `/api/books/categories` | ❌ | 图书分类树(两级) |
-| POST | `/api/books/categories` | ✅ | 新建分类(仅 ADMIN/BOSS) |
-| GET | `/api/books/suggest` | ❌ | 搜索候选词(下拉建议) |
-| POST | `/api/feedbacks/mine` | ✅ | 提交反馈 |
-| GET | `/api/feedbacks/mine` | ✅ | 我的反馈列表 |
-| GET | `/api/feedbacks/all` | ✅ | 全部反馈(仅 ADMIN/BOSS) |
-| GET | `/api/feedbacks/{id}` | ✅ | 反馈详情(本人或管理员) |
-| POST | `/api/feedbacks/{id}/reply` | ✅ | 追述 / 回复 |
-| PATCH | `/api/feedbacks/{id}/status` | ✅ | 改状态/优先级(仅 ADMIN/BOSS) |
-| GET | `/api/stats/dashboard` | ✅ | 仪表盘统计(仅 ADMIN/BOSS) |
-| GET | `/api/security/ip-bans` | ✅ | 生效中的 IP 封禁列表(仅 ADMIN/BOSS) |
-| DELETE | `/api/security/ip-bans/{ip}` | ✅ | 人工解封(仅 ADMIN/BOSS) |
+| POST | `/captcha/login` | ❌ | 获取登录验证码(返回 JSON `{image, expiresAt}`) |
+| POST | `/captcha/register` | ❌ | 获取注册验证码(2026-09 新增) |
+| POST | `/users/register` | ❌ | 注册(需 captcha + uuid) |
+| POST | `/users/login` | ❌ | 登录(需 captcha + uuid) |
+| POST | `/users/logout` | ✅ | 登出 |
+| POST | `/users/forgot-password` | ❌ | 申请密码重置(**永远返回成功**,防用户枚举) |
+| POST | `/users/reset-password` | ❌ | 凭令牌重置密码(令牌一次性,30 分钟有效) |
+| GET | `/users/list` | ✅ | 列表查询(分页+多条件) |
+| GET | `/users/{id}` | ✅ | 详情 |
+| PATCH | `/users/{id}` | ✅ | 更新 |
+| DELETE | `/users/{id}` | ✅ | 软删(需密码) |
+| PATCH | `/users/{id}/password` | ✅ | 改密 |
+| GET | `/users/{id}/purchases` | ✅ | 看订单 |
+| GET | `/books/list` | ❌ | 简单分页 |
+| POST | `/books/created` | ✅ | 新建 |
+| GET | `/books/{isbn}` | ❌ | 详情 |
+| PATCH | `/books/{isbn}` | ✅ | 修改 |
+| PATCH | `/books/{isbn}/stock` | ✅ | 调整库存(盘点) |
+| DELETE | `/books/deleted/isbn/{isbn}` | ✅ | 删除 |
+| GET | `/books` | ❌ | 多条件搜索 |
+| GET | `/books/search/publishedDate/by` | ❌ | 按出版日期粒度 |
+| GET | `/books/search/CreatedTime/by` | ❌ | 按创建时间粒度 |
+| GET | `/books/search/UpdatedTime/by` | ❌ | 按更新时间粒度 |
+| POST | `/purchases` | ✅ | 下单 |
+| GET | `/purchases` | ✅ | **全部订单分页(管理端,仅 ADMIN/BOSS)** |
+| GET | `/purchases/{orderNumber}` | ✅ | 订单详情 |
+| DELETE | `/purchases/{orderNumber}` | ✅ | 取消订单 |
+| PATCH | `/purchases/{orderNumber}/pay` | ✅ | 支付订单 |
+| GET | `/books/categories` | ❌ | 图书分类树(两级) |
+| POST | `/books/categories` | ✅ | 新建分类(仅 ADMIN/BOSS) |
+| GET | `/books/suggest` | ❌ | 搜索候选词(下拉建议) |
+| POST | `/feedbacks/mine` | ✅ | 提交反馈 |
+| GET | `/feedbacks/mine` | ✅ | 我的反馈列表 |
+| GET | `/feedbacks/all` | ✅ | 全部反馈(仅 ADMIN/BOSS) |
+| GET | `/feedbacks/{id}` | ✅ | 反馈详情(本人或管理员) |
+| POST | `/feedbacks/{id}/reply` | ✅ | 追述 / 回复 |
+| PATCH | `/feedbacks/{id}/status` | ✅ | 改状态/优先级(仅 ADMIN/BOSS) |
+| GET | `/stats/dashboard` | ✅ | 仪表盘统计(仅 ADMIN/BOSS) |
+| GET | `/security/ip-bans` | ✅ | 生效中的 IP 封禁列表(仅 ADMIN/BOSS) |
+| DELETE | `/security/ip-bans/{ip}` | ✅ | 人工解封(仅 ADMIN/BOSS) |
 
 > ❌ = 白名单(无需 token) / ✅ = 需要 `Authorization: Bearer <token>`
 >
@@ -1151,14 +1158,14 @@ Auth: ADMIN / BOSS
 ### 10.1 登录完整流程
 
 ```
-┌─────────┐  POST /api/captcha/login?uuid=X   ┌────────┐
+┌─────────┐  POST /captcha/login?uuid=X   ┌────────┐
 │ Frontend│ ─────────────────────────────────→ │Backend │
 │         │ ←─ {image: dataURI, expiresAt} ── │        │
 │         │                                     │ 写Redis│
 │         │                                     │  TTL=3m│
 └─────────┘                                     └────────┘
        ↓ (用户输入 username + password + captcha)
-┌─────────┐  POST /api/users/login             ┌────────┐
+┌─────────┐  POST /users/login             ┌────────┐
 │ Frontend│ ─────────────────────────────────→ │Backend │
 │         │                                     │ 验证captcha│
 │         │                                     │ +username绑定│
@@ -1167,7 +1174,7 @@ Auth: ADMIN / BOSS
 │         │ ←───── { token, username, role } ── │ 写lastLogin  │
 └─────────┘                                     └────────┘
        ↓ (后续请求带 Authorization)
-┌─────────┐  GET /api/books/list               ┌────────┐
+┌─────────┐  GET /books/list               ┌────────┐
 │ Frontend│  Authorization: Bearer <token>     │Backend │
 │         │ ─────────────────────────────────→ │  JwtAuthFilter│
 │         │                                     │  解析+校验jti黑名单 │
@@ -1212,7 +1219,7 @@ Auth: ADMIN / BOSS
 | `tmlibrary_order_compensate_failed_total` | 下单失败后回滚预占也失败 | **任何非零值都应告警**,需人工对账 |
 | `tmlibrary_order_expire_db_fallback_total` | DB 兜底扫描发现"Redis 索引里没有的过期订单" | 非零即说明 Redis 超时索引已不可靠(淘汰/重启丢失),关单正退化为依赖 DB 兜底 |
 
-> ⚠️ **安全提示**:`JwtAuthFilter` 只注册在 `/api/*` 上,`/actuator/**` **不走 JWT 鉴权**。
+> ⚠️ **安全提示**:`JwtAuthFilter` 只注册在 `/*` 上,`/actuator/**` **不走 JWT 鉴权**。
 > 当前仅暴露 `health` 与 `metrics`;生产环境建议改用独立 management 端口,
 > 或在网关/反向代理层限制访问来源。
 

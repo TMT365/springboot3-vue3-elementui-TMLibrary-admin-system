@@ -27,7 +27,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 反馈工单 Controller。
  *
- * <p>所有路径都在 {@code /api/feedbacks/**} 下 —— JwtAuthFilter 没在白名单里,
+ * <p>所有路径都在 {@code /feedbacks/**} 下 —— JwtAuthFilter 没在白名单里,
  * 所以全部要求登录(这正是题目要求)。管理员权限(改状态、查所有)在校验里做,
  * 不在过滤器里做 —— 跟 {@code StatsController} 一个套路。</p>
  */

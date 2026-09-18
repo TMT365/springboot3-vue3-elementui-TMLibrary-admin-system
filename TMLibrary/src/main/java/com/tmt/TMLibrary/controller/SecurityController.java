@@ -25,7 +25,7 @@ import java.util.List;
  * <p>没有这两个端点的话,误封只能手写 SQL + 手动清 Redis,很容易出错
  * (只清 DB 不清 Redis 的话,封禁会一直生效到 TTL 结束)。</p>
  *
- * <p>鉴权:{@code /api/security/**} 不在白名单 → 过滤器层要求 token;
+ * <p>鉴权:{@code /security/**} 不在白名单 → 过滤器层要求 token;
  * 这里再校验仅 ADMIN / BOSS。</p>
  */
 @Slf4j
@@ -36,14 +36,14 @@ public class SecurityController {
 
     private final IpBanService ipBanService;
 
-    /** 生效中的封禁列表 —— GET /api/security/ip-bans */
+    /** 生效中的封禁列表 —— GET /security/ip-bans */
     @GetMapping("/ip-bans")
     public Result<List<IpBan>> listBans(@CurrentUser UserView me) {
         requireAdmin(me);
         return Result.success(ipBanService.listActiveBans());
     }
 
-    /** 人工解封 —— DELETE /api/security/ip-bans/{ip}(同时清 DB 记录与 Redis 标记) */
+    /** 人工解封 —— DELETE /security/ip-bans/{ip}(同时清 DB 记录与 Redis 标记) */
     @DeleteMapping("/ip-bans/{ip}")
     public Result<Void> unban(@PathVariable("ip") String ip, @CurrentUser UserView me) {
         requireAdmin(me);

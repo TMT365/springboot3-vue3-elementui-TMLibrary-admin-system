@@ -42,7 +42,7 @@ public class CaptchaController {
     public Result<CaptchaResponse> login(
             @RequestParam(name = "uuid", required = true) String uuid,
             @RequestBody(required = true) @Valid GetCaptchaRequest request) {
-        log.info("前端请求 /api/captcha/login, uuid={}", uuid);
+        log.info("前端请求 /captcha/login, uuid={}", uuid);
         return Result.success(captchaService.generateCaptcha(CaptchaType.LOGIN, request, uuid));
     }
 
@@ -54,7 +54,7 @@ public class CaptchaController {
     public Result<CaptchaResponse> register(
             @RequestParam(name = "uuid", required = true) String uuid,
             @RequestBody(required = true) @Valid GetCaptchaRequest request) {
-        log.info("前端请求 /api/captcha/register, uuid={}", uuid);
+        log.info("前端请求 /captcha/register, uuid={}", uuid);
         return Result.success(captchaService.generateCaptcha(CaptchaType.REGISTER, request, uuid));
     }
 }

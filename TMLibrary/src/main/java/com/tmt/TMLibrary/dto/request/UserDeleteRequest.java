@@ -4,7 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import lombok.Data;
 
 /**
- * DELETE /api/users/{id} 的 body,只放密码。
+ * DELETE /users/{id} 的 body,只放密码。
  * id 走 URL(@PathVariable),不放 body。
  * 继承 UserCommonRequest 没意义(password 不是公共字段)。
  */

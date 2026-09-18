@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
- * 新建分类的入参 —— POST /api/books/categories
+ * 新建分类的入参 —— POST /books/categories
  *
  * <p>后台「新增图书」里那个可以现敲的小类输入框,敲完先打这个接口把分类建出来,
  * 拿到 id 再提交图书。</p>

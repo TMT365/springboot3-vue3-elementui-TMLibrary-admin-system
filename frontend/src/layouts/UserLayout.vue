@@ -42,8 +42,10 @@ const userNavItems = [
   { index: '/user/cart', title: '购物车', icon: 'ShoppingCart' },
   { index: '/user/profile', title: '个人信息', icon: 'UserFilled' },
   { index: '/user/my-orders', title: '我的订单', icon: 'List' },
-  // 反馈不在 /user 下(管理员也要看同一个详情页),但菜单照样能指过去
-  { index: '/feedback/mine', title: '我的反馈', icon: 'ChatDotRound' },
+  // 「我的反馈」2026-09 从顶层 /feedback/mine 挪进个人中心 ——
+  // 看自己的反馈是个人事务,跟购物车 / 我的订单同类。
+  // (反馈**详情页**仍在顶层 /feedback/:id,管理员也要看同一个页面)
+  { index: '/user/feedback', title: '我的反馈', icon: 'ChatDotRound' },
   { index: '/user/settings', title: '设置', icon: 'Setting' },
 ]
 
@@ -248,7 +250,14 @@ watch(isMobileMenuOpen, (open) => {
   bottom: 16px;
   width: var(--sidebar-width);
   z-index: 30;
-  background: rgba(255, 255, 255, 0.6);
+  /* 毛玻璃面板的不透明度有个下限:0.6 的白压在内容上是"半透明",菜单文字
+     和背后的图书列表会互相干扰,手机上尤其明显(侧栏一滑出来就糊成一片)。
+     backdrop-filter 的模糊只能"糊化"背景,不能替代不透明度 ——
+     而且它在部分环境(禁用 GPU / 不支持该属性的浏览器)直接不生效,
+     那时 0.6 就是彻底穿帮。
+     0.82 是折中:背后的东西基本看不清了(文字可读性有保障),
+     又留了一点点透光和模糊感,玻璃质感还在。 */
+  background: rgba(255, 255, 255, 0.82);
   /* 亮色下白描边/白内高光都压在白底上,等于没有 —— 改成淡墨描边 + 双层投影
      来定义轮廓;暗色由下方 [data-theme='dark'] 覆盖成亮描边(那边天然受光) */
   border: 1px solid rgba(17, 25, 40, 0.07);
@@ -365,7 +374,8 @@ watch(isMobileMenuOpen, (open) => {
   margin: 16px 16px 0 calc(var(--sidebar-width) + 32px);
   padding: 0 16px;
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.54);
+  /* 同 .sidebar:顶栏也是压在内容上的毛玻璃,0.54 太透(见上方注释) */
+  background: rgba(255, 255, 255, 0.82);
   /* 同 .sidebar:亮色用淡墨描边 + 双层投影,白描边在白底上不可见 */
   border: 1px solid rgba(17, 25, 40, 0.07);
   backdrop-filter: blur(12px) saturate(130%);
@@ -607,9 +617,12 @@ watch(isMobileMenuOpen, (open) => {
   }
 }
 
+/* 暗色同理:.56 的深灰压在深色页面上,背后内容照样透出来。
+   提到 .82 和亮色对称 —— 玻璃感交给 backdrop-filter 的模糊,
+   不透明度负责保证文字可读。 */
 :root[data-theme='dark'] .sidebar,
 :root[data-theme='dark'] .topbar {
-  background: rgba(30, 30, 30, 0.56);
+  background: rgba(30, 30, 30, 0.82);
   border-color: rgba(255, 255, 255, 0.08);
 }
 

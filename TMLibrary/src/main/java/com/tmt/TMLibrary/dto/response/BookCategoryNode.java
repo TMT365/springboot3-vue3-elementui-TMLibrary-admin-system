@@ -7,7 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- * 分类树节点 —— GET /api/books/categories 的响应元素(商城侧栏直接用)。
+ * 分类树节点 —— GET /books/categories 的响应元素(商城侧栏直接用)。
  *
  * <p>{@code bookCount} 对大类是<b>累加值</b>:自身直挂的书 + 所有子类之和,
  * 所以商城侧栏显示大类时拿到的就是"这一类一共有几本"。</p>

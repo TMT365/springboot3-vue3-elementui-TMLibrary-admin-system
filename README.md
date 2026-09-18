@@ -5,7 +5,7 @@
 不是脚手架,也不是 CRUD 演示:库存扣减走 Redis Lua 原子预占,超时关单有 DB 兜底,中文搜索接了 Elasticsearch,日志带 traceId 贯穿,反馈系统有按角色分层的缓存。踩过的坑都记在 [`TMLibrary/issue.md`](TMLibrary/issue.md) 和站内 `/journey` 页面上。
 
 ```
-后端  Spring Boot 4.1 · Java 25 · MyBatis · MySQL 8 · Redis 7 · Elasticsearch 9.5(可选)
+后端  Spring Boot 4.1 · Java 25 · MyBatis · MySQL 8 · Redis 7+(8.x 亦可) · Elasticsearch 9.5(可选)
 前端  Vue 3.5 · TypeScript · Vite 8 · Element Plus · Pinia
 ```
 
@@ -19,6 +19,7 @@
 - [目录结构](#目录结构)
 - [这个项目做了什么](#这个项目做了什么)
 - [配置项](#配置项)
+- [生产部署](#生产部署)
 - [文档索引](#文档索引)
 - [已知问题](#已知问题)
 
@@ -86,7 +87,11 @@ docker compose --env-file .env.docker down -v
 
 ## 快速开始(本地开发)
 
-需要 JDK 25、Node 20+、MySQL 8、Redis 7。Elasticsearch 可选。
+需要 JDK 25、Node 20+、MySQL 8、Redis 7+。Elasticsearch 可选。
+
+> Redis 只用到 `GET/SET/DEL/TTL/SETNX/HSETNX/SCAN/ZSET` 这批基础命令 + Lua 脚本 + ACL 命名用户,
+> 7.x 和 8.x 行为一致。Docker 镜像固定 `redis:7-alpine`,本机开发用 8.x 也能跑。
+> MySQL 侧同理:建表脚本要求 8.0+,Docker 镜像固定 `mysql:8.4`。
 
 ### 后端
 
@@ -280,6 +285,18 @@ Redis 缓存  →  Elasticsearch  →  MySQL LIKE
 
 ---
 
+## 生产部署
+
+上线前请读 **[`DEPLOYMENT.md`](DEPLOYMENT.md)** —— 版本选型、支持周期、许可证决策都在那里。
+三个最需要先看的点:
+
+- **MySQL 8.0 于 2026-04 EOL**,本项目锁定的 8.4 LTS 支持到 2032
+- **Redis 从 7.4 起换了许可证**,Redis 8 是 AGPLv3/SSPL/RSALv2 三选一,很多公司直接禁 AGPL。
+  本项目只用基础命令 + Lua,可以无痛换成 BSD-3 的 **Valkey**(AWS 新集群已默认)
+- **上线前必须改的配置**清单(密码、JWT_SECRET、CORS_ORIGINS、FRONTEND_BASE_URL 等)
+
+---
+
 ## 文档索引
 
 | 文件 | 内容 |
@@ -288,6 +305,7 @@ Redis 缓存  →  Elasticsearch  →  MySQL LIKE
 | [`TMLibrary/STRUCTURE.md`](TMLibrary/STRUCTURE.md) | 后端逐文件职责清单 |
 | [`frontend/README.md`](frontend/README.md) | 前端逐文件职责清单 + 架构约定 |
 | [`TMLibrary/issue.md`](TMLibrary/issue.md) | 遗留问题 + 历次修复记录 |
+| [`DEPLOYMENT.md`](DEPLOYMENT.md) | 生产部署与版本选型(支持周期、许可证、资源规划) |
 | [`TMLibrary/REFERENCE.md`](TMLibrary/REFERENCE.md) | Book CRUD 参考实现 |
 | [`TMLibrary/scripts/logstash/README.md`](TMLibrary/scripts/logstash/README.md) | MySQL → ES 增量同步 |
 

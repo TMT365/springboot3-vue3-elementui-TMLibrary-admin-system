@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.util.Set;
 
 /**
- * IP 风控过滤器 —— 每个 {@code /api/*} 请求都过一遍。
+ * IP 风控过滤器 —— 每个 {@code /*} 请求都过一遍。
  *
  * <h2>顺序</h2>
  * 注册在 {@link com.tmt.TMLibrary.security.jwt.JwtAuthFilter} 之前(order 5 &lt; 10):
@@ -38,6 +38,18 @@ public class IpRiskControlFilter extends OncePerRequestFilter {
     private static final String[] IP_HEADERS = {
             "X-Forwarded-For", "X-Real-IP", "Proxy-Client-IP", "WL-Proxy-Client-IP"
     };
+
+    /**
+     * actuator 前缀 —— 健康检查/指标端点不参与风控。
+     *
+     * <p>过滤器注册 pattern 从 {@code /api/*} 放宽到 {@code /*} 后,容器的
+     * healthcheck 也会进这条链;而生产配置 {@code trust-private-ips=false}
+     * (见 application-prod.yml),回环地址不再被 {@link #isTrustedAddress} 豁免。
+     * 于是只要 127.0.0.1 因真实流量触发封禁,健康检查会跟着吃 429 →
+     * 容器被判 unhealthy → 重启 → 而封禁还在 Redis 里 → 抖动满整个封禁时长。
+     * 改动前 actuator 根本不在链上,这里是为了保持原有行为。</p>
+     */
+    private static final String ACTUATOR_PREFIX = "/actuator";
 
     private final IpBanService ipBanService;
     private final AuthErrorWriter errorWriter;
@@ -73,6 +85,12 @@ public class IpRiskControlFilter extends OncePerRequestFilter {
                                     @NonNull FilterChain chain) throws ServletException, IOException {
         // OPTIONS 预检不算请求量(CORS 由 WebMvcConfig 处理)
         if ("OPTIONS".equalsIgnoreCase(req.getMethod())) {
+            chain.doFilter(req, resp);
+            return;
+        }
+
+        // actuator 不计数(理由见 ACTUATOR_PREFIX 的注释)
+        if (req.getRequestURI().startsWith(ACTUATOR_PREFIX)) {
             chain.doFilter(req, resp);
             return;
         }

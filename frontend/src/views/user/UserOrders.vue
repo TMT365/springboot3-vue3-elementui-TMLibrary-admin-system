@@ -11,7 +11,9 @@
 import { ref, onMounted, computed } from 'vue'
 import { userApi } from '@/api/user'
 import { bookApi } from '@/api/book'
+import { purchaseApi } from '@/api/purchase'
 import { useUserStore } from '@/stores/user'
+import PaymentDialog from '@/components/PaymentDialog.vue'
 import type { BookDto, PurchaseResponse } from '@/types/api'
 
 const userStore = useUserStore()
@@ -19,6 +21,50 @@ const orders = ref<PurchaseResponse[]>([])
 const bookMap = ref<Record<number, BookDto>>({})
 const loading = ref(true)
 const error = ref<string | null>(null)
+
+/* ------------------- 支付 ------------------- */
+
+/** 支付方式 code → 中文名(展示用;后端存的是枚举 code) */
+const PAY_LABEL: Record<string, string> = {
+  WECHAT: '微信支付',
+  ALIPAY: '支付宝',
+  QQ: 'QQ 钱包',
+}
+
+/** 已支付订单显示支付方式;老订单(加这列之前付的)没有记录,显示 - */
+function payMethodLabel(method: string | null): string {
+  if (!method) return '-'
+  return PAY_LABEL[method] ?? method
+}
+
+const payDialogVisible = ref(false)
+/** 正在支付的订单;null = 弹窗没开 */
+const payingOrder = ref<PurchaseResponse | null>(null)
+const paying = ref(false)
+
+function openPay(order: PurchaseResponse): void {
+  payingOrder.value = order
+  payDialogVisible.value = true
+}
+
+async function onPayConfirm(method: string): Promise<void> {
+  const order = payingOrder.value
+  if (!order) return
+  paying.value = true
+  try {
+    await purchaseApi.pay(order.orderNumber, method)
+    ElMessage.success('支付成功')
+    payDialogVisible.value = false
+    payingOrder.value = null
+    // 重新拉一次而不是本地改状态 —— 支付会连带扣 DB 库存、翻 Redis 预占,
+    // 本地手改容易和真实状态漂移(比如库存被别人抢空导致订单被自动取消)
+    await fetchOrders()
+  } catch {
+    // request.ts 已经 toast 过具体原因(库存不足会自动关单、状态被别人抢先等),这里不重复弹
+  } finally {
+    paying.value = false
+  }
+}
 
 // 四个状态都要有 —— 漏掉 TIMEOUT 的话超时关单的订单不显示状态标签,
 // 时间轴上又只有一个"尚未支付"的灰节点,看起来像数据缺了
@@ -145,6 +191,9 @@ onMounted(fetchOrders)
             <span v-if="order.paidTime" class="tl-value">
               <span class="tl-date">{{ splitDateTime(order.paidTime)?.date }}</span>
               <span class="tl-time">{{ splitDateTime(order.paidTime)?.time }}</span>
+              <!-- 用了什么方式付的。老订单(加这列之前付的)没有记录 → 「-」,
+                   不是渲染失败,是当时确实没存 -->
+              <span class="tl-method">{{ payMethodLabel(order.paymentMethod) }}</span>
             </span>
             <span v-else class="tl-value is-pending">尚未支付</span>
           </div>
@@ -169,9 +218,27 @@ onMounted(fetchOrders)
         <footer class="order-foot">
           <span class="total-label">订单合计</span>
           <span class="total-amount">{{ formatPrice(order.totalAmount) }}</span>
+          <!-- 只有待支付才给「去支付」;已支付/已取消/超时都不该出现这个按钮 -->
+          <el-button
+            v-if="order.status === 'PENDING'"
+            type="primary"
+            class="pay-btn"
+            @click="openPay(order)"
+          >
+            去支付
+          </el-button>
         </footer>
       </article>
     </div>
+
+    <!-- 支付方式选择弹窗 —— 挂在列表外,避免每个订单卡片都渲染一份 -->
+    <PaymentDialog
+      v-model="payDialogVisible"
+      :order-number="payingOrder?.orderNumber ?? ''"
+      :amount="payingOrder ? formatPrice(payingOrder.totalAmount) : ''"
+      :loading="paying"
+      @confirm="onPayConfirm"
+    />
   </div>
 </template>
 
@@ -504,6 +571,37 @@ onMounted(fetchOrders)
   gap: 12px;
   padding-top: 12px;
   border-top: 1px solid var(--color-border);
+}
+
+/* 支付方式小标签 —— 跟在支付时间后面,弱化处理(它是补充信息,不是主体) */
+.tl-method {
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--color-bg-alt);
+  box-shadow: 0 0 0 1px var(--color-border);
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+/* 去支付按钮:金额右边的主行动点,和卡片里其它次要元素拉开层级 */
+.pay-btn {
+  border: none;
+  border-radius: 16px;
+  font-weight: 600;
+  background: linear-gradient(
+    135deg,
+    var(--color-accent) 0%,
+    var(--color-accent-hover) 100%
+  );
+  box-shadow: 0 8px 18px -8px rgba(76, 175, 80, 0.65);
+  transition:
+    transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 180ms ease;
+}
+
+.pay-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 12px 22px -8px rgba(76, 175, 80, 0.7);
 }
 
 .total-label {

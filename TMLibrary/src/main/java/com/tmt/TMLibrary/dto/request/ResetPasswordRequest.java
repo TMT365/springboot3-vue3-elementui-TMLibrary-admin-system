@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
- * 凭令牌重置密码 —— POST /api/users/reset-password
+ * 凭令牌重置密码 —— POST /users/reset-password
  */
 @Data
 public class ResetPasswordRequest {

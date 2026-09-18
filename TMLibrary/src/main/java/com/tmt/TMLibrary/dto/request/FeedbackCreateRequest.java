@@ -6,7 +6,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
- * 提交反馈 —— POST /api/feedbacks/mine。
+ * 提交反馈 —— POST /feedbacks/mine。
  *
  * <p>校验与 SQL 的 {@code category VARCHAR(32) / title VARCHAR(120) / body TEXT} 对齐 —— 前后端
  * 都把字段长度卡住,避免垃圾数据(尤其 title,一条反馈标题写一整页没意义)。</p>

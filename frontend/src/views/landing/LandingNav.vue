@@ -588,8 +588,16 @@ onBeforeUnmount(() => {
     align-items: stretch;
     gap: 0;
     padding: 12px;
-    background: var(--color-bg, #faf8f3);
+    /* 展开的菜单是一层"浮"在页面上的面板,得让人看出它是浮的。
+       原来用 --color-bg —— 而页面底色也是 --color-bg,两者**一模一样**,
+       加上没有投影、没有圆角,展开后就是"一块和背景同色的区域 + 一条分割线",
+       完全没有层次(浅色下尤其明显:米白压米白)。
+       改成 --color-card(浅色 #fff / 暗色 #1f1f1f)比页面底色亮一档,
+       再补上圆角和向下的投影,和桌面端 .nav-dropdown 的处理保持一致。 */
+    background: var(--color-card, #fff);
     border-bottom: 1px solid var(--color-border, #e8e5dc);
+    border-radius: 0 0 16px 16px;
+    box-shadow: 0 18px 32px -14px var(--color-shadow-strong, rgba(17, 25, 40, 0.18));
     transform: translateY(-8px);
     opacity: 0;
     pointer-events: none;

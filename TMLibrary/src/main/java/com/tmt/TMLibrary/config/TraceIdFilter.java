@@ -23,7 +23,7 @@ import java.util.regex.Pattern;
  * <p>没有 traceId 的日志只能按时间戳猜:"09:38:10 有个 500" —— 但同一秒可能有几十个请求,
  * 你没法知道哪几行属于同一次调用。有了它,一行 {@code grep <traceId>} 就能还原完整链路:</p>
  * <pre>
- * 09:38:10.317 INFO  [a1b2c3d4e5f6] [http-nio-8080-exec-1] c.t.T.c.BookController : 前端请求 /api/books
+ * 09:38:10.317 INFO  [a1b2c3d4e5f6] [http-nio-8080-exec-1] c.t.T.c.BookController : 前端请求 /books
  * 09:38:10.318 INFO  [a1b2c3d4e5f6] [http-nio-8080-exec-1] c.t.T.s.i.BookServiceImpl : 命中缓存
  * 09:38:10.401 ERROR [a1b2c3d4e5f6] [http-nio-8080-exec-1] c.t.T.e.GlobalExceptionHandler : 系统异常
  * </pre>

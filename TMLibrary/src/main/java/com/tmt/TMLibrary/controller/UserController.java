@@ -51,17 +51,17 @@ import com.tmt.TMLibrary.dto.request.LoginRequest;
  *        端点:
  *
  *        <pre>
- *   POST   /api/users/register                  — 注册
- *   POST   /api/users/login                     — 登录
- *   POST   /api/users/logout                    — 登出
- *   POST   /api/users/forgot-password           — 申请密码重置(公开,永远返回成功)
- *   POST   /api/users/reset-password            — 凭令牌重置密码(公开)
- *   GET    /api/users/list                      — 列表查询(ADMIN/BOSS)
- *   GET    /api/users/{id}                      — 详情
- *   PATCH  /api/users/{id}                      — 更新用户信息
- *   DELETE /api/users/{id}                      — 软删(body: password)
- *   PATCH  /api/users/{id}/password             — 改密(只能改自己)
- *   GET    /api/users/{id}/purchases            — 看订单(自己 or BOSS)
+ *   POST   /users/register                  — 注册
+ *   POST   /users/login                     — 登录
+ *   POST   /users/logout                    — 登出
+ *   POST   /users/forgot-password           — 申请密码重置(公开,永远返回成功)
+ *   POST   /users/reset-password            — 凭令牌重置密码(公开)
+ *   GET    /users/list                      — 列表查询(ADMIN/BOSS)
+ *   GET    /users/{id}                      — 详情
+ *   PATCH  /users/{id}                      — 更新用户信息
+ *   DELETE /users/{id}                      — 软删(body: password)
+ *   PATCH  /users/{id}/password             — 改密(只能改自己)
+ *   GET    /users/{id}/purchases            — 看订单(自己 or BOSS)
  *        </pre>
  *
  *        <p>
@@ -79,10 +79,10 @@ public class UserController {
     private final PurchaseService purchaseService;
     private final PasswordResetService passwordResetService;
 
-    /** 注册 — POST /api/users */
+    /** 注册 — POST /users */
     @PostMapping("/register")
     public Result<Integer> create(@Valid @RequestBody UserRegisterRequest req) {
-        log.info("前端请求/api/users/register, 参数 username={}, email={}, phoneNumber={}, password=***",
+        log.info("前端请求/users/register, 参数 username={}, email={}, phoneNumber={}, password=***",
                 req.getUsername(), req.getEmail(), req.getPhoneNumber());
         int id = userManagementService.createUser(req);
         return Result.success(id);
@@ -96,7 +96,7 @@ public class UserController {
     // ============================================================
 
     /**
-     * 申请密码重置 — POST /api/users/forgot-password
+     * 申请密码重置 — POST /users/forgot-password
      *
      * <p><b>永远返回成功</b>,不管邮箱是否注册过。这是防用户枚举的关键:
      * 一旦"该邮箱未注册"和"已发送"能被区分开,这个接口就成了批量探测
@@ -106,13 +106,13 @@ public class UserController {
     @PostMapping("/forgot-password")
     public Result<Void> forgotPassword(@Valid @RequestBody ForgotPasswordRequest req) {
         // 邮箱是个人信息,日志里只记长度不记内容
-        log.info("前端请求/api/users/forgot-password, email 长度={}", req.getEmail().length());
+        log.info("前端请求/users/forgot-password, email 长度={}", req.getEmail().length());
         passwordResetService.requestReset(req.getEmail());
         return Result.success();
     }
 
     /**
-     * 凭令牌重置密码 — POST /api/users/reset-password
+     * 凭令牌重置密码 — POST /users/reset-password
      *
      * <p>这个**会返回失败**:令牌无效/过期/用过,或者新密码与原密码相同,
      * 都会返回 400 并带明确原因。用户必须知道改没改成,
@@ -121,47 +121,47 @@ public class UserController {
     @PostMapping("/reset-password")
     public Result<Void> resetPassword(@Valid @RequestBody ResetPasswordRequest req) {
         // 令牌是凭据,不能进日志
-        log.info("前端请求/api/users/reset-password, token 长度={}", req.getToken().length());
+        log.info("前端请求/users/reset-password, token 长度={}", req.getToken().length());
         passwordResetService.resetPassword(req.getToken(), req.getNewPassword());
         return Result.success();
     }
 
-    /** 登录 - POST /api/users/login */
+    /** 登录 - POST /users/login */
     @PostMapping("/login")
     public Result<LoginResponse> login(@Valid @RequestBody LoginRequest req,
                                       HttpServletRequest request) {
         // 客户端 IP 由服务端解析并落库(前端传的不信任)——此前该字段从未被赋值,
         // 导致 last_login_ip 恒为 NULL、"按登录 IP 筛选"永远查不到数据
         req.setIpAddress(IpUtil.resolveClientIp(request));
-        log.info("前端请求/api/users/login, 参数={}", req);
+        log.info("前端请求/users/login, 参数={}", req);
         LoginResponse response = authService.login(req);
         return Result.success(response);
     }
 
-    /** 登出 - POST /api/users/logout
+    /** 登出 - POST /users/logout
      * 返回 LogoutResponse,前端据 loggedOut=true 跳转到 /login(已登出) */
     @PostMapping("/logout")
     public Result<LogoutResponse> logout(HttpServletRequest request) {
-        log.info("前端发送/api/users/logout");
+        log.info("前端发送/users/logout");
         return Result.success(authService.logout(request));
     }
 
-    /** 列表查询 — GET /api/users/list?username=&amp;role=&amp;page=1&amp;size=10 */
+    /** 列表查询 — GET /users/list?username=&amp;role=&amp;page=1&amp;size=10 */
     @GetMapping("/list")
     public Result<PageResult<UserVo>> list(@ModelAttribute @Valid UserSearchRequest query,
             @CurrentUser UserView me) {
         requireLogin(me);
-        log.info("前端请求/api/users/list, 参数={}", query);
+        log.info("前端请求/users/list, 参数={}", query);
         return Result.success(userManagementService.selectUsersByCriteria(query, me.getRole()));
     }
 
-    /** 详情 — GET /api/users/{id}
+    /** 详情 — GET /users/{id}
      * 仅自己 / ADMIN / BOSS 可看 */
     @GetMapping("/{id}")
     public Result<UserVo> getById(@PathVariable(value = "id") int id,
             @CurrentUser UserView me) {
         requireLogin(me);
-        log.info("前端请求/api/users/{}", id);
+        log.info("前端请求/users/{}", id);
 
         UserVo target = userManagementService.getUserById(id);
 
@@ -179,49 +179,49 @@ public class UserController {
         throw new BusinessException(ResultCode.FORBIDDEN, "无权查看该用户详情");
     }
 
-    /** 更新 — PATCH /api/users/{id} */
+    /** 更新 — PATCH /users/{id} */
     @PatchMapping("/{id}")
     public Result<Void> update(@PathVariable(value = "id") int id,
             @Valid @RequestBody UserUpdatedRequest req,
             @CurrentUser UserView me) {
         requireLogin(me);
-        log.info("前端请求/api/users/{}, 参数={}", id, req);
+        log.info("前端请求/users/{}, 参数={}", id, req);
         req.setId(id); // URL id 覆盖 body id(防止前端串改)
         userManagementService.updateUser(req, me.getRole(), me.getId());
         return Result.success();
     }
 
-    /** 软删(需密码确认) — DELETE /api/users/{id} */
+    /** 软删(需密码确认) — DELETE /users/{id} */
     @DeleteMapping("/{id}")
     public Result<Void> delete(@PathVariable int id,
             @Valid @RequestBody UserDeleteRequest req,
             @CurrentUser UserView me) {
         requireLogin(me);
-        log.info("前端请求/api/users/delete/{}, password=***", id);
+        log.info("前端请求/users/delete/{}, password=***", id);
         userManagementService.deleteUser(id, req.getPassword(), me.getRole(), me.getId());
         return Result.success();
     }
 
-    /** 改密 — PATCH /api/users/{id}/password */
+    /** 改密 — PATCH /users/{id}/password */
     @PatchMapping("/{id}/password")
     public Result<Void> changePassword(@PathVariable int id,
             @Valid @RequestBody UserPasswordRequest req,
             @CurrentUser UserView me) {
         requireLogin(me);
-        log.info("前端请求/api/users/{}/password, password=***", id);
+        log.info("前端请求/users/{}/password, password=***", id);
         userManagementService.changePassword(id, req.getOldPassword(), req.getNewPassword(), me.getId());
         return Result.success();
     }
 
     /**
-     * 用户的订单列表 — GET /api/users/{id}/purchases
+     * 用户的订单列表 — GET /users/{id}/purchases
      * 路径 {id} 是被查看的用户 ID。看自己的订单,或 BOSS 看任意人的。
      */
     @GetMapping("/{id}/purchases")
     public Result<List<PurchaseResponse>> listPurchases(@PathVariable int id,
             @CurrentUser UserView me) {
         requireLogin(me);
-        log.info("前端请求/api/users/{}/purchases", id);
+        log.info("前端请求/users/{}/purchases", id);
         if (id != me.getId() && !me.getRole().equals(UserRole.BOSS.getCode())) {
             throw new BusinessException(ResultCode.FORBIDDEN, "Not authorized to view other user's orders");
         }

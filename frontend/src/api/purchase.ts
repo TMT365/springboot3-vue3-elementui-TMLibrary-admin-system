@@ -44,8 +44,14 @@ export const purchaseApi = {
       url: `/api/purchases/${orderNumber}`,
     }),
 
-  /** PATCH /api/purchases/{orderNumber}/pay?paymentMethod=  -  付款扣 DB 库存(API §5.4) */
-  pay: (orderNumber: string, paymentMethod: string = 'DEFAULT'): Promise<void> =>
+  /**
+   * PATCH /api/purchases/{orderNumber}/pay?paymentMethod=  -  付款扣 DB 库存(API §5.4)
+   *
+   * paymentMethod 传 PaymentMethod 枚举的 code(WECHAT / ALIPAY / QQ)。
+   * 这里**不给默认值** —— 以前默认 'DEFAULT' 是个占位值,后端现在会把它当非法值拒掉(400);
+   * 而且支付方式本来就该由用户在弹窗里明确选,不该有个隐式默认。
+   */
+  pay: (orderNumber: string, paymentMethod: string): Promise<void> =>
     http<void>({
       method: 'PATCH',
       url: `/api/purchases/${orderNumber}/pay`,

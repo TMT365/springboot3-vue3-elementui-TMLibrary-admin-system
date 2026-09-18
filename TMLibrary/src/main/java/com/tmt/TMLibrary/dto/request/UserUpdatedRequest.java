@@ -7,7 +7,7 @@ import lombok.Getter;
 import lombok.Setter;
 
 /**
- * PATCH /api/users/{id} 的 body。
+ * PATCH /users/{id} 的 body。
  *
  * <p>这里面的字段都是可选的 — 用户可以选择性地更新某些字段,不必全填。
  *

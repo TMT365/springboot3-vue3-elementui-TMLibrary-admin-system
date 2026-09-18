@@ -25,6 +25,7 @@ import { useRoute, useRouter, type RouteLocationMatched } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useTheme } from '@/composables/useTheme'
 import SidebarMenu from '@/components/SidebarMenu.vue'
+import { initialOf } from '@/utils/format'
 
 const route = useRoute()
 const router = useRouter()
@@ -277,7 +278,7 @@ async function handleCommand(command: string): Promise<void> {
           <el-dropdown @command="handleCommand" trigger="click">
             <span class="user-trigger">
               <span class="avatar-mini" aria-hidden="true">
-                {{ (userStore.username || '?').slice(0, 1).toUpperCase() }}
+                {{ initialOf(userStore.username) }}
               </span>
               <span class="user-name">{{ userStore.username || '游客' }}</span>
               <el-tag v-if="userStore.role" :type="roleTagType" size="small" effect="light">

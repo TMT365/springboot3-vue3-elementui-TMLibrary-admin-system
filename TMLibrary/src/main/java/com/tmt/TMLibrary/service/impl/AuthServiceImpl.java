@@ -79,9 +79,9 @@ public class AuthServiceImpl implements AuthService {
     public LoginResponse login(LoginRequest loginRequest) {
         String uuid = loginRequest.getUuid();
         String username = loginRequest.getUsername();
-        // 先验证验证码 —— key 是 login:{username}:{uuid},username 不匹配直接 404
+        // 先验证验证码 —— key 是 login:{uuid}(2026-09 起不再带 username)
         String jsonString = stringRedisTemplate.opsForValue()
-            .get(RedisKeys.captchaLogin(username.trim(), uuid.trim()));
+            .get(RedisKeys.captchaLogin(uuid.trim()));
         if (jsonString == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "未找到请求验证码");
         }
@@ -95,10 +95,24 @@ public class AuthServiceImpl implements AuthService {
         }
 
         // 后续：验证码内容校验
-        // 注:username 一致性已经从 key 层保证(404 拿不到),这里再 defense-in-depth 比对一次
-        if (!loginCaptchaRedis.getUsername().equals(username)) {
-            log.error("key 命中但 value.username 与请求不一致: key.username={}, req.username={}",
-                loginCaptchaRedis.getUsername(), username);
+        //
+        // username 一致性比对 —— 只在 value 里「存了用户名」时才比。
+        //
+        // 为什么允许为空(2026-09 解绑后新增):前端现在进页面就拉图,那一刻 username
+        // 还是空的,所以 value.username 为空是**正常状态**,不是异常。如果照旧严格
+        // equals 比对,等于每次登录都必然 400「验证码与账号不匹配」。
+        //
+        // 那这层校验还剩什么用:任何**主动带上了 username 去申请 captcha** 的调用方
+        // (第三方客户端 / 以后前端若改回带用户名申请),它的 captcha 依然只能给该
+        // 用户名用 —— 这层防御对那类调用方仍然生效,所以留着而不是删掉。
+        //
+        // 注意:captcha 真正的安全边界是 uuid(122 位随机,申请和提交都得带上),
+        // 不是 username —— 绑 username 挡不住"攻击者用受害者的用户名申请一张图",
+        // 属于心理安慰大于实际收益,这也是这次解绑的底气所在。
+        String boundUsername = loginCaptchaRedis.getUsername();
+        if (boundUsername != null && !boundUsername.isBlank() && !boundUsername.equals(username)) {
+            log.error("captcha value 里绑定的 username 与请求不一致: bound={}, req={}",
+                boundUsername, username);
             throw new BusinessException(ResultCode.BAD_REQUEST, "验证码与账号不匹配");
         }
         if (!loginCaptchaRedis.getCaptcha().equals(loginRequest.getCaptcha())) {
@@ -191,7 +205,7 @@ public class AuthServiceImpl implements AuthService {
         String token = jwtService.issue(user, jti);
 
         // 登录成功 → 删除 captcha,防止同一张图被重复使用(2026-09:从"校验通过即删"挪到这里)
-        stringRedisTemplate.delete(RedisKeys.captchaLogin(username.trim(), uuid.trim()));
+        stringRedisTemplate.delete(RedisKeys.captchaLogin(uuid.trim()));
 
         // 登出时，将jti作为key，剩余时间TTL，放入blackList:jti中，时间一过自动清除
         return new LoginResponse(token, user.getUsername(), UserRole.getUserRoleByCode(user.getRole()));

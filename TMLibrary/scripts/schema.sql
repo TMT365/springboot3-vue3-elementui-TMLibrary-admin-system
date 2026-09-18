@@ -142,6 +142,7 @@ CREATE TABLE IF NOT EXISTS `orders` (
     -- 支付时间:只有 PENDING → PAID 那一次流转会写。不能用 updated_time 代替 ——
     -- 支付后的任何改动都会顶掉 updated_time,而「什么时候付的钱」是财务口径。
     `paid_time`    DATETIME      NULL                    COMMENT '支付时间;未支付为 NULL',
+    `payment_method` VARCHAR(16) NULL                    COMMENT '支付方式:WECHAT/ALIPAY/QQ;未支付为 NULL',
     `created_time` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_time` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间(状态流转时自动刷新)',
 
@@ -189,7 +190,7 @@ CREATE TABLE IF NOT EXISTS `order_items` (
 -- ⚠️ 注册接口强制 role=USER,而提升角色需要 BOSS 权限 —— 冷启动时没有 BOSS,
 --    因此第一个管理员必须用 SQL 手动提升:
 --
---    -- 1) 先用 POST /api/users/register 注册一个账号
+--    -- 1) 先用 POST /users/register 注册一个账号
 --    -- 2) 再把它的角色改成 BOSS(2)
 --    UPDATE users SET role = 2 WHERE username = 'your_admin_name';
 --

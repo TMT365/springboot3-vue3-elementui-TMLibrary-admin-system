@@ -38,6 +38,13 @@ public class PurchaseResponse {
     private LocalDateTime paidTime;
 
     /**
+     * 支付方式 —— orders.payment_method,取值 WECHAT / ALIPAY / QQ。
+     * <p><b>未支付时为 null</b>;另外,加这一列之前就已支付的老订单也是 null ——
+     * 当时压根没记录,不能编一个值出来。前端把 null 渲染成「-」。</p>
+     */
+    private String paymentMethod;
+
+    /**
      * 从 OrderWithItems 实体构造响应 — 排除 id / orderId 等内部字段。
      * 整体映射在 Controller 调用,Service 不知道这层。
      */
@@ -53,6 +60,7 @@ public class PurchaseResponse {
         Order o = owi.getOrder();
         r.setCreatedTime(truncate(o.getCreatedTime()));
         r.setPaidTime(truncate(o.getPaidTime()));
+        r.setPaymentMethod(o.getPaymentMethod());
 
         if (owi.getItems() != null) {
             r.setItems(owi.getItems().stream()

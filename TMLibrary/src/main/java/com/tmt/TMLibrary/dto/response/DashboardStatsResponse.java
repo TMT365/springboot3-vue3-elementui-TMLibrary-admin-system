@@ -8,7 +8,7 @@ import lombok.Setter;
 import java.util.List;
 
 /**
- * 仪表盘统计快照 —— GET /api/stats/dashboard 的响应体,也是 Redis 缓存的对象。
+ * 仪表盘统计快照 —— GET /stats/dashboard 的响应体,也是 Redis 缓存的对象。
  *
  * <p>一次请求返回 4 组数据,前端 4 张图各取一组:
  * <ul>

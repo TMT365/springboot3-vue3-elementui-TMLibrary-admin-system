@@ -19,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 /**
  * 统计接口 —— 目前只有仪表盘一个端点。
  *
- * <p><b>鉴权</b>:{@code /api/stats/**} 不在 {@code JwtAuthFilter} 白名单里,
+ * <p><b>鉴权</b>:{@code /stats/**} 不在 {@code JwtAuthFilter} 白名单里,
  * 所以未带 token 的请求会在过滤器层被 401 拦掉;这里再补一层角色校验,
  * 只放 ADMIN / BOSS 进来(普通用户看仪表盘没意义,数据也不该给)。
  */
@@ -37,7 +37,7 @@ public class StatsController {
     private final StatsService statsService;
 
     /**
-     * 仪表盘统计快照 —— GET /api/stats/dashboard?days=30
+     * 仪表盘统计快照 —— GET /stats/dashboard?days=30
      *
      * @param days 统计窗口天数,夹到 [7, 90],默认 30
      */
@@ -55,7 +55,7 @@ public class StatsController {
         }
 
         int safeDays = Math.min(Math.max(days, MIN_DAYS), MAX_DAYS);
-        log.info("前端请求/api/stats/dashboard?days={}", safeDays);
+        log.info("前端请求/stats/dashboard?days={}", safeDays);
         return Result.success(statsService.dashboard(safeDays));
     }
 }

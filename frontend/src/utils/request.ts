@@ -43,6 +43,32 @@ requestInstance.interceptors.request.use((config) => {
   return config
 })
 
+// ============== 认证类接口:401 是"这次没通过",不是"登录态过期" ==============
+/**
+ * 这几个接口本来就是**未登录时**调用的(它们自己在鉴权白名单里)。
+ * 它们返回 401 表示"你这次提交的凭据不对",而不是"你的登录态失效了"。
+ *
+ * <h2>为什么必须区分</h2>
+ * 不区分的话,登录密码输错会走进 handle401():清 store → 跳 /login →
+ * 抛一个写死的 `ApiError(401, '未登录')`,**顺手把后端真正的原因丢掉**,
+ * 而且 handle401 里没有 ElMessage —— 结果就是**一个字都不弹**,
+ * 用户点了登录只看到页面闪一下,完全不知道发生了什么。
+ *
+ * 后端对"用户不存在"和"密码错误"故意返回同一句文案(防账号枚举),
+ * 那句文案本身是对的,只是以前根本传不到用户眼前。
+ */
+const AUTH_ENDPOINTS: readonly string[] = [
+  '/api/users/login',
+  '/api/users/register',
+  '/api/users/forgot-password',
+  '/api/users/reset-password',
+]
+
+function isAuthEndpoint(url: string | undefined): boolean {
+  if (!url) return false
+  return AUTH_ENDPOINTS.some((p) => url.startsWith(p))
+}
+
 // ============== 401 重定向防并发 ==============
 let isRedirecting = false
 
@@ -64,11 +90,18 @@ function handle401(): never {
 }
 
 // ============== Result<T> 解包 ==============
-function unwrap<T>(body: Result<T> | unknown): T {
+function unwrap<T>(body: Result<T> | unknown, authEndpoint = false): T {
   if (body && typeof body === 'object' && 'code' in body) {
     const result = body as Result<T>
     if (result.code === 200) return result.data as T
-    if (result.code === 401) return handle401()
+    if (result.code === 401) {
+      /* 认证类接口:401 = 本次凭据不对 → 当普通业务错误处理(弹后端文案、不登出、不跳转) */
+      if (authEndpoint) {
+        ElMessage.error(result.msg || '用户名或密码错误')
+        throw new ApiError(result.code, result.msg)
+      }
+      return handle401()
+    }
     // 429 = IP 被风控封禁:弹大尺寸封禁弹窗(挂在 App.vue 上的 IpBanDialog),
     // 不再叠一个 toast —— 弹窗本身已经把信息说清了
     if (result.code === 429) {
@@ -92,9 +125,10 @@ function unwrap<T>(body: Result<T> | unknown): T {
  *   }
  */
 export async function http<T = unknown>(config: AxiosRequestConfig): Promise<T> {
+  const authEndpoint = isAuthEndpoint(config.url)
   try {
     const resp = await requestInstance.request<Result<T>>(config)
-    return unwrap<T>(resp.data)
+    return unwrap<T>(resp.data, authEndpoint)
   } catch (err) {
     if (axios.isAxiosError(err)) {
       const status = err.response?.status
@@ -102,10 +136,16 @@ export async function http<T = unknown>(config: AxiosRequestConfig): Promise<T> 
       // 后端已改为返回真实 HTTP 状态码,错误响应体仍是统一的 Result 壳。
       // 交给 unwrap 处理:它会展示 result.msg、处理 401、并抛出带业务码的 ApiError。
       if (body && typeof body === 'object' && 'code' in body) {
-        return unwrap<T>(body)
+        return unwrap<T>(body, authEndpoint)
       }
       // 过滤器写的错误是裸 Result 壳之外的场景(理论上不会走到)
-      if (status === 401) return handle401()
+      if (status === 401) {
+        if (authEndpoint) {
+          ElMessage.error('用户名或密码错误')
+          throw new ApiError(401, '用户名或密码错误')
+        }
+        return handle401()
+      }
       ElMessage.error(err.message || '网络错误')
       throw new ApiError(status ?? 0, err.message)
     }

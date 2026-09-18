@@ -2,7 +2,7 @@
 -- ip_bans — IP 封禁记录(风控)
 --
 -- 用途:脚本高频请求触发阈值后,把来源 IP 封禁 24 小时。
---   判定在 IpRiskControlFilter(每个 /api/* 请求都过),计数走 Redis,
+--   判定在 IpRiskControlFilter(每个 /* 请求都过),计数走 Redis,
 --   封禁记录落这张表 —— 好处是 Redis 重启/淘汰后仍能追溯"封过谁、为什么"。
 --
 -- 执行:

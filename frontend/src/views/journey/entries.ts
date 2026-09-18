@@ -248,6 +248,93 @@ return req.getRemoteAddr();`,
       '清理历史要用 filter-repo 重写所有 commit hash,代价远大于一开始就用环境变量。',
   },
   {
+    id: 'atob-jwt-mojibake',
+    title: '中文用户名在顶栏是乱码,在登录提示里却是好的',
+    category: 'tech',
+    tags: ['编码', 'JWT', 'Base64'],
+    symptom:
+      '用户名是中文时,顶栏右上角显示成 `å¼ ä¸‰` 这种东西。' +
+      '但同一个用户登录成功时弹出的「欢迎,张三」完全正常 —— **同一个用户名,两处显示不一样**。',
+    cause:
+      '两处走的不是一条路。\n' +
+      '登录提示用的是**响应体**,axios 拿 `JSON.parse` 解,UTF-8 天然正确;\n' +
+      '顶栏用的是 **JWT**,前端自己 `atob()` 解 payload —— ' +
+      '而 `atob()` 返回的是"一个字符 = 一个字节"的 **Latin-1** 字符串,' +
+      'JWT 里却是 UTF-8 编码的 JSON。逐字节按 Latin-1 解读,中文就成了乱码(`张三` → `å¼ ä¸‰`)。',
+    solution:
+      '解 base64 之后不要直接 `JSON.parse`,中间插一步"按 UTF-8 解码":\n' +
+      '`atob` → 逐字节转 `Uint8Array` → `TextDecoder("utf-8")` → 再 `JSON.parse`。',
+    takeaway:
+      '`atob`/`btoa` 是**字节级** API,不是文本级 API —— 凡是要和 UTF-8 打交道的地方都得自己转一道。' +
+      'ASCII 下看不出问题,一旦出现非 ASCII 字符才会暴露。',
+    code: {
+      lang: 'typescript',
+      content: `// ✗ 中文必乱码:atob 给的是 Latin-1
+// return JSON.parse(atob(b64))
+
+// ✓ 先还原成字节,再按 UTF-8 解码
+function base64UrlDecode(input: string): string {
+  const b64 = input.replace(/-/g, '+').replace(/_/g, '/')
+  const binary = atob(b64)
+  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0))
+  return new TextDecoder('utf-8').decode(bytes)
+}
+return JSON.parse(base64UrlDecode(payload))`,
+    },
+  },
+  {
+    id: 'whitelist-prefix-drift',
+    title: '验证码接口一直 401,因为白名单短了一截前缀',
+    category: 'tech',
+    tags: ['鉴权', '反向代理', '前后端契约'],
+    symptom:
+      '注册页一打开就弹「验证码加载失败: 未登录」。' +
+      '直接 curl 后端验证码接口,返回 `401 {"msg":"缺少 Authorization 头"}` —— ' +
+      '可验证码本来就是给未登录用户用的,要 token 就说不通了。',
+    cause:
+      '后端鉴权过滤器里有一张**免鉴权白名单**,当时是按 `"/captcha/"` 写的。' +
+      '但前端走的是 **vite / nginx 的 `/api/*` 反向代理**,代理是**原样转发**、不会剥掉前缀,' +
+      '所以后端真正收到的是 `/api/captcha/login` —— 拿它去匹配 `"/captcha/"`,永远匹配不上。\n' +
+      '关键在于:controller 上的 `@RequestMapping("/captcha")` **没有** `/api`, ' +
+      '这就让人误以为"路径里没有 /api",而过滤器看到的却是完整 URI。两边各看一半,谁都没错。',
+    solution:
+      '把白名单里的路径补全成**过滤器实际看到的形态**(带 `/api`):' +
+      '`/api/captcha/`、`/api/users/login`、`/api/books` …;' +
+      '同时给所有 controller 的类级 `@RequestMapping` 补上 `/api` 前缀,让两侧对齐。\n' +
+      '注意 `/actuator/` 那条**不能**加 —— 它本来就不在 `/api` 下,加了反而会失效。',
+    takeaway:
+      '"改了代理规则"是个容易漏配套改动的动作:代理只负责转发,**路径前缀不会自动对齐**。' +
+      '排查这类问题时,要在**过滤器、controller、代理**三处分别确认各自看到的路径,不能只看一处。',
+  },
+  {
+    id: 'origin-scoped-theme',
+    title: 'dev 和 preview 长得完全不一样,一度以为是 CSS 坏了',
+    category: 'tech',
+    tags: ['调试方法', 'localStorage', '构建产物'],
+    symptom:
+      '同一个项目,`npm run dev` 打开的页面和 `vite preview` 打开的页面**观感差别很大**' +
+      '(层次感、透明度都不一样),很像是打包把样式搞坏了。',
+    cause:
+      '**逐条比对同一个元素在两个端口上的计算样式,结果完全一致** —— 连 box-shadow、' +
+      'backdrop-filter 的值都一模一样。既然样式相同,差异就不可能来自打包。\n' +
+      '真正的变量是**主题**:主题存在 `localStorage` 里,而 **localStorage 按 origin 隔离**。' +
+      'dev 在 `:5173`、preview 在 `:4173`,是两个 origin —— 在一边点过主题切换,' +
+      '另一边完全不知道,于是回退到系统偏好。两套配色对比强烈,看起来就像"样式崩了"。\n' +
+      '(实测:`:5173` 存了 `dark`,同时 `:4173` 读出来是 `null` → 回退浅色。)',
+    solution:
+      '定位方法本身是可复用的:**先比计算样式,再怀疑构建**。\n' +
+      '`getComputedStyle` 把两边同一元素的关键属性打出来逐条 diff —— ' +
+      '相同就说明是环境差异(主题 / 缓存 / 数据),不同才去查打包。\n' +
+      '顺带记一个相邻的坑:`vite preview` 服务的是 `dist/`,**不是源码**,改了代码不重新 build ' +
+      '就会看到旧版本。\n' +
+      '⚠️ **遗留**:主题差异能解释"观感不同",但没有拿到用户端确认,' +
+      '所以这个问题**始终没有最终定论**,先按"环境差异"记录。',
+    takeaway:
+      '"看起来像样式问题"和"是样式问题"是两回事。' +
+      '跨端口/跨环境比对时,先把**能确定的变量**(计算样式)钉死,再去找剩下的变量 —— ' +
+      '否则很容易一头扎进打包配置里翻半天,而真正的原因在 localStorage。',
+  },
+  {
     id: 'paid-time-vs-updated-time',
     title: '「支付时间」不能拿 updated_time 顶替',
     category: 'arch',
@@ -311,6 +398,41 @@ return req.getRemoteAddr();`,
     takeaway:
       '降级不是"加个 try-catch",而是**先想清楚哪个是主、哪个是增强**。' +
       '主数据必须有一个不依赖增强组件的读取路径。',
+  },
+  {
+    id: 'captcha-unbound-from-username',
+    title: '把验证码和用户名绑在一起,结果图根本不显示',
+    category: 'arch',
+    tags: ['验证码', '设计反转', '用户体验'],
+    symptom:
+      '登录页打开后,验证码的位置一直空着,提示「请先输入用户名」—— ' +
+      '要先把用户名敲进去,图才会出来。更别扭的是:输一个字符它就重新拉一张,' +
+      '输完用户名往往已经换了三四张图。',
+    cause:
+      '一开始的绑定是"有意为之",理由也写得挺像回事:\n' +
+      '① 防止 A 的验证码被 B 拿去用 —— 于是把 username 编进了 Redis key;\n' +
+      '② 用户名变了就该换图 —— 于是前端 `watch` 用户名,debounce 后重新拉。\n' +
+      '但这两条都经不起推敲:\n' +
+      '**① 挡不住真正的攻击**。攻击者完全可以拿受害者的用户名去申请一张图 —— ' +
+      '验证码的安全边界是 **uuid**(申请和提交都要带上、122 位随机),不是用户名。\n' +
+      '**② 把加载时机绑死在"用户输入"上**。进页面时用户名为空,`if (!val) return` ' +
+      '直接把加载拦掉了,于是图不出来;而用户每敲一个字都触发一次网络请求,纯浪费。\n' +
+      '还有一条副作用:中文用户名会被原样编进 Redis key,' +
+      '运维最常用的 `KEYS tmlibrary:captcha:*` 打出来是乱码。',
+    solution:
+      '**把验证码彻底解绑用户名** —— 触发时机只留三个:mount、用户点图、倒计时归零。\n' +
+      '前端去掉 `watch(username)` 和 `:username` prop;' +
+      '后端 Redis key 从 `captcha:login:{username}:{uuid}:code` 收成 `captcha:login:{uuid}:code`,' +
+      '并删掉按用户名批量清理的 pattern 和 `clearCaptchasForUsername`。\n' +
+      '顺带发现一处**顺带被修出来的坑**:value 里那个"防御性比对 username"的检查,' +
+      '在解绑后会**必然失败** —— 因为拉图时用户名还是空的,提交时却拿着真名去比,' +
+      '结果是每次登录都 400。改成"只在 value 里存了用户名时才比",' +
+      '保留了这层校验对其它调用方的价值。',
+    takeaway:
+      '安全设计要问一句"**这到底挡住了什么**"。绑 username 挡不住任何真实攻击,' +
+      '却实打实地牺牲了可用性 —— 这种"看起来更安全"的设计最容易通过评审。\n' +
+      '还有:**改动一个被多处依赖的约定(key 结构、加载时机)时,要把所有调用点一起过一遍**,' +
+      '包括那些"看起来只是防御性"的检查 —— 它们同样会因为约定改变而失效。',
   },
 
   // ============================================================

@@ -14,6 +14,7 @@ import { useLoadingStore } from '@/stores/loading'
 import { useIpBanStore } from '@/stores/ipBan'
 import LoadingScreen from '@/components/LoadingScreen.vue'
 import IpBanDialog from '@/components/IpBanDialog.vue'
+import NoticeDialog from '@/components/NoticeDialog.vue'
 import FeedbackFab from '@/components/FeedbackFab.vue'
 
 const loadingStore = useLoadingStore()
@@ -56,6 +57,13 @@ onMounted(() => {
 
   <!-- IP 风控封禁弹窗 —— 由 request.ts 收到 429 时触发,见 stores/ipBan.ts -->
   <IpBanDialog />
+
+  <!--
+    浏览须知 —— 登录成功后由 Login.vue 调 noticeStore.open() 触发(见 stores/notice.ts)。
+    挂全局而不是挂在登录页:登录成功后马上就会 router.push 走人,弹窗要跟着用户
+    到落地页(商城 / 后台)继续显示,挂在登录页会在跳转的一瞬间被卸载掉。
+  -->
+  <NoticeDialog />
 
   <!--
     反馈入口 —— 挂全局而不是某个 layout 里:

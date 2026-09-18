@@ -165,7 +165,6 @@ async function onSubmit(): Promise<void> {
         <Captcha
           ref="captchaRef"
           v-model="form.captcha"
-          :username="form.username"
           type="register"
         />
       </el-form-item>

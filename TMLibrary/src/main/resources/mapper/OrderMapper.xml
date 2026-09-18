@@ -12,6 +12,7 @@
         <result property="updatedTime" column="updated_time" />
         <result property="expireTime" column="expire_time" />
         <result property="paidTime" column="paid_time" />
+        <result property="paymentMethod" column="payment_method" />
     </resultMap>
 
     <resultMap id="OrderItemResultMap" type="com.tmt.TMLibrary.entity.OrderItem">
@@ -41,6 +42,7 @@
             <result property="createdTime" column="created_time"/>
             <result property="updatedTime" column="updated_time"/>
             <result property="paidTime" column="paid_time"/>
+            <result property="paymentMethod" column="payment_method"/>
         </association>
 
         <!-- collection：映射集合 private List<OrderItem> items; -->
@@ -56,7 +58,7 @@
 
     <!-- expire_time 一并查出:实体持有该字段,缺列会让 Order.expireTime 恒为 null -->
     <sql id="Order_Base_Column_List">
-        id, order_number, user_id, total_amount, order_status, expire_time, paid_time, created_time, updated_time
+        id, order_number, user_id, total_amount, order_status, expire_time, paid_time, payment_method, created_time, updated_time
     </sql>
 
     <sql id="OrderItem_Base_Column_List">
@@ -141,6 +143,11 @@
              与 orders 表 order_status 的注释一致。 -->
         <if test="toStatus == 1">
             , paid_time = NOW()
+            <!-- 支付方式:只有"支付"这条路径会传值。取消 / 超时关单传 null,
+                 这里直接跳过 —— 既不会写空串,也不会把已有的值抹掉。 -->
+            <if test="paymentMethod != null">
+                , payment_method = #{paymentMethod}
+            </if>
         </if>
         WHERE order_number = #{orderNumber}
           AND order_status = #{fromStatus}

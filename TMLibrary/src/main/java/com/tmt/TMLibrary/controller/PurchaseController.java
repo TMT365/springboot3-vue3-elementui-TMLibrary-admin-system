@@ -36,10 +36,10 @@ import org.springframework.web.bind.annotation.RestController;
  *        <p>
  *        端点:
  *        <pre>
- *   POST   /api/purchases              — 下单(创建 PENDING 订单)
- *   GET    /api/purchases/{orderNumber}         — 订单详情(含 items)
- *   DELETE /api/purchases/{orderNumber}         — 取消订单(改状态 CANCELLED + 退库存)
- *   PATCH  /api/purchases/{orderNumber}/pay     — 支付(改状态 PAID)
+ *   POST   /purchases              — 下单(创建 PENDING 订单)
+ *   GET    /purchases/{orderNumber}         — 订单详情(含 items)
+ *   DELETE /purchases/{orderNumber}         — 取消订单(改状态 CANCELLED + 退库存)
+ *   PATCH  /purchases/{orderNumber}/pay     — 支付(改状态 PAID)
  *        </pre>
  *
  *        <p>
@@ -55,24 +55,24 @@ public class PurchaseController {
     private final PurchaseService purchaseService;
 
     /**
-     * 下单 — POST /api/purchases
-     * 返回订单 ID,客户端可用 GET /api/purchases/{id} 看详情。
+     * 下单 — POST /purchases
+     * 返回订单 ID,客户端可用 GET /purchases/{id} 看详情。
      */
     @PostMapping
     public Result<Integer> create(@Valid @RequestBody PurchaseRequest req,
             @CurrentUser UserView me) {
         // 多加一层兜底
         requireLogin(me);
-        log.info("前端请求/api/purchases, 参数={}", req);
+        log.info("前端请求/purchases, 参数={}", req);
         int orderId = purchaseService.createOrder(req, me.getId());
         return Result.success(orderId);
     }
 
     /**
-     * 订单列表(全量分页)— GET /api/purchases?page=1&amp;size=10
+     * 订单列表(全量分页)— GET /purchases?page=1&amp;size=10
      *
      * <p>管理端专用:仅 ADMIN / BOSS 可调用。普通用户看自己的订单走
-     * {@code GET /api/users/{id}/purchases}。</p>
+     * {@code GET /users/{id}/purchases}。</p>
      *
      * <p>返回 {@code PageResult<OrderListItem>} —— 每行只有订单主体
      * (订单号 / 状态 / 总额 / 下单时间),不带 items。</p>
@@ -87,7 +87,7 @@ public class PurchaseController {
                 && !UserRole.BOSS.getCode().equals(me.getRole())) {
             throw new BusinessException(ResultCode.FORBIDDEN, "仅管理员可查看全部订单");
         }
-        log.info("前端请求/api/purchases?page={}&size={}", page, size);
+        log.info("前端请求/purchases?page={}&size={}", page, size);
 
         PageResult<Order> result = purchaseService.listAllOrders(page, size);
         // 实体 → 响应 DTO 的映射放在 Controller(与 PurchaseResponse.from 一致)
@@ -97,7 +97,7 @@ public class PurchaseController {
     }
 
     /**
-     * 订单详情 — GET /api/purchases/{orderNumber}
+     * 订单详情 — GET /purchases/{orderNumber}
      * 仅订单所有者可查看(service 没做权限检查,这里 Controller 兜底)。
      * 返回 PurchaseResponse(只暴露客户端需要的字段)。
      */
@@ -105,7 +105,7 @@ public class PurchaseController {
     public Result<PurchaseResponse> getById(@PathVariable long orderNumber,
             @CurrentUser UserView me) {
         requireLogin(me);
-        log.info("前端请求/api/purchases/{}", orderNumber);
+        log.info("前端请求/purchases/{}", orderNumber);
         OrderWithItems order = purchaseService.getOrderWithItemsByOrderNumber(orderNumber);
         if (order == null || order.getOrder() == null) {
             throw new BusinessException(ResultCode.NOT_FOUND, "Order not found: " + orderNumber);
@@ -117,20 +117,20 @@ public class PurchaseController {
     }
 
     /**
-     * 取消订单 — DELETE /api/purchases/{orderNumber}
+     * 取消订单 — DELETE /purchases/{orderNumber}
      * 状态 → CANCELLED,库存还原。Service 内部做 owner 校验。
      */
     @DeleteMapping("/{orderNumber}")
     public Result<Void> cancel(@PathVariable long orderNumber,
             @CurrentUser UserView me) {
         requireLogin(me);
-        log.info("前端请求DELETE /api/purchases/{}", orderNumber);
+        log.info("前端请求DELETE /purchases/{}", orderNumber);
         purchaseService.cancelOrder(orderNumber, me.getId());
         return Result.success();
     }
 
     /**
-     * 支付订单 — PATCH /api/purchases/{orderNumber}/pay?paymentMethod=ALIPAY
+     * 支付订单 — PATCH /purchases/{orderNumber}/pay?paymentMethod=ALIPAY
      * 状态 → PAID。paymentMethod 作为 query 参数,留给未来接支付网关时扩展。
      */
     @PatchMapping("/{orderNumber}/pay")
@@ -138,7 +138,7 @@ public class PurchaseController {
             @RequestParam(name = "paymentMethod", defaultValue = "DEFAULT") String paymentMethod,
             @CurrentUser UserView me) {
         requireLogin(me);
-        log.info("前端请求/api/purchases/{}/pay?paymentMethod={}", orderNumber, paymentMethod);
+        log.info("前端请求/purchases/{}/pay?paymentMethod={}", orderNumber, paymentMethod);
         purchaseService.payOrder(orderNumber, me.getId(), paymentMethod);
         return Result.success();
     }

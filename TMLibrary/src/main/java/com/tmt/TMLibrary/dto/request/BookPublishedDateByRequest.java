@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
- * GET /api/books/search/publishedDate/by 粒度查询入参
+ * GET /books/search/publishedDate/by 粒度查询入参
  *
  * 支持 3 级粒度:year / year+month / year+month+day
  * 必须从大到小连续(粒度连续性由 {@link #compact()} 校验):

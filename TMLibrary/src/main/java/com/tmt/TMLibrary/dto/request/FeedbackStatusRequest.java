@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
- * 改反馈状态/优先级 —— PATCH /api/feedbacks/{id}/status,仅 ADMIN/BOSS 可调。
+ * 改反馈状态/优先级 —— PATCH /feedbacks/{id}/status,仅 ADMIN/BOSS 可调。
  *
  * <p>两个字段都允许省略(只改其一也是合法的),但至少要传一个 —— 用 {@code @AssertTrue} 在
  * 字段之间做"至少一个非空"的检查(写在 Service 层,因为 DTO 上跨字段校验要写起来

@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
- * PATCH /api/users/{id}/password 的 body。
+ * PATCH /users/{id}/password 的 body。
  * 必须 currentUserId == id(只能改自己的密码)。
  */
 @Data

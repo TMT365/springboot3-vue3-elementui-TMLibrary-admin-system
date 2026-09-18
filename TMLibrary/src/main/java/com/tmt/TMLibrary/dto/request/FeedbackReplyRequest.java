@@ -5,7 +5,7 @@ import jakarta.validation.constraints.Size;
 import lombok.Data;
 
 /**
- * 反馈回复 / 追述 —— POST /api/feedbacks/{id}/reply。
+ * 反馈回复 / 追述 —— POST /feedbacks/{id}/reply。
  *
  * <p>提交人和管理员共用这个 DTO,差异在 {@code isInternal} 字段:
  * 普通用户传 {@code false};管理员可以传 {@code true} 写"内部备注"(对提交人不可见)。</p>

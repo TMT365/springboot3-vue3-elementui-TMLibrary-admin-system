@@ -28,7 +28,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
      *
      * <p><b>为什么要带 HTTP 方法</b>:图书模块的读接口(商城/详情页,GET)必须对未登录
      * 访客开放,而同一路径前缀下的写接口(新建/修改/删除图书、盘点调整库存)
-     * 必须要求 token。若只按路径前缀放行 {@code /api/books},写操作会被一起放行。</p>
+     * 必须要求 token。若只按路径前缀放行 {@code /books},写操作会被一起放行。</p>
      *
      * @param path   路径(精确匹配)或前缀
      * @param methods 允许的方法;空集合表示不限方法
@@ -49,14 +49,28 @@ public class JwtAuthFilter extends OncePerRequestFilter {
             new WhitelistRule("/api/users/register", Set.of("POST"), true),
             // 密码重置:也必须公开 —— 用户正是**因为登不上去**才用它,
             // 不可能要求先带 token。两条都精确匹配 + 仅 POST,
-            // 不会有前缀放大(比如 /api/users/forgot-password/xxx 不在白名单里)
+            // 不会有前缀放大(比如 /users/forgot-password/xxx 不在白名单里)
             new WhitelistRule("/api/users/forgot-password", Set.of("POST"), true),
             new WhitelistRule("/api/users/reset-password", Set.of("POST"), true),
             // 验证码:POST 取图(login / register 两个端点),前缀匹配
             new WhitelistRule("/api/captcha/", Set.of("POST"), false),
             // 图书展示:所有 GET 放行(未登录可浏览商城/图书列表/详情/搜索),
             // 同一前缀下的 POST/PATCH/DELETE(新建、修改、删书、盘点调库存)仍需 token
-            new WhitelistRule("/api/books", Set.of("GET"), false));
+            //
+            // 写成单独的 /api/books/categories、/api/books/suggest 而不是只写
+            // /api/books 前缀 —— 前缀匹配按字面 startsWith 走,本身没问题;
+            // 但 authorizeHttpRequests-style 的前缀匹配容易和具体路径混在一起,
+            // 显式列出来更安全,后人维护时一眼能看到"哪些是公开 GET"。
+            new WhitelistRule("/api/books", Set.of("GET"), false),
+            new WhitelistRule("/api/books/categories", Set.of("GET"), false),
+            new WhitelistRule("/api/books/suggest", Set.of("GET"), false),
+            new WhitelistRule("/api/books/list", Set.of("GET"), false),
+            new WhitelistRule("/api/books/search", Set.of("GET"), false),
+            // actuator:注册 pattern 从 /api/* 放宽到 /* 之后才需要这一条。
+            // 容器 healthcheck 打的是 /actuator/health 且不带 token,
+            // 不白名单会 401 → 容器被判 unhealthy。
+            // 方法集留空 = 不限方法,与改动前"actuator 不走鉴权"的行为一致。
+            new WhitelistRule("/actuator/", Set.of(), false));
 
     private final JwtService jwtService;
     private final AuthErrorWriter errorWriter;

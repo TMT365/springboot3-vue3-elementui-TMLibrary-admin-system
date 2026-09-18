@@ -10,10 +10,14 @@
  *   />
  *
  * 行为:
- *   1. 页面打开不拉 —— 等用户输入 username 才开始拉(避免拿到一张绑空 username 的图)
- *   2. watch username:400ms debounce → 重生 uuid + 重新拉
- *   3. username 清空 → 撤销已加载的 captcha(绑了旧 username 也用不上了)
- *   4. 失败 / 用户点图 → 重新拉
+ *   1. mount 立即拉一次 —— 进登录/注册页就能看到图,不依赖任何 prop
+ *   2. 用户点验证码图 → 重新拉
+ *   3. 倒计时归零 → 自动换一张
+ *   4. 加载失败 → toast 提示
+ *
+ * 注意:captcha 不再绑 username。原版有这个绑定是想着"防止极端情况 A 的图被 B
+ * 用",但实际上后端 captcha value 里仍存 username,提交时做 defense-in-depth 校验,
+ * 这层防御没丢,只是挪到了服务端 —— 前端没必要再因为用户名变了就换图。
  *
  * UI:
  *   - 输入框全宽
@@ -28,14 +32,56 @@
  *   - <circle :key> 改 key 强制重渲染,动画从 0 重新开始
  */
 
-import { onBeforeUnmount, ref, watch } from 'vue'
+import { onBeforeUnmount, ref } from 'vue'
 import { authApi } from '@/api/auth'
+
+/**
+ * 生成 captcha 请求的 uuid —— 三层兜底,适应各种运行环境。
+ *
+ * <h2>为什么不直接用 crypto.randomUUID()</h2>
+ * 那个 API 在以下场景会抛 TypeError("crypto.randomUUID is not a function"):
+ *   1. 非 HTTPS / 非 localhost 环境 + 老浏览器 ——
+ *      Chrome 92+/Firefox 95+ 在 http:// 上 Crypto Subtle 不可用。
+ *   2. IE(虽然项目已不考虑,但用户的浏览器由不得你选)
+ *   3. 极个别 webview/嵌入式浏览器
+ *
+ * <h2>三层兜底策略</h2>
+ *   ① 原生 crypto.randomUUID —— 主流浏览器 + localhost/HTTPS,带标准 v4 + RFC 4122 标记
+ *   ② 手搓 v4 用 crypto.getRandomValues —— 退一步,只要 crypto 还能用(非安全上下文也能 getRandomValues)
+ *   ③ Math.random —— 最后一搏,够"唯一"就行(captcha 的 uuid 不参与安全校验,
+ *      唯一作用是让前端拿到一个 32 位串给后端做 Redis key 的命名空间,
+ *      重复概率 1/2^122 可以忽略)
+ */
+function generateUuid(): string {
+  // ① 优先走原生 —— 标准实现,带 -4xxx-y 版本与变体位,合规
+  if (typeof crypto !== 'undefined' && typeof crypto.randomUUID === 'function') {
+    return crypto.randomUUID()
+  }
+  // ② crypto 还能 getRandomValues(非安全上下文也可用)—— 手搓 v4 UUID
+  if (typeof crypto !== 'undefined' && typeof crypto.getRandomValues === 'function') {
+    const bytes = new Uint8Array(16)
+    crypto.getRandomValues(bytes)
+    // 版本位 v4:第 7 字节高 4 位 = 0100 → (bytes[6] & 0x0f) | 0x40
+    bytes[6] = (bytes[6] & 0x0f) | 0x40
+    // 变体位 RFC 4122:第 9 字节高 2 位 = 10 → (bytes[8] & 0x3f) | 0x80
+    bytes[8] = (bytes[8] & 0x3f) | 0x80
+    const hex: string[] = []
+    for (let i = 0; i < 16; i++) {
+      hex.push(bytes[i].toString(16).padStart(2, '0'))
+    }
+    return `${hex.slice(0, 4).join('')}-${hex.slice(4, 6).join('')}-${hex.slice(6, 8).join('')}-${hex.slice(8, 10).join('')}-${hex.slice(10, 16).join('')}`
+  }
+  // ③ 兜底:Math.random 拼一个形似 uuid 的串 —— 不是真 v4,但 captcha 这场景够用
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = (Math.random() * 16) | 0
+    const v = c === 'x' ? r : (r & 0x3) | 0x8
+    return v.toString(16)
+  })
+}
 
 interface Props {
   /** v-model 双向绑定的 captcha 输入框内容 */
   modelValue: string
-  /** 用户名变化触发刷新(后端 captcha 跟 username 绑定) */
-  username: string
   /** 用途,决定调 /api/captcha/login 还是 /api/captcha/register */
   type: 'login' | 'register'
 }
@@ -44,13 +90,12 @@ const emit = defineEmits<{
   'update:modelValue': [value: string]
 }>()
 
-const uuid = ref<string>(crypto.randomUUID())
+const uuid = ref<string>(generateUuid())
 const captchaUrl = ref<string>('')
 /* 后端 expiresAt 是 string(避免 JS Number 精度风险),内部转 number 做倒计时计算 */
 const expiresAt = ref<number>(0)
 const captchaLoading = ref(false)
 let reqId = 0
-let debounceTimer: ReturnType<typeof setTimeout> | null = null
 
 /* ----- 倒计时参数 ----- */
 /** 后端 TTL = 3 分钟(180 秒),跟后端 CaptchaServiceImpl.CAPTCHA_TTL_MINUTES 一致 */
@@ -71,9 +116,8 @@ function tick(): void {
 
     /* 倒计时归零 → 自动换一张
      * 后端 Redis 的 TTL 与倒计时同步,归零意味着旧图已失效,不换白不换。
-     * expiresAt 先置 0:① 避免下一帧重复触发;② loadCaptcha 成功后会写入新的 expiresAt。
-     * username 为空时不触发(没有 username 拉了也用不了)。 */
-    if (remaining <= 0 && props.username) {
+     * expiresAt 先置 0:① 避免下一帧重复触发;② loadCaptcha 成功后会写入新的 expiresAt。 */
+    if (remaining <= 0) {
       expiresAt.value = 0
       refreshCaptcha()
     }
@@ -86,7 +130,10 @@ async function loadCaptcha(): Promise<void> {
   captchaLoading.value = true
   try {
     const api = props.type === 'login' ? authApi.loginCaptcha : authApi.registerCaptcha
-    const resp = await api(uuid.value, { username: props.username })
+    /* 请求体里不再带 username —— captcha 不再绑 username(见组件顶部注释)。
+     * 后端 GetCaptchaRequest 的 username 字段保留(提交时仍要存进 value 做防御),
+     * 这里发空串占位就行,后端不会再拿它做 key。 */
+    const resp = await api(uuid.value, { username: '' })
     if (myId !== reqId) return
     captchaUrl.value = resp.image
     /* 后端传 String,这里转 number 给 setInterval / animation 用 */
@@ -107,40 +154,33 @@ async function loadCaptcha(): Promise<void> {
 }
 
 function refreshCaptcha(): void {
-  uuid.value = crypto.randomUUID()
+  uuid.value = generateUuid()
   void loadCaptcha()
 }
 
 /* 启动 rAF 倒计时 tick —— 即便没 captcha 也要让视图响应式更新 */
 rafId = requestAnimationFrame(tick)
 
-/* username 变化 → debounce 400ms → 重新拉;username 清空 → 撤销 captcha */
-watch(
-  () => props.username,
-  (val) => {
-    if (debounceTimer) {
-      clearTimeout(debounceTimer)
-      debounceTimer = null
-    }
-    if (!val) {
-      /* username 清空 → 撤销 captcha(图片 / 倒计时全清)
-       * 注意:image 是 base64 data URI,不是 objectURL,不需要 revoke */
-      captchaUrl.value = ''
-      expiresAt.value = 0
-      secondsLeft.value = TTL_SECONDS
-      emit('update:modelValue', '')
-      return
-    }
-    debounceTimer = setTimeout(() => {
-      uuid.value = crypto.randomUUID()
-      void loadCaptcha()
-    }, 400)
-  },
-)
+/*
+ * mount 立即拉一次验证码图 —— Captcha 不再绑 username,触发时机只有两个:
+ *   ① 组件 mount(进登录/注册页时立即拉)
+ *   ② 用户点验证码图(显式 refresh)
+ *   ③ 倒计时归零(自动换一张)
+ *
+ * 之前绑 username 的写法存在三个真问题:
+ *   1. 用户进登录页 → username 是空 → 验证码不加载 → 用户得先输完用户名才能看到图
+ *   2. 用户每次敲一个字符 → 400ms debounce 再发一次请求,纯浪费
+ *   3. 把 username 编进 Redis key,中文用户名会带进 key 字符串,
+ *      对运维的 KEYS / SCAN 都不友好
+ *
+ * 真正的"用户名绑定"语义由后端守住:captcha value 里的 username 字段在提交时
+ * 仍做 defense-in-depth 校验(见 AuthServiceImpl / UserManagementServiceImpl),
+ * 即使前端不再主动换,服务端也认。
+ */
+void loadCaptcha()
 
 onBeforeUnmount(() => {
   if (rafId != null) cancelAnimationFrame(rafId)
-  if (debounceTimer) clearTimeout(debounceTimer)
 })
 
 /* expose 给父组件(Login/Register)拿 uuid 和强制 refresh */
@@ -168,12 +208,10 @@ defineExpose({
         class="captcha-img-wrap"
         :class="{ 'is-loading': captchaLoading, 'is-empty': !captchaUrl }"
         :title="captchaUrl ? '换一张' : ''"
-        :aria-disabled="!props.username"
-        @click="props.username && refreshCaptcha()"
+        @click="refreshCaptcha()"
       >
         <img v-if="captchaUrl" :src="captchaUrl" alt="验证码" class="captcha-img" />
-        <span v-else-if="!props.username" class="captcha-placeholder">请先输入用户名</span>
-        <span v-else class="captcha-placeholder">加载中…</span>
+        <span v-else class="captcha-placeholder">{{ captchaLoading ? '加载中…' : '暂无图像' }}</span>
       </div>
 
       <!-- 倒计时圆形 SVG —— 仅 captcha 加载后显示(没有 captcha 显示一个空圆 180s 误导) -->

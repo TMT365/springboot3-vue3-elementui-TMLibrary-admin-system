@@ -70,11 +70,15 @@ public interface OrderMapper {
      * <p>防 PAID→CANCELLED 静默成功。即使有人未来优化去掉 {@code FOR UPDATE},
      * 这条 SQL 仍然保证"只有 PENDING 能被关单/支付"。</p>
      *
+     * @param paymentMethod 支付方式({@code PaymentMethod} 的 code)。<b>只有支付那一条路径需要传</b>,
+     *                      取消 / 超时关单传 {@code null} —— SQL 里它也只在
+     *                      {@code toStatus == PAID} 且非 null 时才写这一列。
      * @return 1=转换成功,0=状态不匹配(被别人抢先改了)
      */
     int updateStatusByOrderNumberGuard(@Param("orderNumber") Long orderNumber,
                                        @Param("fromStatus") Integer fromStatus,
-                                       @Param("toStatus") Integer toStatus);
+                                       @Param("toStatus") Integer toStatus,
+                                       @Param("paymentMethod") String paymentMethod);
 
     /**
      * 查出"已超时但仍未关闭"的订单号 —— 供超时关单的 <b>DB 兜底扫描</b>使用。

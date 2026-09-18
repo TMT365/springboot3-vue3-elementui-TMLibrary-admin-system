@@ -426,6 +426,9 @@ export interface PurchaseResponse {
   createdTime: string
   /** 支付时间 —— orders.paid_time;未支付 / 已取消 / 超时都是 null */
   paidTime: string | null
+  /** 支付方式 —— WECHAT / ALIPAY / QQ;未支付为 null。
+   *  另外加这一列之前就已支付的老订单也是 null(当时没记录),UI 要显示「-」 */
+  paymentMethod: string | null
 }
 
 // ------------------- 用户反馈 -------------------

@@ -35,6 +35,31 @@ function saveToken(token: string | null): void {
  *    `.claim("role", user.getRole())`,user.getRole() 是 Integer。
  *    这两处的类型断言必须走 normalizeRole(),否则运行时会拿到数字。
  */
+/**
+ * base64url → UTF-8 字符串。
+ *
+ * <h2>为什么不能直接 atob() 之后就 JSON.parse</h2>
+ * {@code atob()} 返回的是「<b>一个字符 = 一个字节</b>」的 Latin-1 字符串,而 JWT
+ * 里的 payload 是 <b>UTF-8</b> 编码的 JSON。两者对不上时,非 ASCII 字符会被逐字节
+ * 当成 Latin-1 解读,中文直接变成乱码:
+ * <pre>
+ *   {"sub":"张三"}  →  atob 解出  "å¼ ä¸‰"
+ * </pre>
+ * 这就是「中文用户名在顶栏显示乱码」的根因 —— 而且只乱在顶栏:
+ * 登录成功时那句「欢迎,张三」用的是<b>响应体</b>(axios 走 JSON.parse,UTF-8 正确),
+ * 顶栏用的是 <b>JWT</b>(走这里),所以同一个用户名两处显示不一样。
+ *
+ * 正确做法:先还原成字节数组,再按 UTF-8 解码。
+ * TextDecoder 从 2016 年起就是各浏览器基线能力(Vue 3 本身要求的环境都满足),
+ * 比 crypto.randomUUID 那种还挑安全上下文的 API 稳得多。
+ */
+function base64UrlDecode(input: string): string {
+  const b64 = input.replace(/-/g, '+').replace(/_/g, '/')
+  const binary = atob(b64)
+  const bytes = Uint8Array.from(binary, (c) => c.charCodeAt(0))
+  return new TextDecoder('utf-8').decode(bytes)
+}
+
 function decodeJwtPayload(token: string): {
   uid?: number
   sub?: string
@@ -43,9 +68,7 @@ function decodeJwtPayload(token: string): {
   try {
     const payload = token.split('.')[1]
     if (!payload) return null
-    // base64url → base64
-    const b64 = payload.replace(/-/g, '+').replace(/_/g, '/')
-    return JSON.parse(atob(b64))
+    return JSON.parse(base64UrlDecode(payload))
   } catch {
     return null
   }

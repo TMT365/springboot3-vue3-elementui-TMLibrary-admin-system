@@ -47,38 +47,42 @@ public final class RedisKeys {
     public static final String JWT_BLACKLIST = "tmlibrary:auth:byJti:%s:blackList";
 
     // ============================================================
-    // 2. Captcha(按 username + uuid + 类型)
+    // 2. Captcha(按 uuid + 类型)
     // ============================================================
     /**
-     * 登录验证码 —— 把 username 编进 key(2026-09 加):
-     * <br>路径模式:{@code tmlibrary:captcha:login:{username}:{uuid}:code}
-     * <br>占位符 = {username}, {uuid}
-     * <br><b>为什么 key 里要带 username?</b>
+     * 登录验证码。
+     * <br>路径模式:{@code tmlibrary:captcha:login:{uuid}:code}
+     * <br>占位符 = {uuid}
+     *
+     * <h2>为什么 key 里不再带 username(2026-09 去掉)</h2>
+     * <p>原来 key 是 {@code login:{username}:{uuid}:code},带 username 的三个理由
+     * 现在都不成立了:</p>
      * <ul>
-     *   <li>防止极端情况下(前端 bug / UUID 碰撞)用户 A 的 captcha 被用户 B 拿去登录</li>
-     *   <li>支持按 username 清理:用户改名字后,可以用
-     *       {@code KEYS tmlibrary:captcha:login:{oldUsername}:*:code} 一次性清掉旧名字的所有 captcha</li>
-     *   <li>UUID v4 冲突概率极低(~1/2^122),但带 username 0 成本,且语义更清晰</li>
+     *   <li>"防止 A 的 captcha 被 B 拿去登录" —— captcha 的安全边界是 <b>uuid</b>
+     *       (122 位随机,申请和提交都得带上),不是 username。绑 username 挡不住
+     *       「攻击者用受害者的用户名申请一张图」,属于心理安慰。
+     *       另外 value 里的 {@code CaptchaRedis.username} 仍在做一致性比对,
+     *       真正的绑定语义没有丢。</li>
+     *   <li>"支持按 username 清理" —— 前端不再因为用户名变化而换图,这条清理也就
+     *       失去意义:改名字不影响任何在途 captcha,而且它 3 分钟自动过期,
+     *       不值得为它保留一次 KEYS 全量扫描。</li>
+     *   <li>"语义更清晰" —— 恰恰相反:中文用户名会被原样编进 key,
+     *       {@code KEYS tmlibrary:captcha:*}(运维排障时最常用的命令)会打出乱码。</li>
      * </ul>
+     * <p>UUID 本身是 v4(122 位随机),已经唯一标识一张图,不需要再加维度。</p>
+     *
+     * <h2>⚠️ 破坏性变更</h2>
+     * <p>key 格式变了,老 key 不会被新代码读到(但会自己 3 分钟内 TTL 过期)。
+     * 部署时建议清一次:{@code redis-cli --scan --pattern 'tmlibrary:captcha:*:code' | xargs -r redis-cli DEL}</p>
      */
-    public static final String CAPTCHA_LOGIN = "tmlibrary:captcha:login:%s:%s:code";
+    public static final String CAPTCHA_LOGIN = "tmlibrary:captcha:login:%s:code";
 
     /**
      * 注册验证码 —— 跟 login 路径对称。
-     * <br>路径模式:{@code tmlibrary:captcha:register:{username}:{uuid}:code}
-     * <br>占位符 = {username}, {uuid}
+     * <br>路径模式:{@code tmlibrary:captcha:register:{uuid}:code}
+     * <br>占位符 = {uuid}
      */
-    public static final String CAPTCHA_REGISTER = "tmlibrary:captcha:register:%s:%s:code";
-
-    /**
-     * 用于 {@code KEYS} 模式匹配 —— 清掉某用户的所有登录 captcha
-     */
-    public static final String CAPTCHA_LOGIN_PATTERN = "tmlibrary:captcha:login:%s:*:code";
-
-    /**
-     * 用于 {@code KEYS} 模式匹配 —— 清掉某用户的所有注册 captcha
-     */
-    public static final String CAPTCHA_REGISTER_PATTERN = "tmlibrary:captcha:register:%s:*:code";
+    public static final String CAPTCHA_REGISTER = "tmlibrary:captcha:register:%s:code";
 
     // ============================================================
     // 3. User — 三种用户维度缓存
@@ -181,7 +185,7 @@ public final class RedisKeys {
     // 7. Security — IP 风控(封禁标记 + 请求计数)
     // ============================================================
     /**
-     * IP 封禁标记 —— 每个 /api/* 请求都要读一次,必须走 Redis(不能查 DB)。
+     * IP 封禁标记 —— 每个 /* 请求都要读一次,必须走 Redis(不能查 DB)。
      * <br>路径模式:{@code tmlibrary:sec:byIp:{ip}:ban}
      * <br>TTL = 封禁剩余时间,到期自动消失(不用定时任务解封)。
      * <br>占位符 = ip
@@ -213,22 +217,12 @@ public final class RedisKeys {
         return String.format(JWT_BLACKLIST, jti);
     }
 
-    public static String captchaLogin(String username, String uuid) {
-        return String.format(CAPTCHA_LOGIN, username, uuid);
+    public static String captchaLogin(String uuid) {
+        return String.format(CAPTCHA_LOGIN, uuid);
     }
 
-    public static String captchaRegister(String username, String uuid) {
-        return String.format(CAPTCHA_REGISTER, username, uuid);
-    }
-
-    /** 该用户名下所有登录 captcha 的 KEY 匹配模式 */
-    public static String captchaLoginPattern(String username) {
-        return String.format(CAPTCHA_LOGIN_PATTERN, username);
-    }
-
-    /** 该用户名下所有注册 captcha 的 KEY 匹配模式 */
-    public static String captchaRegisterPattern(String username) {
-        return String.format(CAPTCHA_REGISTER_PATTERN, username);
+    public static String captchaRegister(String uuid) {
+        return String.format(CAPTCHA_REGISTER, uuid);
     }
 
     public static String userByUsername(String username) {

@@ -27,6 +27,10 @@ CREATE TABLE IF NOT EXISTS `orders` (
     -- 不能用 updated_time 代替 —— 支付后又取消/改地址之类的操作会把 updated_time 顶掉,
     -- 「什么时候付的钱」是财务口径,必须单独落一列。
     `paid_time`    DATETIME      NULL                    COMMENT '支付时间;未支付为 NULL',
+    -- 支付方式:和 paid_time 在同一次状态流转里写入,未支付为 NULL。
+    -- 取值由后端 PaymentMethod 枚举把关(WECHAT / ALIPAY / QQ),别的值在入口就 400 了,
+    -- 所以这一列不加数据库层 ENUM 约束也能保证内容干净。
+    `payment_method` VARCHAR(16) NULL                    COMMENT '支付方式:WECHAT/ALIPAY/QQ;未支付为 NULL',
     `created_time` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP COMMENT '创建时间',
     `updated_time` DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT '更新时间(状态流转时自动刷新)',
 

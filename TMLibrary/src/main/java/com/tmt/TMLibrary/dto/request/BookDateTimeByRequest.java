@@ -6,7 +6,7 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
- * GET /api/books/search/{CreatedTime|UpdatedTime}/by 粒度查询入参
+ * GET /books/search/{CreatedTime|UpdatedTime}/by 粒度查询入参
  *
  * 支持 5 级粒度:year / year+month / year+month+day /
  *               year+month+day+hour / year+month+day+hour+minute

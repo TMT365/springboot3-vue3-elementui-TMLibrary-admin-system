@@ -5,7 +5,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 
 /**
- * GET /api/books 多条件搜索的入参 DTO
+ * GET /books 多条件搜索的入参 DTO
  *
  * 所有筛选字段都是包装类型(可为 null),null = "该条件不参与"。
  * 由 Spring 用 {@code @ModelAttribute} 从 query 参数自动绑定。

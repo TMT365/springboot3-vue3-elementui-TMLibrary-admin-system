@@ -8,7 +8,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 /**
- * 管理端订单列表的一行 —— GET /api/purchases 的分页元素。
+ * 管理端订单列表的一行 —— GET /purchases 的分页元素。
  *
  * <p>比 {@link PurchaseResponse} 轻:不带 items(列表页不展开明细),
  * 但补上 createdTime(列表要按时间展示;详情接口反而不暴露时间)。</p>

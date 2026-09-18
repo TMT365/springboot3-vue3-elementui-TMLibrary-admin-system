@@ -64,7 +64,7 @@ public class SecurityConfig {
     @Bean
     public FilterRegistrationBean<JwtAuthFilter> jwtAuthFilterRegistration(JwtAuthFilter filter) {
         FilterRegistrationBean<JwtAuthFilter> reg = new FilterRegistrationBean<>(filter);
-        reg.addUrlPatterns("/api/*");
+        reg.addUrlPatterns("/*");
         reg.setOrder(10);
         reg.setName("jwtAuthFilter");
         return reg;
@@ -108,7 +108,7 @@ public class SecurityConfig {
     public FilterRegistrationBean<IpRiskControlFilter> ipRiskControlFilterRegistration(
             IpRiskControlFilter filter) {
         FilterRegistrationBean<IpRiskControlFilter> reg = new FilterRegistrationBean<>(filter);
-        reg.addUrlPatterns("/api/*");
+        reg.addUrlPatterns("/*");
         reg.setOrder(5);
         reg.setName("ipRiskControlFilter");
         return reg;

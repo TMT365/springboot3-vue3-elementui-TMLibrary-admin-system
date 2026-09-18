@@ -68,9 +68,18 @@ app:
     ip-ban:
       trust-private-ips: false
 
-  # ES:生产把地址/凭据都走环境变量(application.yml 里已有占位符)
+  # ES:生产把地址/凭据都走环境变量
+  #
+  # 三项**都给了默认值**,故意和 dev 一致 —— 故意让 ES 不可用时应用照样能起。
+  # 启动期 SearchSuggestServiceConfig 会打 1 秒超时的 ping,连不上就自动
+  # 把候选词服务降级回 MySQL(整个降级链是 Spring Boot 启动完成的必要前提,
+  # 不能让一个外部依赖炸掉整个启动)。所以"没装 ES / 启动 = 失败"是错误设计。
+  #
+  # ⚠️ 但 Docker 部署里 compose 会用 ${ES_HOSTS:-http://elasticsearch:9200}
+  # 覆盖,这里的 localhost 不会生效;裸 jar 部署里如果你真的需要连本地 ES,
+  # 再用环境变量覆盖即可。
   search:
     elasticsearch:
-      hosts: ${ES_HOSTS}
-      username: ${ES_USERNAME}
-      password: ${ES_PASSWORD}
+      hosts: ${ES_HOSTS:http://localhost:9200}
+      username: ${ES_USERNAME:elastic}
+      password: ${ES_PASSWORD:}

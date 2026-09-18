@@ -20,6 +20,7 @@ import { useRoute, useRouter } from 'vue-router'
 import type { FormInstance, FormRules } from 'element-plus'
 import { authApi } from '@/api/auth'
 import { useUserStore } from '@/stores/user'
+import { useNoticeStore } from '@/stores/notice'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import Captcha from '@/components/Captcha.vue'
 // 圆角卡片外壳(页面底 + 卡片 + 输入框 / 主按钮 / 社交按钮样式都收在里面)
@@ -28,6 +29,7 @@ import AuthCard from '@/components/AuthCard.vue'
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const noticeStore = useNoticeStore()
 
 /**
  * 窄屏(手机)把表单标签改到输入框上方。
@@ -76,6 +78,13 @@ async function onSubmit(): Promise<void> {
       uuid: captchaRef.value?.uuid ?? '',
     })
     userStore.setLogin(resp)
+    /*
+      浏览须知:每次登录弹一次(状态在内存里,刷新页面不会再弹)。
+      在 push 之前调用 —— 弹窗挂在 App.vue 上不会随路由卸载,所以它会跟着
+      用户到落地页继续显示;反过来说,如果哪天有人把弹窗挪进登录页,
+      这行就得挪到 push 之后(否则跳转的一瞬间弹窗被卸载,用户根本看不见)。
+    */
+    noticeStore.open()
     ElMessage.success(`欢迎，${resp.username}`)
     // 登录后所有角色统一进商城(/mall) -  后续可在商城内导航到个人中心/后台
     const defaultRedirect = '/mall'
@@ -130,7 +139,6 @@ async function onSubmit(): Promise<void> {
         <Captcha
           ref="captchaRef"
           v-model="form.captcha"
-          :username="form.username"
           type="login"
         />
       </el-form-item>

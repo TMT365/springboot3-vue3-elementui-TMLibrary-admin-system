@@ -60,11 +60,13 @@ public class CaptchaServiceImpl implements CaptchaService {
         long now = System.currentTimeMillis();
         long expiresAt = now + CAPTCHA_TTL_MS;
 
-        // 4. 写 Redis,按 type 选路径(login:{username}:{uuid} 或 register:{username}:{uuid})
-        //    key 里带 username 是 2026-09 的安全改进 —— 见 RedisKeys.CAPTCHA_LOGIN 注释
+        // 4. 写 Redis,按 type 选路径(login:{uuid} 或 register:{uuid})
+        //    key 里不带 username(2026-09 去掉)—— username 仍存进 value,
+        //    提交时由 AuthServiceImpl / UserManagementServiceImpl 做一致性校验。
+        //    见 RedisKeys.CAPTCHA_LOGIN 的「为什么 key 里不再带 username」。
         String key = (type == CaptchaType.LOGIN)
-            ? RedisKeys.captchaLogin(request.getUsername().trim(), uuid.trim())
-            : RedisKeys.captchaRegister(request.getUsername().trim(), uuid.trim());
+            ? RedisKeys.captchaLogin(uuid.trim())
+            : RedisKeys.captchaRegister(uuid.trim());
 
         CaptchaRedis meta = CaptchaRedis.of(captchaText, request, expiresAt);
         try {

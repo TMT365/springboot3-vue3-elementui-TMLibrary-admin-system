@@ -23,6 +23,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { userApi } from '@/api/user'
 import { useUserStore } from '@/stores/user'
+import { initialOf } from '@/utils/format'
 import type { UserDto, UserRole, UserStatus } from '@/types/api'
 
 const userStore = useUserStore()
@@ -127,7 +128,7 @@ onMounted(fetchProfile)
         <div class="hero-inner">
           <!-- 大头像 + 渐变背景 + 立体阴影 -->
           <div class="avatar-large">
-            {{ profile.username.slice(0, 1).toUpperCase() }}
+            {{ initialOf(profile.username) }}
           </div>
 
           <div class="hero-text">

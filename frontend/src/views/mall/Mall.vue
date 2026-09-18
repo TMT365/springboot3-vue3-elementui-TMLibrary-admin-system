@@ -10,6 +10,7 @@ import { useRoute, useRouter } from 'vue-router'
 import { bookApi } from '@/api/book'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import { highlightParts, useBookSuggest } from '@/composables/useBookSuggest'
+import { useCartStore } from '@/stores/cart'
 import type { BookCategoryNode, BookDto, BookSuggestion, PageResult } from '@/types/api'
 
 const route = useRoute()
@@ -126,8 +127,28 @@ function formatPrice(p: number): string {
   return `¥${Number(p).toFixed(2)}`
 }
 
-function buyNow(book: BookDto): void {
-  ElMessage.success(`已加入购物车:「${book.title}」`)
+const cartStore = useCartStore()
+
+/**
+ * 加入购物车。
+ *
+ * 和 UserBooks.vue 的 handleAddToCart 保持同一套行为:
+ *   - 库存 <= 0 → warning,不加
+ *   - 首次加入   → 「已加入购物车」
+ *   - 已在车里   → 「购物车中数量 +1」
+ *
+ * 之前这个方法只弹了一句「已加入购物车」就结束了,`cartStore.addItem()` 压根没被调用 ——
+ * 点了等于没点,购物车永远是空的(提示还是假的)。
+ */
+function addToCart(book: BookDto): void {
+  if ((book.stockQuantity ?? 0) <= 0) {
+    ElMessage.warning('库存不足,无法加入')
+    return
+  }
+  const result = cartStore.addItem(book)
+  ElMessage.success(
+    result === 'added' ? `已加入购物车:「${book.title}」` : '购物车中数量 +1',
+  )
 }
 
 /** 点 chip 真的跳分类页;再点一次当前分类 = 取消筛选 */
@@ -266,7 +287,7 @@ onMounted(async () => {
             你想要的下一本书, 一直都在。
           </p>
           <div class="hero-actions">
-            <button class="btn-primary" @click="featured && buyNow(featured)">
+            <button class="btn-primary" @click="featured && addToCart(featured)">
               加入购物车
             </button>
             <button class="btn-ghost">浏览全部</button>
@@ -361,7 +382,7 @@ onMounted(async () => {
               <span class="price">{{ formatPrice(book.price) }}</span>
               <span class="stock">库存 {{ book.stockQuantity ?? 0 }}</span>
             </div>
-            <button class="buy" @click="buyNow(book)">加入购物车</button>
+            <button class="buy" @click="addToCart(book)">加入购物车</button>
           </div>
         </article>
       </div>
@@ -407,7 +428,7 @@ onMounted(async () => {
               <span class="price">{{ formatPrice(book.price) }}</span>
               <span class="stock">库存 {{ book.stockQuantity ?? 0 }}</span>
             </div>
-            <button class="buy" @click="buyNow(book)">加入购物车</button>
+            <button class="buy" @click="addToCart(book)">加入购物车</button>
           </div>
         </article>
       </div>
@@ -430,7 +451,7 @@ onMounted(async () => {
             <p class="arrival-author">{{ book.author }} · ISBN {{ book.isbn }}</p>
           </div>
           <div class="arrival-price">{{ formatPrice(book.price) }}</div>
-          <button class="buy-sm" @click="buyNow(book)">加入购物车</button>
+          <button class="buy-sm" @click="addToCart(book)">加入购物车</button>
         </article>
       </div>
 

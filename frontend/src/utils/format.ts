@@ -31,3 +31,24 @@ export function formatDateTime(iso: string | null | undefined): string {
   if (!iso) return ''
   return iso.replace('T', ' ')
 }
+
+/**
+ * 取用户名的首字符,给头像占位用(MallLayout / AdminLayout / UserProfile 共用)。
+ *
+ * <h2>为什么不用 str.slice(0, 1)</h2>
+ * JS 的字符串下标是按 <b>UTF-16 code unit</b> 切的,不是按字符。BMP 之外的字符
+ * (emoji / 生僻字)占两个 code unit,slice(0,1) 会切出半个代理对,
+ * 渲染成一个「�」。用展开运算符按 <b>code point</b> 迭代就没这个问题。
+ *
+ * 中文用户名本来 slice(0,1) 是对的(一个汉字一个 code unit),所以这不是
+ * 「中文乱码」的根因 —— 那个在 stores/user.ts 的 JWT 解码里。
+ * 这里只是顺手把边界补上,顺带把三处重复的写法收敛成一处。
+ *
+ * @param name 用户名,允许 null/undefined
+ * @returns 首字符(大写化只对拉丁字母生效,中文原样返回);空值返回 '?'
+ */
+export function initialOf(name: string | null | undefined): string {
+  if (!name) return '?'
+  const first = [...name][0] ?? ''
+  return first.toUpperCase()
+}

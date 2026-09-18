@@ -5,7 +5,7 @@ import java.util.List;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 /**
- * 下单请求体 — 客户端发起购买时 POST /api/purchases 的入参。
+ * 下单请求体 — 客户端发起购买时 POST /purchases 的入参。
  * <p>
  * 用户身份(userId)不在这里 — Controller 从 @CurrentUser UserView me.getId() 拿,
  * 客户端 DTO 传 userId 字段是攻击面,已被移除。

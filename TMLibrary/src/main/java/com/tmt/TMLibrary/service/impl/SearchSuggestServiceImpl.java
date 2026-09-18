@@ -22,7 +22,7 @@ import java.util.regex.Pattern;
  * 下面的排序/裁剪逻辑可以原样保留。</p>
  *
  * <h2>关于"个性化"</h2>
- * <p>暂未实现,原因是<b>接口是免登录的</b>:{@code /api/books/**} 的 GET 在
+ * <p>暂未实现,原因是<b>接口是免登录的</b>:{@code /books/**} 的 GET 在
  * JwtAuthFilter 白名单里,过滤器命中白名单后直接放行、<b>不会解析 token</b>,
  * 所以这里拿不到 userId,没法按"这个用户买过什么"加权。
  * 要做个性化得先让白名单路径支持"有 token 就解析"(可选鉴权),或者

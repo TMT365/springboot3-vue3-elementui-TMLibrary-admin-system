@@ -15,11 +15,11 @@ import java.util.List;
 /**
  * 搜索候选词(下拉建议)。
  *
- * <p><b>免登录</b>:挂在 {@code /api/books} 前缀下,蹭 JwtAuthFilter 里
- * {@code ("/api/books", GET)} 那条白名单 —— 商城搜索框未登录也要能用。</p>
+ * <p><b>免登录</b>:挂在 {@code /books} 前缀下,蹭 JwtAuthFilter 里
+ * {@code ("/books", GET)} 那条白名单 —— 商城搜索框未登录也要能用。</p>
  *
  * <p>路径匹配:字面量段 {@code suggest} 优先于变量段 {@code {isbn}},
- * 所以不会和 {@code GET /api/books/{isbn}} 撞车(同 {@code /categories})。</p>
+ * 所以不会和 {@code GET /books/{isbn}} 撞车(同 {@code /categories})。</p>
  */
 @Slf4j
 @RestController
@@ -30,7 +30,7 @@ public class SearchSuggestController {
     private final SearchSuggestService searchSuggestService;
 
     /**
-     * GET /api/books/suggest?q=计算&amp;limit=8
+     * GET /books/suggest?q=计算&amp;limit=8
      *
      * @param q     已输入内容;空白直接返回空数组(不打库)
      * @param limit 条数上限,夹到 [1, 20],默认 8

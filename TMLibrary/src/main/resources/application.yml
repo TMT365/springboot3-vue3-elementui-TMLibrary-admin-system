@@ -41,6 +41,24 @@ spring:
 # ⚠️ 生产环境必须用环境变量覆盖成精确域名,不要保留 [*]:
 #   APP_CORS_ORIGINS=https://admin.example.com
 app:
+  # ============================================================
+  # 用户注册
+  # ============================================================
+  user:
+    # 新注册用户的角色。取值必须是枚举名且大写:USER / ADMIN / BOSS
+    # (写小写会在启动时直接失败,这是故意的 —— 配错就该起不来)。
+    #
+    # 默认 USER —— 权限只能由 BOSS 事后提升(见 UserManagementServiceImpl.updateUser
+    # 里「仅 BOSS 可修改用户角色」那条)。这是安全默认值:注册接口是公开的,
+    # 默认给高权限等于「谁注册谁是管理员」。
+    #
+    # 想临时测试管理员能力(本地 / 内网),用环境变量打开即可,不用改这个文件:
+    #   export REGISTER_DEFAULT_ROLE=ADMIN
+    #
+    # 代码侧还有一层兜底:UserManagementServiceImpl.registerDefaultRole 的
+    # @Value 默认值也是 USER,所以把这个 key 整行删掉同样安全。
+    register-default-role: ${REGISTER_DEFAULT_ROLE:USER}
+
   cors:
     origins: http://127.0.0.1:[*]
 
@@ -98,7 +116,7 @@ app:
       socket-timeout-ms:  ${ES_SOCKET_TIMEOUT_MS:2000}
 
   # IP 风控 —— 高频请求(脚本攻击)自动封禁
-  # 判定在 IpRiskControlFilter(每个 /api/* 请求),计数走 Redis,封禁记录落 ip_bans 表
+  # 判定在 IpRiskControlFilter(每个 /* 请求),计数走 Redis,封禁记录落 ip_bans 表
   security:
     ip-ban:
       # 总开关 —— 本地压测/调试时可以设 false 关掉
@@ -132,7 +150,7 @@ app:
       trusted-proxies: ${IP_BAN_TRUSTED_PROXIES:}
 
 # Actuator / 指标
-# ⚠️ 注意:JwtAuthFilter 只注册在 /api/* 上,actuator 端点不走鉴权。
+# ⚠️ 注意:JwtAuthFilter 只注册在 /* 上,actuator 端点不走鉴权。
 #    这里仅暴露 health 与 metrics;生产环境建议用独立 management 端口,
 #    或在网关层限制访问来源。
 management:
