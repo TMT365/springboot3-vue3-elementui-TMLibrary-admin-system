@@ -70,6 +70,16 @@ function statusLabel(status: string): string {
   }
 }
 
+/** 支付方式 code → 中文名(后端存的是 PaymentMethod 枚举 code) */
+function payMethodLabel(method: string): string {
+  switch (method) {
+    case 'WECHAT': return '微信支付'
+    case 'ALIPAY': return '支付宝'
+    case 'QQ': return 'QQ 钱包'
+    default: return method
+  }
+}
+
 function goCreate(): void {
   router.replace('/admin/purchases/new')
 }
@@ -129,9 +139,26 @@ function goCreate(): void {
             <span class="cell-price">{{ formatPrice(row.totalAmount) }}</span>
           </template>
         </el-table-column>
+        <el-table-column label="支付方式" width="110">
+          <template #default="{ row }">
+            <!-- 未支付 = null;加这列之前就付过的老订单也是 null(当时没记录),
+                 统一显示「-」,不是渲染失败 -->
+            <span v-if="row.paymentMethod" class="cell-muted">
+              {{ payMethodLabel(row.paymentMethod) }}
+            </span>
+            <span v-else class="cell-muted">-</span>
+          </template>
+        </el-table-column>
         <el-table-column label="下单时间" width="180">
           <template #default="{ row }">
             <span class="cell-muted">{{ formatDateTime(row.createdTime) }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="支付时间" width="180">
+          <template #default="{ row }">
+            <span class="cell-muted">
+              {{ row.paidTime ? formatDateTime(row.paidTime) : '-' }}
+            </span>
           </template>
         </el-table-column>
         <el-table-column label="操作" width="160" fixed="right" align="center">

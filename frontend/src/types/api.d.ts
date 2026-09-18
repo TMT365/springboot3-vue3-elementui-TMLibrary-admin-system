@@ -412,6 +412,10 @@ export interface OrderListItem {
   totalAmount: number
   /** LocalDateTime → "yyyy-MM-ddTHH:mm:ss" */
   createdTime: string
+  /** WECHAT / ALIPAY / QQ;未支付为 null */
+  paymentMethod: string | null
+  /** 支付时间;未支付为 null */
+  paidTime: string | null
 }
 
 /** GET /api/purchases/{orderNumber} 或 GET /api/users/{id}/purchases 响应元素

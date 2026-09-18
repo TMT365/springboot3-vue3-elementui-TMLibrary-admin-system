@@ -114,6 +114,7 @@
         o.created_time,
         o.updated_time,
         o.paid_time,
+        o.payment_method,
 
         oi.id AS item_id,
         oi.order_id AS item_order_id,
@@ -177,6 +178,7 @@
         o.created_time,
         o.updated_time,
         o.paid_time,
+        o.payment_method,
 
         oi.id AS item_id,
         oi.order_id AS item_order_id,
@@ -196,7 +198,7 @@
          ============================================================ -->
     <select id="selectOrderPage" resultMap="OrderResultMap">
         SELECT id, order_number, user_id, total_amount, order_status,
-               created_time, updated_time, expire_time
+               created_time, updated_time, expire_time, payment_method
         FROM orders
         ORDER BY id DESC
         LIMIT #{offset}, #{limit}

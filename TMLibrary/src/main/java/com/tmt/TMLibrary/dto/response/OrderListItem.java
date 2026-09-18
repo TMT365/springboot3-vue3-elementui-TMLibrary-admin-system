@@ -26,6 +26,20 @@ public class OrderListItem {
 
     private LocalDateTime createdTime;
 
+    /**
+     * 支付方式 —— WECHAT / ALIPAY / QQ;未支付为 null。
+     *
+     * <p>管理端要靠它核对"这单走的哪个渠道"。加这一列之前列表里完全看不到支付信息,
+     * 用户付完款管理员也无从确认。</p>
+     */
+    private String paymentMethod;
+
+    /**
+     * 支付时间 —— 未支付为 null。
+     * <p>和 paymentMethod 一起给:单看"支付方式"没有时间参照,对账时对不上。</p>
+     */
+    private LocalDateTime paidTime;
+
     public static OrderListItem from(Order o) {
         if (o == null) {
             return null;
@@ -35,6 +49,8 @@ public class OrderListItem {
         item.setStatus(OrderStatus.getOrderStatusByCode(o.getOrderStatus()));
         item.setTotalAmount(o.getTotalAmount());
         item.setCreatedTime(o.getCreatedTime());
+        item.setPaymentMethod(o.getPaymentMethod());
+        item.setPaidTime(o.getPaidTime());
         return item;
     }
 }
