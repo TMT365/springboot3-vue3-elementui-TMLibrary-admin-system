@@ -14,9 +14,9 @@
 import type { ChartPalette } from '@/composables/useChartPalette'
 import type { ChartJsConfig } from '@/types/chartjs'
 import type { BookSalesItem, DailyCountItem, DailySalesItem, StatusCountItem } from '@/types/api'
+import { externalTooltip } from '@/utils/chartTooltip'
 
 const FONT_FAMILY = "'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif"
-const SERIF_FAMILY = "'DM Serif Display', Georgia, serif"
 
 /**
  * 构建时的视口信息 —— 由 BaseChart 传入。
@@ -65,21 +65,24 @@ function rgbOf(hex: string, fallback: string): string {
   return `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`
 }
 
-/** 各图共用的 tooltip 样式 —— 卡片化,和页面卡片一致的圆角与描边 */
-function tooltipStyle(p: ChartPalette) {
+/**
+ * 各图共用的 tooltip 配置 —— 外部 HTML 提示框(见 utils/chartTooltip.ts)。
+ *
+ * 为什么不用 Chart.js 自带提示框:自带的是画在 canvas 上的矩形,
+ * 只能靠 config 里的颜色写死,没法跟页面共用设计令牌,主题切换还得重建图表。
+ * 换成 external 之后,提示框是一块普通 DOM,样式在 theme.css 里,
+ * 明暗切换零成本。
+ *
+ * 回调返回的字符串用 \t 分隔「标签」和「数值」,提示框里标签靠左、数值靠右。
+ */
+function tooltipConfig() {
   return {
-    backgroundColor: p.card,
-    titleColor: p.text,
-    bodyColor: p.textMuted,
-    borderColor: p.border,
-    borderWidth: 1,
-    padding: 12,
-    cornerRadius: 10,
-    boxPadding: 6,
-    usePointStyle: true,
-    titleFont: { family: SERIF_FAMILY, size: 13, weight: 700 as const },
-    bodyFont: { family: FONT_FAMILY, size: 12 },
-    displayColors: true,
+    // enabled: false —— 关掉 Chart.js 自带的 canvas 提示框。
+    //   注意:4.x 里 external 只是"额外叫一声",自带的框照样会画出来,
+    //   两块提示框会叠在一起(一块黑底 canvas 框 + 一块 HTML 框)。
+    //   关掉自带框后,external 依然会被调用(事件处理里是 enabled || external)。
+    enabled: false,
+    external: externalTooltip,
   }
 }
 
@@ -174,12 +177,12 @@ export function buildSalesTrendConfig(
           },
         },
         tooltip: {
-          ...tooltipStyle(p),
+          ...tooltipConfig(),
           callbacks: {
             label: (ctx: { dataset: { label?: string }; parsed: { y: number } }) =>
               ctx.dataset.label === '销售额'
-                ? ` 销售额 ${money(ctx.parsed.y)}`
-                : ` 订单 ${ctx.parsed.y} 笔`,
+                ? `销售额\t${money(ctx.parsed.y)}`
+                : `订单\t${ctx.parsed.y} 笔`,
           },
         },
       },
@@ -242,9 +245,9 @@ export function buildNewUsersConfig(
       plugins: {
         legend: { display: false },
         tooltip: {
-          ...tooltipStyle(p),
+          ...tooltipConfig(),
           callbacks: {
-            label: (ctx: { parsed: { y: number } }) => ` 新增 ${ctx.parsed.y} 人`,
+            label: (ctx: { parsed: { y: number } }) => `新增\t${ctx.parsed.y} 人`,
           },
         },
       },
@@ -293,10 +296,13 @@ export function buildBookSalesConfig(
       indexAxis: 'y',
       responsive: true,
       maintainAspectRatio: false,
+      // 横向条形用 index 模式:不必精确压在那根 16px 宽的条上,
+      // 鼠标横向扫过哪一行就提示哪一行(和上面两张折线一致)
+      interaction: { mode: 'index', intersect: false },
       plugins: {
         legend: { display: false },
         tooltip: {
-          ...tooltipStyle(p),
+          ...tooltipConfig(),
           callbacks: {
             title: (items: { dataIndex: number }[]) => {
               const row = (data as BookSalesItem[])[items[0]?.dataIndex ?? 0]
@@ -304,7 +310,7 @@ export function buildBookSalesConfig(
             },
             label: (ctx: { dataIndex: number; parsed: { x: number } }) => {
               const row = (data as BookSalesItem[])[ctx.dataIndex]
-              return [` 售出 ${ctx.parsed.x} 件`, ` 销售额 ${money(row?.amount ?? 0)}`]
+              return [`售出\t${ctx.parsed.x} 件`, `销售额\t${money(row?.amount ?? 0)}`]
             },
           },
         },
@@ -391,11 +397,11 @@ export function buildOrderStatusConfig(
           },
         },
         tooltip: {
-          ...tooltipStyle(p),
+          ...tooltipConfig(),
           callbacks: {
             label: (ctx: { label?: string; parsed: number }) => {
               const pct = total > 0 ? ((ctx.parsed / total) * 100).toFixed(1) : '0.0'
-              return ` ${ctx.label} ${ctx.parsed} 笔(${pct}%)`
+              return `\t${ctx.parsed} 笔(${pct}%)`
             },
           },
         },

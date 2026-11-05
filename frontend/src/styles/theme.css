@@ -837,6 +837,85 @@ html:root .premium-table .cell {
 }
 
 /* =============================================================
+ * 4.5 图表提示框  -  Chart.js external tooltip 的 HTML 外观
+ * ============================================================= */
+
+/* ---- 4.5.1 为什么提示框要自己画 ----
+ *
+ * Chart.js 自带的提示框是**画在 canvas 上**的一块矩形:颜色、字体、
+ * 圆角全靠 options.plugins.tooltip 里的配置写死,拿不到 CSS 变量。
+ * 结果是:提示框和页面卡片是两套视觉体系(一套 Canvas 一套 CSS),
+ * 主题切换后还得重建图表才能换色。
+ *
+ * 换成 external tooltip 后,提示框就是一块普通 DOM,于是:
+ *   - 底色 / 描边 / 圆角 / 阴影直接用令牌(--color-card、--color-border、
+ *     --radius-md、--shadow-card-hover),跟卡片完全一致
+ *   - 明暗切换零成本(CSS 变量跟着 html[data-theme] 变)
+ *   - 数值用 tabular-nums,多行不错位
+ *
+ * 结构:.chart-tip(定位层) > .chart-tip-inner(外观层)。
+ * 定位层只管 left/top + translate,外观层管排版 —— 两者分开,
+ * 换外观时不用动定位逻辑。
+ */
+html:root .chart-tip {
+  position: absolute;
+  z-index: 12;
+  pointer-events: none;
+  transform: translate(-50%, -100%);
+  opacity: 0;
+  transition: opacity 140ms ease;
+}
+
+html:root .chart-tip-inner {
+  min-width: 128px;
+  padding: 9px 11px;
+  border-radius: var(--radius-md);
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  box-shadow: var(--shadow-card-hover);
+  font-family: var(--font-sans);
+  font-size: 12px;
+  line-height: 1.6;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+html:root .chart-tip-title {
+  font-family: var(--font-display);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 5px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--color-border);
+}
+
+html:root .chart-tip-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+html:root .chart-tip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex: none;
+}
+
+html:root .chart-tip-label {
+  color: var(--color-text-muted);
+}
+
+html:root .chart-tip-value {
+  margin-left: auto;
+  padding-left: 14px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text);
+}
+
+/* =============================================================
  * 5. 全局动效减弱  -  尊重系统的 prefers-reduced-motion 设置
  *    覆盖所有动画 / 过渡,让减弱动态效果的用户立即看到最终态
  * ============================================================= */
