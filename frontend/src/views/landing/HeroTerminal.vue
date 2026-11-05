@@ -346,8 +346,11 @@ onBeforeUnmount(() => {
   /* 可视行数 —— 改这个数字,窗口高度自动跟着变。
      注意:加行数 = 加高度,而 Hero 里留给它的垂直空间是有限的,
      动这个值要连带复核 Landing.vue 里 .hero-terminal 的 bottom
-     (那边有完整的垂直预算推导) */
-  --t-visible-lines: 12;
+     (那边有完整的垂直预算推导)。
+     9 行:终端高 = 30 + 9×1.65×13 + 2 = 225px。这是 Hero 左下角
+     那块"浮窗"的高度上限 —— 再高就会顶到副标题底边
+     (Landing.vue .hero-terminal 注释里有推导) */
+  --t-visible-lines: 9;
 
   width: min(440px, 100%);
   background: var(--t-bg);

@@ -321,8 +321,8 @@ onBeforeUnmount(() => {
   height: 32px;
   display: grid;
   place-items: center;
-  background: var(--color-accent, #4caf50);
-  color: #fff;
+  background: var(--color-accent, #337a3e);
+  color: var(--color-on-accent);
   font-family: 'DM Serif Display', Georgia, serif;
   font-weight: 400;
   font-size: 18px;
@@ -369,12 +369,14 @@ onBeforeUnmount(() => {
   top: 0;
   left: 0;
   display: block;
-  background: var(--color-accent, #4caf50);
+  background: var(--color-accent, #337a3e);
   border-radius: 30px;
   pointer-events: none;
   z-index: 0;
-  will-change: transform, width, height;
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.28);
+  /* 只提 transform:width/height 不是 GPU 合成属性,
+     挂进 will-change 只会白白占内存,真正的重绘由 transform 完成 */
+  will-change: transform;
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-accent) 28%, transparent);
   transition:
     transform 280ms cubic-bezier(0.22, 0.61, 0.36, 1),
     width 220ms ease,
@@ -401,9 +403,10 @@ onBeforeUnmount(() => {
   transition: color 180ms ease;
 }
 
-/* 滑块在该 nav-item 时文字反白 */
+/* 滑块在该 nav-item 时文字反色 —— 反色跟着 --color-on-accent 走:
+   暗色下滑块是亮绿 #66bb6a,白字只有 1.98:1,必须换成墨字。 */
 .nav-item.is-active > .nav-link {
-  color: #fff;
+  color: var(--color-on-accent);
 }
 
 .nav-dropdown {
@@ -454,7 +457,7 @@ onBeforeUnmount(() => {
   top: 50%;
   width: 3px;
   height: 0;
-  background: var(--color-accent, #4caf50);
+  background: var(--color-accent, #337a3e);
   border-radius: 2px;
   transform: translateY(-50%);
   transition: height 220ms cubic-bezier(0.4, 0, 0.2, 1);
@@ -466,7 +469,7 @@ onBeforeUnmount(() => {
 
 /* 子项被点击选中 —— 绿色文字 + 绿色竖条 */
 .nav-dropdown-item.is-pinned a {
-  color: var(--color-accent, #4caf50);
+  color: var(--color-accent, #337a3e);
 }
 
 .nav-dropdown-item.is-pinned a::before {
@@ -519,7 +522,15 @@ onBeforeUnmount(() => {
 }
 
 .theme-toggle input:checked + .toggle-track {
-  background: var(--color-accent, #4caf50);
+  background: var(--color-accent, #337a3e);
+}
+
+/* 主题开关:checkbox 本身是透明的(只做状态载体),
+ * 浏览器默认焦点圈画在透明元素上 = 键盘用户看不见焦点在哪。
+ * 所以把焦点环画到可见的滑轨上(相邻兄弟选择器)。 */
+.theme-toggle input:focus-visible + .toggle-track {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
 }
 
 .theme-toggle input:checked + .toggle-track .toggle-thumb {
@@ -533,16 +544,21 @@ onBeforeUnmount(() => {
   font-weight: 500;
   text-decoration: none;
   border-radius: 6px;
-  transition: all 150ms ease;
+  /* 明确列出要过渡的属性:transition:all 会把 padding/border-radius
+     之类不该动的属性也一起带上,改布局时会出现拖影 */
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    border-color 150ms ease;
 }
 
 .login-link {
-  background: var(--color-accent, #4caf50);
-  color: #fff;
+  background: var(--color-accent, #337a3e);
+  color: var(--color-on-accent);
 }
 
 .login-link:hover {
-  background: var(--color-accent-hover, #43a047);
+  background: var(--color-accent-hover, #2c6b35);
 }
 
 .admin-link {
@@ -551,8 +567,8 @@ onBeforeUnmount(() => {
 }
 
 .admin-link:hover {
-  border-color: var(--color-accent, #4caf50);
-  color: var(--color-accent, #4caf50);
+  border-color: var(--color-accent, #337a3e);
+  color: var(--color-accent, #337a3e);
 }
 
 /* 注册按钮  -  描边 + 绿色字,跟登录的实心绿形成层级 */
@@ -562,16 +578,16 @@ onBeforeUnmount(() => {
   font-weight: 500;
   text-decoration: none;
   border-radius: 6px;
-  color: var(--color-accent, #4caf50);
+  color: var(--color-accent, #337a3e);
   background: transparent;
-  border: 1px solid var(--color-accent, #4caf50);
+  border: 1px solid var(--color-accent, #337a3e);
   cursor: pointer;
   transition: background 150ms ease, color 150ms ease;
 }
 
 .register-link:hover {
-  background: var(--color-accent, #4caf50);
-  color: #fff;
+  background: var(--color-accent, #337a3e);
+  color: var(--color-on-accent);
 }
 
 @media (max-width: 900px) {
@@ -620,7 +636,7 @@ onBeforeUnmount(() => {
   }
   /* 移动端高亮用纯背景色 */
   .nav-item.is-active > .nav-link {
-    background: var(--color-accent, #4caf50);
+    background: var(--color-accent, #337a3e);
   }
   .nav-dropdown {
     position: static;

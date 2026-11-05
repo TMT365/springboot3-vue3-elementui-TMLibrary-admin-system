@@ -321,12 +321,15 @@ async function handleCommand(command: string): Promise<void> {
  * 侧栏
  * ============================================================ */
 .sidebar {
-  background: var(--color-bg);
+  /* 侧栏 = chrome(凹面),比画布深一档。
+     之前这里写的是 --color-bg(和内容区同色),亮色下侧栏和内容区糊成一片,
+     暗色下又比内容区浅 —— 明暗两个主题的层级方向正好相反。 */
+  background: var(--color-chrome);
   color: var(--color-text);
-  border-right: 1px solid var(--color-border);
+  border-right: 1px solid var(--color-border-strong);
   display: flex;
   flex-direction: column;
-  
+
   transition: width 280ms cubic-bezier(0.4, 0, 0.2, 1);
   overflow-x: hidden;
 }
@@ -361,7 +364,7 @@ async function handleCommand(command: string): Promise<void> {
   display: grid;
   place-items: center;
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
   font-family: 'DM Serif Display', Georgia, serif;
   font-weight: 400;
   font-size: 18px;
@@ -385,7 +388,7 @@ async function handleCommand(command: string): Promise<void> {
   justify-content: space-between;
   height: 60px;
   padding: 0 24px;
-  background: rgba(250, 248, 243, 0.72);
+  background: var(--color-glass);
   -webkit-backdrop-filter: blur(14px) saturate(180%);
   backdrop-filter: blur(14px) saturate(180%);
   border-bottom: 1px solid var(--color-border);
@@ -393,10 +396,6 @@ async function handleCommand(command: string): Promise<void> {
   top: 0;
   z-index: 10;
   transition: background 200ms ease, border-color 200ms ease;
-}
-
-:root[data-theme='dark'] .topbar {
-  background: rgba(26, 26, 26, 0.72);
 }
 
 
@@ -549,7 +548,7 @@ async function handleCommand(command: string): Promise<void> {
   display: grid;
   place-items: center;
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
   font-family: 'DM Serif Display', Georgia, serif;
   font-size: 14px;
   font-weight: 400;
@@ -606,7 +605,8 @@ async function handleCommand(command: string): Promise<void> {
  * 主内容区
  * ============================================================ */
 .main-content {
-  background: var(--color-bg-alt);
+  /* 画布 = --color-bg,卡片(--color-card 白)浮在它上面 */
+  background: var(--color-bg);
   padding: 28px 28px 48px;
 }
 
@@ -625,21 +625,34 @@ async function handleCommand(command: string): Promise<void> {
 }
 
 .sidebar :deep(.el-menu-item:hover) {
-  background-color: var(--color-bg-alt);
+  background-color: var(--color-chrome-hover);
   color: var(--color-text);
 }
 
 .sidebar :deep(.el-menu-item:focus-visible) {
   outline: none;
   box-shadow: inset 3px 0 0 var(--color-accent);
-  background-color: var(--color-bg-alt);
+  background-color: var(--color-chrome-hover);
   color: var(--color-text);
 }
 
 .sidebar :deep(.el-menu-item.is-active) {
-  background-color: rgba(76, 175, 80, 0.12);
+  position: relative;
+  background-color: var(--color-accent-soft);
   color: var(--color-accent);
   font-weight: 600;
+}
+
+/* 选中项左侧一道品牌色竖条 —— 光靠底色偏淡,扫视时找不到"我在哪一页" */
+.sidebar :deep(.el-menu-item.is-active)::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 9px;
+  bottom: 9px;
+  width: 3px;
+  border-radius: 0 3px 3px 0;
+  background: var(--color-accent);
 }
 
 

@@ -69,6 +69,9 @@ interface StatCard {
   icon: string
   tone: string
   loading: boolean
+  /** 值是不是"计数" —— 计数用大号衬线数字,文本(角色名/日期)用 UI 字体小一号,
+   *  免得 "2026-11-04" 这种串用 28px 衬线体撑破卡片 */
+  numeric: boolean
 }
 
 /**
@@ -85,6 +88,7 @@ const stats = computed<StatCard[]>(() => {
       icon: 'Reading',
       tone: 'primary',
       loading: loading.value,
+      numeric: true,
     },
   ]
   if (isAdmin.value) {
@@ -96,6 +100,7 @@ const stats = computed<StatCard[]>(() => {
       icon: 'UserFilled',
       tone: 'neutral',
       loading: loading.value,
+      numeric: true,
     })
   }
   baseStats.push(
@@ -107,6 +112,7 @@ const stats = computed<StatCard[]>(() => {
       icon: 'Avatar',
       tone: 'neutral',
       loading: false,
+      numeric: false,
     },
     {
       key: 'time',
@@ -116,6 +122,7 @@ const stats = computed<StatCard[]>(() => {
       icon: 'Calendar',
       tone: 'neutral',
       loading: false,
+      numeric: false,
     },
   )
   return baseStats
@@ -206,7 +213,7 @@ function goTo(path: string): void {
           <div v-if="stat.loading" class="stat-skeleton">
             <el-skeleton-item variant="h1" style="width: 60%" />
           </div>
-          <p v-else class="stat-value">
+          <p v-else class="stat-value" :class="{ 'is-text': !stat.numeric }">
             <span class="stat-number">{{ stat.value }}</span>
             <span v-if="stat.unit" class="stat-unit">{{ stat.unit }}</span>
           </p>
@@ -406,8 +413,8 @@ function goTo(path: string): void {
   align-items: center;
   gap: 8px;
   padding: 14px 18px;
-  background: rgba(245, 108, 108, 0.08);
-  color: #f56c6c;
+  background: color-mix(in srgb, var(--el-color-danger) 8%, transparent);
+  color: var(--el-color-danger);
   border-radius: 10px;
   margin-bottom: 16px;
   font-size: 14px;
@@ -418,16 +425,31 @@ function goTo(path: string): void {
  * ============================================================ */
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  /* 4 张卡一行 —— 之前用 repeat(auto-fit, minmax(240px, 1fr)),
+     侧栏占掉 220px 后放不下 4 列,永远渲染成 "3 + 1" 的孤儿布局。
+     现在写死 4 列,再按视口逐级降为 2 列 / 1 列。 */
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 16px;
   margin-bottom: 32px;
+}
+
+@media (max-width: 1180px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 560px) {
+  .stats-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .stat-card {
   display: flex;
   align-items: center;
-  gap: 16px;
-  padding: 24px;
+  gap: 14px;
+  padding: 20px;
   background: var(--color-card);
   border-radius: 14px;
   /* 分层阴影(亮=环境+直射两层,暗=压边)+ 1px 描边定义轮廓 */
@@ -463,8 +485,8 @@ function goTo(path: string): void {
 }
 
 .stat-icon {
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   display: grid;
   place-items: center;
   background: var(--color-bg-alt);
@@ -474,7 +496,7 @@ function goTo(path: string): void {
 }
 
 .stat-card.tone-primary .stat-icon {
-  background: rgba(76, 175, 80, 0.12);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
   color: var(--color-accent);
 }
 
@@ -501,6 +523,15 @@ function goTo(path: string): void {
   line-height: 1.1;  display: flex;
   align-items: baseline;
   gap: 4px;
+}
+
+/* 文本值(角色名 / 系统日期)—— 用 UI 字体小一号,
+   28px 的衬线体套一串 "2026-11-04" 会把卡片撑破 */
+.stat-value.is-text {
+  font-family: var(--font-sans);
+  font-size: 19px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
 }
 
 .stat-number {
@@ -615,7 +646,7 @@ function goTo(path: string): void {
   height: 40px;
   display: grid;
   place-items: center;
-  background: rgba(76, 175, 80, 0.12);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
   color: var(--color-accent);
   border-radius: 10px;
   flex-shrink: 0;

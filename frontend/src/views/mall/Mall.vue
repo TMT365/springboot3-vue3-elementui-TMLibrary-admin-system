@@ -511,8 +511,8 @@ onMounted(async () => {
 
 .hero-grid {
   display: grid;
-  grid-template-columns: 1.2fr 1fr;
-  gap: 56px;
+  grid-template-columns: 1.35fr 1fr;
+  gap: 48px;
   align-items: center;
   padding: 48px 40px;
   background: linear-gradient(
@@ -532,7 +532,7 @@ onMounted(async () => {
   right: -80px;
   width: 280px;
   height: 280px;
-  background: radial-gradient(circle, rgba(76, 175, 80, 0.08) 0%, transparent 70%);
+  background: radial-gradient(circle, color-mix(in srgb, var(--color-accent) 8%, transparent) 0%, transparent 70%);
   pointer-events: none;
 }
 
@@ -548,12 +548,18 @@ onMounted(async () => {
 
 .hero-title {
   font-family: 'DM Serif Display', Georgia, serif;
-  font-size: clamp(36px, 4.5vw, 56px);
+  /* 上限从 56px 降到 50px:9 个汉字(「深入理解计算机系统」)按 56px 排不下,
+     第二行只剩一个「统」,孤零零挂在下面很难看。
+     text-wrap: balance 再兜一层 —— 真的换行时两行长度也均衡,不会出现孤儿字。 */
+  font-size: clamp(30px, 3.8vw, 50px);
   font-weight: 400;
-  line-height: 1.1;
+  line-height: 1.15;
   letter-spacing: -0.025em;
   color: var(--color-text);
-  margin: 0 0 16px;}
+  margin: 0 0 16px;
+  text-wrap: balance;
+  line-break: strict;
+}
 
 .hero-title-placeholder {
   color: var(--color-text);
@@ -594,7 +600,7 @@ onMounted(async () => {
   gap: 8px;
   padding: 14px 28px;
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
   font-size: 15px;
   font-weight: 600;
   border: none;
@@ -746,13 +752,40 @@ onMounted(async () => {
 
 /* overflow-x: auto 会顺带把 overflow-y 变成 hidden(clipping),
    chip hover 时 translateY(-1px) 抬起的那 1px + 阴影就被上方区块切掉了,
-   看起来像"被上面的 div 遮住"。上下留出空间即可 —— 顺便让横向滚动条不贴边。 */
+   看起来像"被上面的 div 遮住"。上下留出空间即可 —— 顺便让横向滚动条不贴边。
+
+   滚动条本身藏掉:一排 chip 底下挂一根灰条太脏。
+   改用经典的「滚动阴影」提示还有内容可横向滚:
+   local 的两张底色渐变跟着内容滚(到头时把阴影盖住),
+   scroll 的两张阴影固定在容器左右(只在溢出时露出来)。 */
 .cat-row {
   display: flex;
   gap: 12px;
   overflow-x: auto;
   padding: 8px 2px 10px;
-  scrollbar-width: thin;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+  background:
+    linear-gradient(to right, var(--color-bg) 40%, transparent) left center / 36px 100%
+      no-repeat local,
+    linear-gradient(to left, var(--color-bg) 40%, transparent) right center / 36px 100%
+      no-repeat local,
+    radial-gradient(
+        farthest-side at 0 50%,
+        color-mix(in srgb, var(--color-text) 14%, transparent),
+        transparent
+      )
+      left center / 14px 100% no-repeat scroll,
+    radial-gradient(
+        farthest-side at 100% 50%,
+        color-mix(in srgb, var(--color-text) 14%, transparent),
+        transparent
+      )
+      right center / 14px 100% no-repeat scroll;
+}
+
+.cat-row::-webkit-scrollbar {
+  display: none;
 }
 
 .cat-chip {
@@ -769,7 +802,14 @@ onMounted(async () => {
   border: 1px solid var(--color-border);
   border-radius: 999px;
   cursor: pointer;
-  transition: all 220ms cubic-bezier(0.4, 0, 0.2, 1);
+  /* 明确列出要过渡的属性(hover 改边框色/文字色/底色/位移,
+     选中态还要带 box-shadow),不用 transition: all */
+  transition:
+    color 220ms cubic-bezier(0.4, 0, 0.2, 1),
+    background-color 220ms cubic-bezier(0.4, 0, 0.2, 1),
+    border-color 220ms cubic-bezier(0.4, 0, 0.2, 1),
+    box-shadow 220ms cubic-bezier(0.4, 0, 0.2, 1),
+    transform 220ms cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 /* 「全部」用一条竖分隔线和后面的分类 chip 拉开,视觉上表明它不是一个分类 */
@@ -807,25 +847,27 @@ onMounted(async () => {
 .cat-chip:hover {
   border-color: var(--color-accent);
   color: var(--color-accent);
-  background: rgba(76, 175, 80, 0.06);
+  background: color-mix(in srgb, var(--color-accent) 6%, transparent);
   transform: translateY(-2px);
 }
 
 .cat-chip:hover .chip-count {
-  background: rgba(76, 175, 80, 0.16);
+  background: color-mix(in srgb, var(--color-accent) 16%, transparent);
   color: var(--color-accent);
 }
 
 .cat-chip.is-active {
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
   border-color: var(--color-accent);
-  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+  box-shadow: 0 4px 12px color-mix(in srgb, var(--color-accent) 30%, transparent);
 }
 
 .cat-chip.is-active .chip-count {
-  background: rgba(255, 255, 255, 0.22);
-  color: #fff;
+  /* 计数药丸压在品牌色上:半透明反色层 + 反色文字,
+     暗色主题下品牌色是亮绿,白字只有 2.36:1,所以这层也要跟 --color-on-accent */
+  background: color-mix(in srgb, var(--color-on-accent) 22%, transparent);
+  color: var(--color-on-accent);
 }
 
 /* 筛选结果标题里的「查看全部」 */
@@ -891,8 +933,8 @@ onMounted(async () => {
   align-items: center;
   gap: 8px;
   padding: 14px 18px;
-  background: rgba(245, 108, 108, 0.08);
-  color: #f56c6c;
+  background: color-mix(in srgb, var(--el-color-danger) 8%, transparent);
+  color: var(--el-color-danger);
   border-radius: 8px;
 }
 
@@ -949,7 +991,7 @@ onMounted(async () => {
   left: 12px;
   padding: 4px 10px;
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
@@ -1014,7 +1056,7 @@ onMounted(async () => {
 
 .buy:hover {
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
 }
 
 /* ============ Arrivals list ============ */
@@ -1075,7 +1117,7 @@ onMounted(async () => {
 .buy-sm {
   padding: 8px 16px;
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
   font-size: 13px;
   font-weight: 600;
   border: none;
@@ -1128,8 +1170,8 @@ onMounted(async () => {
   top: 12px;
   right: 12px;
   padding: 4px 10px;
-  background: #d9534f;
-  color: #fff;
+  background: var(--el-color-danger);
+  color: var(--color-on-danger);
   font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.04em;
@@ -1170,7 +1212,7 @@ onMounted(async () => {
   font-family: 'DM Serif Display', Georgia, serif;
   font-size: 22px;
   font-weight: 700;
-  color: #d9534f;}
+  color: var(--el-color-danger);}
 
 .deal-was {
   font-size: 13px;

@@ -236,8 +236,8 @@ watch(isMobileMenuOpen, (open) => {
   min-height: 100vh;
   -webkit-font-smoothing: antialiased;
   background:
-    radial-gradient(circle at 8% 8%, rgba(76, 175, 80, 0.18), transparent 42%),
-    radial-gradient(circle at 92% 14%, rgba(97, 223, 137, 0.13), transparent 36%),
+    radial-gradient(circle at 8% 8%, color-mix(in srgb, var(--color-accent) 18%, transparent), transparent 42%),
+    radial-gradient(circle at 92% 14%, color-mix(in srgb, var(--color-accent-hover) 13%, transparent), transparent 36%),
     var(--color-bg);
   --sidebar-width: 240px;
   --sidebar-collapsed-width: 90px;
@@ -257,10 +257,10 @@ watch(isMobileMenuOpen, (open) => {
      那时 0.6 就是彻底穿帮。
      0.82 是折中:背后的东西基本看不清了(文字可读性有保障),
      又留了一点点透光和模糊感,玻璃质感还在。 */
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--color-glass-strong);
   /* 亮色下白描边/白内高光都压在白底上,等于没有 —— 改成淡墨描边 + 双层投影
-     来定义轮廓;暗色由下方 [data-theme='dark'] 覆盖成亮描边(那边天然受光) */
-  border: 1px solid rgba(17, 25, 40, 0.07);
+     来定义轮廓;暗色由 token 换成亮描边(那边天然受光) */
+  border: 1px solid var(--color-glass-border);
   backdrop-filter: blur(16px) saturate(135%);
   -webkit-backdrop-filter: blur(16px) saturate(135%);
   border-radius: 22px;
@@ -299,7 +299,7 @@ watch(isMobileMenuOpen, (open) => {
   display: grid;
   place-items: center;
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
   font-family: 'DM Serif Display', Georgia, serif;
   font-weight: 400;
   font-size: 18px;
@@ -335,19 +335,19 @@ watch(isMobileMenuOpen, (open) => {
 }
 
 .nav-link:hover {
-  background: var(--color-bg-alt);
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
   color: var(--color-text);
 }
 
 .nav-link:focus-visible {
   outline: none;
   box-shadow: inset 3px 0 0 var(--color-accent);
-  background: var(--color-bg-alt);
+  background: color-mix(in srgb, var(--color-text) 5%, transparent);
   color: var(--color-text);
 }
 
 .nav-link.is-active {
-  background: rgba(76, 175, 80, 0.14);
+  background: var(--color-accent-soft);
   color: var(--color-accent);
   font-weight: 600;
 }
@@ -375,9 +375,9 @@ watch(isMobileMenuOpen, (open) => {
   padding: 0 16px;
   border-radius: 18px;
   /* 同 .sidebar:顶栏也是压在内容上的毛玻璃,0.54 太透(见上方注释) */
-  background: rgba(255, 255, 255, 0.82);
+  background: var(--color-glass-strong);
   /* 同 .sidebar:亮色用淡墨描边 + 双层投影,白描边在白底上不可见 */
-  border: 1px solid rgba(17, 25, 40, 0.07);
+  border: 1px solid var(--color-glass-border);
   backdrop-filter: blur(12px) saturate(130%);
   -webkit-backdrop-filter: blur(12px) saturate(130%);
   box-shadow:
@@ -620,18 +620,18 @@ watch(isMobileMenuOpen, (open) => {
 /* 暗色同理:.56 的深灰压在深色页面上,背后内容照样透出来。
    提到 .82 和亮色对称 —— 玻璃感交给 backdrop-filter 的模糊,
    不透明度负责保证文字可读。 */
-:root[data-theme='dark'] .sidebar,
-:root[data-theme='dark'] .topbar {
-  background: rgba(30, 30, 30, 0.82);
-  border-color: rgba(255, 255, 255, 0.08);
-}
+/* 暗色的玻璃底色/描边由 --color-glass-* token 统一带过来,
+   这里不再单独写一份 rgba(30,30,30,.82) —— 三块玻璃(侧栏/顶栏/菜单按钮)
+   之前各写各的,现在已经共用同一个 token。 */
 
 :root[data-theme='dark'] .menu-btn {
-  background: rgba(46, 46, 46, 0.92);
-  border-color: rgba(255, 255, 255, 0.14);
-  color: #f5f5f5;
+  /* 全部改成 token 推导:底色跟卡片色,描边/内高光跟文字色,
+     投影跟阴影 token(阴影必须是黑的,不能跟文字色走)。 */
+  background: color-mix(in srgb, var(--color-card) 92%, transparent);
+  border-color: color-mix(in srgb, var(--color-text) 14%, transparent);
+  color: var(--color-text);
   box-shadow:
-    0 6px 16px rgba(0, 0, 0, 0.36),
-    inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    0 6px 16px var(--color-shadow-strong),
+    inset 0 1px 0 color-mix(in srgb, var(--color-text) 8%, transparent);
 }
 </style>

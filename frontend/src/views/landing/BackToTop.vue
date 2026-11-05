@@ -150,7 +150,7 @@ function scrollTop() {
 
 .back-to-top:hover {
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
   transform: translateY(-3px);
   box-shadow: var(--shadow-card-hover), var(--edge-highlight);
 }
@@ -197,13 +197,14 @@ function scrollTop() {
 }
 
 /* hover 时整颗变绿,绿环压在绿底上等于消失 —— 所以环反白。
-   进度信息没丢:白环在绿底上对比度比原来的绿环还高。 */
+   注意"反白"要跟着 --color-on-accent 走:暗色下 accent 是亮绿,
+   底上的字和环都改成墨色(#0b120e),白环压在亮绿上只有 1.98:1,根本看不见。 */
 .back-to-top:hover .b2t-ring-track {
-  stroke: rgba(255, 255, 255, 0.3);
+  stroke: color-mix(in srgb, var(--color-on-accent) 30%, transparent);
 }
 
 .back-to-top:hover .b2t-ring-bar {
-  stroke: #fff;
+  stroke: var(--color-on-accent);
 }
 
 .b2t-icon {
@@ -227,7 +228,7 @@ function scrollTop() {
 @media (hover: none) {
   .back-to-top:active {
     background: var(--color-accent);
-    color: #fff;
+    color: var(--color-on-accent);
   }
 }
 </style>

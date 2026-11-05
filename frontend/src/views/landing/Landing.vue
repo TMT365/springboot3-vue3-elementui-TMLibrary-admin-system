@@ -416,6 +416,7 @@ onUnmounted(pauseShowcase)
         <div class="hero-actions">
           <router-link to="/mall" class="cta-primary">
             进入商城
+            <el-icon class="cta-arrow"><ArrowRight /></el-icon>
           </router-link>
         </div>
       </div>
@@ -913,6 +914,9 @@ onUnmounted(pauseShowcase)
   color: var(--color-text);
   position: relative;
   overflow-x: hidden;
+  /* 顶部导航条(LandingNav)的高度:14px×2 内边距 + 44px 内容 = 72px。
+     Hero 用它算"导航条以下的整屏高度",改导航条高度时这里要跟着改。 */
+  --landing-nav-h: 72px;
 }
 
 /* =============================================================
@@ -926,7 +930,7 @@ onUnmounted(pauseShowcase)
   z-index: 200;
   padding: 10px 18px;
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
   font-size: 14px;
   font-weight: 500;
   border-radius: 6px;
@@ -982,9 +986,18 @@ onUnmounted(pauseShowcase)
  * ============================================================= */
 .hero {
   position: relative;
-  /* 占满整个画面 — 100dvh 适配移动端浏览器地址栏收起/展开 */
-  min-height: 100vh;
-  min-height: 100dvh;
+  /* 占满"导航栏以下"的整个画面 — 100dvh 适配移动端浏览器地址栏收起/展开。
+   *
+   * ⚠️ 这里必须减掉导航条的高度(72px = .nav-inner 的 14px×2 内边距 + 44px 内容):
+   * 导航条是 sticky、仍在文档流里,所以 Hero 的盒子是从 y=72 开始的。
+   * 写成 100dvh 的话 Hero 会比可视区高出整整 72px —— 后果有两个:
+   *   1) 内容块(标题/副标题/CTA)按 900px 居中,实际比可视区的中线低了 36px;
+   *   2) 左下角那个绝对定位的终端窗锚在 Hero 的底边(也就是折线以下 72px),
+   *      有一截永远露不出来。
+   * 减去 72px 之后:Hero 的底边 == 折线,内容块在可视区里居中,终端窗完整可见。
+   * (改 LandingNav.vue 的高度时要同步改这个数) */
+  min-height: calc(100vh - var(--landing-nav-h));
+  min-height: calc(100dvh - var(--landing-nav-h));
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -998,16 +1011,16 @@ onUnmounted(pauseShowcase)
      第 2 层:底部暖光(emphasis 琥珀),平衡冷暖
      第 3 层:垂直渐变 bg → bg-alt,给底色加纵深 */
   background:
-    radial-gradient(ellipse 90% 50% at 50% 0%, rgba(76, 175, 80, 0.10) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(255, 193, 7, 0.07) 0%, transparent 60%),
+    radial-gradient(ellipse 90% 50% at 50% 0%, color-mix(in srgb, var(--color-accent) 10%, transparent) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, color-mix(in srgb, var(--color-emphasis) 9%, transparent) 0%, transparent 60%),
     linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg) 50%, var(--color-bg-alt) 100%);
 }
 
 :root[data-theme='dark'] .hero {
   /* 暗模式:深底反衬,光感增强(高 1.5-2× 不透明度),色相更亮 */
   background:
-    radial-gradient(ellipse 90% 50% at 50% 0%, rgba(102, 187, 106, 0.18) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 50% 100%, rgba(255, 213, 79, 0.10) 0%, transparent 60%),
+    radial-gradient(ellipse 90% 50% at 50% 0%, color-mix(in srgb, var(--color-accent) 18%, transparent) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 50% 100%, color-mix(in srgb, var(--color-emphasis) 13%, transparent) 0%, transparent 60%),
     linear-gradient(180deg, var(--color-bg) 0%, var(--color-bg) 50%, var(--color-bg-alt) 100%);
 }
 
@@ -1029,6 +1042,17 @@ onUnmounted(pauseShowcase)
   border-radius: 999px;
   font-size: 13px;
   color: var(--color-text-muted);
+}
+
+/* 品牌绿小圆点 —— 亮色主题下,CTA 之外唯一的品牌色锚点,
+   让视线在标题之前先碰到一次"这是墨绿的站" */
+.hero-eyebrow::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 0 3px var(--color-accent-soft);
 }
 
 .hero-title {
@@ -1067,61 +1091,40 @@ onUnmounted(pauseShowcase)
  *
  * ---- 垂直位置怎么定的(不是随手填的数)----
  *
- * Hero 内容块约 537px 高、在视口里**垂直居中**,所以它下方那块空白只有
- * (H-537)/2 —— 900px 高的屏上也就 182px,比终端(≈221px)还矮。
- * 终端**不可能**靠"待在内容下方"避让,必须往上伸进内容所在的纵向区间,
- * 靠**横向错开**活下来。
+ * 真正的约束**不是标题底边,而是副标题底边** —— 副标题和 CTA 排在标题
+ * 下面,终端往上一伸,先撞上的是它们(标题太宽,横向根本躲不开)。
  *
- * 横向是安全的:CTA 按钮 x≈650-790、副标题 x≈540-900(都是居中的窄块),
- * 终端 x≈65-505,都不碰。
- *
- * 硬约束是**标题底边** —— 它在 1440px 下横跨大半个屏幕,横向躲不开。
- * 标题底边离视口底 ≈ H/2 - 60.5(内容居中推出来的)。
- *
- * ⚠️ 这里有个**没法在本机验证**的变量:标题算 2 行还是 3 行。
- * 字体栈是 'Times New Roman', 'Times', Georgia, serif —— 前三个在 Linux 上
- * 全都没有,实际落到 **DejaVu Serif**,比 Times 宽一大截(实测 fc-match 确认)。
- * 换算下来「Manage Your Library」在 128px 下 ≈1336px,而可用宽度 1392px ——
- * **刚好卡在折与不折的边界上**,所以 2 行 / 3 行都可能:
- *     2 行 → 内容块 537px → 标题底边离底 390px(H=900)
- *     3 行 → 内容块 671px → 标题底边离底 322px(H=900)
- * 差 68px。**下面的数按 3 行(更坏的那种)定的**,所以真出现 2 行时
- * 只会更宽松,不会撞上。
- *
- * 终端总高 ≈ 319px(30 标题栏 + 12×1.65×13 正文 + 30 内边距 + 2 边框),
- * 于是 bottom + 319 必须 < 标题底边。
- *
- * 加高之后**上面已经很紧**:标题底边就是天花板,顶边只能贴着它。
- * 所以这轮加高主要是**往下长** —— bottom 从 10vh 收到 3.5vh,
- * 把多出来的 64px 高度放到下方,顶边只跟着抬了一点(311 → 350)。
- * 这样加高不会引入新的碰撞风险,顶边那道约束几乎没被触碰。
- *
- * ✅ 标题行数已确认(2026-09,用户实测):**2 行**。所以按
- *    标题底边 = H/2 - 60.5 = 389.5px(H=900)算,而不是保守的 322px。
- *    两者差 68px —— 这也是这轮能加这么高的原因。
+ * 以 Hero 盒子为坐标系(H = 视口高,Hero 盒子 = 72 .. H,高 H-72):
+ *   · 内容块 514px 高(eyebrow + 标题 + 副标题 + CTA),在盒子里垂直居中
+ *       → 内容块顶边 = 72 + (H-72-514)/2
+ *       → 副标题底边 = 内容块顶边 + 390
+ *   · 终端锚在盒子底边:顶边 = H - bottom - 终端高
+ *   · 终端高 = 30(标题栏) + L×1.65×13(正文) + 2(边框)
+ *              L = --t-visible-lines = 9 → 225px
+ *   ⇒ 余量 = 终端顶边 - 副标题底边 = H/2 - 394 - bottom
+ *       H=900 → 38px ✓   H=881(最紧一档)→ 29px ✓   H=1080 → 124px ✓
  *
  * ⚠️ 坐标方向(改这个值之前先看这条):
  *    这里用 bottom 定位,而 bottom 是**离屏幕底边的距离** ——
  *    数值**越大越靠上**。想把它往上挪,是把这个值调**大**。
  *    (直觉上容易反,所以写在这。)
  *
- * 这一版又整体上移了 20px(bottom 31.5 → 51.3 @H=900):
- *     H=900  标题底边 389.5   bottom 51.3  顶边 370.3  余量 19px ✓
- *     H=881  标题底边 380.0   bottom 50.2  顶边 369.2  余量 11px ✓(最紧档)
- *     H=1080 标题底边 479.5   bottom 61.6  顶边 380.6  余量 99px ✓
- *     ⚠ 余量只剩 19px 了,再往上就要贴着标题 —— 想继续上移的话,
- *       要么降 --t-visible-lines(减高度),要么接受和标题挨得更近。
+ * ⚠️ L(--t-visible-lines)从 12 降到 9 是必须的:
+ *    12 行时终端高 289px,余量变成 H/2-458-bottom,H=900 时只有 -26px ——
+ *    终端正好盖住副标题左端(之前那版 Hero 用的是 100dvh,盒子比可视区
+ *    高出导航条的 72px,内容块整体下沉、副标题左端被压掉一截,就是这个)。
+ *    现在 Hero 高度 = 100dvh - 导航条(72px),内容块回到可视区正中,
+ *    终端 9 行 + bottom 收敛到 2vh,两者彻底分开。
  *
- * ⚠️ 依赖:这个预算建立在"标题 2 行"上。而标题字体栈
- *    'Times New Roman', 'Times', Georgia, serif 在 Linux 上三个都落空、
- *    实际落到 DejaVu Serif(比 Times 宽),换算下来刚好卡在折行边界。
- *    如果哪天标题变成 3 行(换字体、改文案、窄一点的窗口),底边会掉到
- *    322px,终端就会压上去 —— 届时把 --t-visible-lines 降回 9 即可。
+ * ⚠️ 依赖:标题是 2 行。字体栈 'Times New Roman','Times',Georgia,serif
+ *    在 Linux 上前三个都落空、实际落到 DejaVu Serif(比 Times 宽),
+ *    但标题字号是 clamp(56px,9vw,128px) 跟着视口宽缩放,
+ *    所以 1101px 以上始终排得下 2 行(1100px 及以下终端改回文档流)。
  * ============================================================ */
 .hero-terminal {
   position: absolute;
   left: clamp(24px, 4.5vw, 88px);
-  bottom: clamp(36px, 5.7vh, 110px);
+  bottom: clamp(12px, 2vh, 28px);
   z-index: 2;
 }
 
@@ -1130,7 +1133,7 @@ onUnmounted(pauseShowcase)
  *   2) 矮(<880px):居中块下沉,底部空间被吃掉
  *      —— 阈值从 720 提到 880 是被放大后的终端高度顶上去的,
  *         沿用 720 的话 1366×768 这类屏上会压在标题上
- * Hero 是 min-height: 100dvh(不是 height),回文档流后它自然长高,
+ * Hero 是 min-height(不是 height),回文档流后它自然长高,
  * 不会把内容挤出去。 */
 @media (max-width: 1100px), (max-height: 880px) {
   .hero-terminal {
@@ -1140,16 +1143,26 @@ onUnmounted(pauseShowcase)
 }
 
 /* =============================================================
- * CTA primary  -  editorial 方角 + 内外双框
+ * CTA primary  -  实心墨绿块 + 内外双框
  *
  * 布局层级(从底到顶):
  *   .cta-primary(创建 stacking context,isolation: isolate)
- *   ├─ ::before  -  填充层,默认 0 宽,hover 时 scaleX(1)
+ *   ├─ ::before  -  高光层,hover 时从 0 亮到 .14(斜向白光泽)
  *   ├─ ::after   -  内框,1px border,inset 5px
  *   └─ 文字 + 箭头(自然层,在所有伪元素之上)
  *
- * 默认态:外框 1.5px + 内框 1px,中间 3.5px 留白(像书的封面 + 烫金内框)
- * hover:  填充层从左向右铺,内框反色成半透明白,文字 + 箭头反向
+ * 为什么是**实心**而不是描边 ghost:
+ *   落地页是整个站点的门面,亮色主题底是暖纸(#faf8f3),
+ *   原来的"1.5px 绿描边 + 绿字"在纸底上几乎没有存在感 ——
+ *   截图实测:整屏只有导航 logo 和 CTA 文字是绿的,品牌色几乎缺席。
+ *   改成实心墨绿块之后,品牌绿第一次成为画面里的"实体"。
+ *
+ * 内外双框保留:外框 = 纸页的硬边,内框 = 书封上的烫金细线,
+ * 压在墨块上时用 --color-on-accent 的半透明版本(白墨 / 黑墨自动跟随主题)。
+ *
+ * 文字颜色用 --color-on-accent:
+ *   亮色 accent 是墨绿 #337a3e → 白字 5.27:1 ✓
+ *   暗色 accent 是亮绿 #66bb6a → 白字只有 2.36:1,改墨字 8.1:1 ✓
  * ============================================================= */
 .cta-primary {
   position: relative;
@@ -1158,8 +1171,8 @@ onUnmounted(pauseShowcase)
   align-items: center;
   gap: 12px;
   padding: 14px 24px;
-  background: transparent;
-  color: var(--color-accent);
+  background: var(--color-accent);
+  color: var(--color-on-accent);
   font-family: 'DM Serif Display', Georgia, serif;
   font-size: 17px;
   font-weight: 400;
@@ -1170,53 +1183,60 @@ onUnmounted(pauseShowcase)
   border-radius: 0;
   overflow: hidden;
   cursor: pointer;
+  box-shadow: 0 2px 10px color-mix(in srgb, var(--color-accent) 22%, transparent);
   transition:
+    background-color 350ms cubic-bezier(0.22, 1, 0.36, 1),
     color 350ms cubic-bezier(0.22, 1, 0.36, 1),
     transform 250ms cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 350ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-/* 背景填充层(从左向右 scaleX) */
+/* 高光层:斜向白光泽,hover 时浮出来 */
 .cta-primary::before {
   content: '';
   position: absolute;
   inset: 0;
-  background: var(--color-accent);
-  transform: scaleX(0);
-  transform-origin: left center;
-  transition: transform 450ms cubic-bezier(0.22, 1, 0.36, 1);
+  background: linear-gradient(
+    115deg,
+    rgba(255, 255, 255, 0.26) 0%,
+    rgba(255, 255, 255, 0) 46%
+  );
+  opacity: 0;
+  transition: opacity 450ms cubic-bezier(0.22, 1, 0.36, 1);
   z-index: -1;
 }
 
-/* 内层边框:1px 绿框,距外框 5px,中间留 3.5px 呼吸 */
+/* 内层边框:1px 细线,距外框 5px,中间留 3.5px 呼吸 */
 .cta-primary::after {
   content: '';
   position: absolute;
   inset: 5px;
-  border: 1px solid var(--color-accent);
+  border: 1px solid color-mix(in srgb, var(--color-on-accent) 42%, transparent);
   pointer-events: none;
   z-index: -1; /* 同 ::before 一层,DOM 顺序决定 ::after 叠在 ::before 之上 */
   transition: border-color 350ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 .cta-primary:hover {
-  color: #fff;
+  background: var(--color-accent-hover);
+  border-color: var(--color-accent-hover);
+  color: var(--color-on-accent);
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(76, 175, 80, 0.3);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--color-accent) 34%, transparent);
 }
 
 .cta-primary:hover::before {
-  transform: scaleX(1);
+  opacity: 1;
 }
 
-/* hover 时内框反色成半透明白,跟绿底形成层次 */
+/* hover 时内框更亮一档 */
 .cta-primary:hover::after {
-  border-color: rgba(255, 255, 255, 0.55);
+  border-color: color-mix(in srgb, var(--color-on-accent) 72%, transparent);
 }
 
 .cta-primary:active {
   transform: translateY(0);
-  box-shadow: 0 2px 8px rgba(76, 175, 80, 0.2);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-accent) 24%, transparent);
 }
 
 .cta-primary:focus-visible {
@@ -1231,8 +1251,8 @@ onUnmounted(pauseShowcase)
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  background: var(--color-accent);
-  color: #fff;
+  background: var(--color-on-accent);
+  color: var(--color-accent);
   font-size: 12px;
   font-style: normal;
   line-height: 1;
@@ -1243,8 +1263,8 @@ onUnmounted(pauseShowcase)
 }
 
 .cta-primary:hover .cta-arrow {
-  background: #fff;
-  color: var(--color-accent);
+  background: var(--color-on-accent);
+  color: var(--color-accent-hover);
   transform: translateX(3px) scale(1.05);
 }
 
@@ -1378,7 +1398,7 @@ onUnmounted(pauseShowcase)
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    rgba(76, 175, 80, 0.12) 0%,
+    color-mix(in srgb, var(--color-accent) 12%, transparent) 0%,
     transparent 70%
   );
 }
@@ -1441,7 +1461,7 @@ onUnmounted(pauseShowcase)
   place-items: center;
   width: 56px;
   height: 56px;
-  background: rgba(76, 175, 80, 0.1);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
   color: var(--color-accent);
   border-radius: 12px;
   margin-bottom: 24px;
@@ -1617,7 +1637,7 @@ onUnmounted(pauseShowcase)
   place-items: center;
   width: 46px;
   height: 46px;
-  background: rgba(76, 175, 80, 0.1);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
   color: var(--color-accent);
   border-radius: 12px;
   font-size: 23px;
@@ -1713,7 +1733,7 @@ onUnmounted(pauseShowcase)
   place-items: center;
   width: 48px;
   height: 48px;
-  background: rgba(76, 175, 80, 0.1);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
   border-radius: 12px;
   font-size: 24px;
   line-height: 1;
@@ -1750,7 +1770,7 @@ onUnmounted(pauseShowcase)
   gap: 4px;
   align-self: flex-start;
   padding: 4px 10px;
-  background: rgba(76, 175, 80, 0.12);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
   color: var(--color-accent);
   font-size: 11px;
   font-weight: 600;
@@ -1892,7 +1912,7 @@ onUnmounted(pauseShowcase)
   place-items: center;
   width: 42px;
   height: 42px;
-  background: rgba(76, 175, 80, 0.1);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
   color: var(--color-accent);
   border-radius: 11px;
   font-size: 21px;
@@ -2072,7 +2092,7 @@ onUnmounted(pauseShowcase)
   align-items: center;
   gap: 4px;
   padding: 2px 9px;
-  background: rgba(76, 175, 80, 0.12);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
   color: var(--color-accent);
   font-size: 11px;
   font-weight: 600;
@@ -2126,7 +2146,7 @@ onUnmounted(pauseShowcase)
   place-items: center;
   width: 46px;
   height: 46px;
-  background: rgba(76, 175, 80, 0.1);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
   color: var(--color-accent);
   border-radius: 12px;
   font-size: 23px;
@@ -2347,7 +2367,7 @@ onUnmounted(pauseShowcase)
   gap: 8px;
   padding: 14px 30px;
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
   font-family: inherit;
   font-size: 15px;
   font-weight: 600;
@@ -2367,7 +2387,7 @@ onUnmounted(pauseShowcase)
   background: var(--color-accent-hover);
   border-color: var(--color-accent-hover);
   transform: translateY(-2px);
-  box-shadow: 0 10px 26px rgba(76, 175, 80, 0.28);
+  box-shadow: 0 10px 26px color-mix(in srgb, var(--color-accent) 28%, transparent);
 }
 
 /* 次按钮:描边款,视觉权重低一档 —— "先读 README"该是更轻的那条路 */
@@ -2474,7 +2494,9 @@ onUnmounted(pauseShowcase)
   border-radius: 50%;
   object-fit: cover;
   background: var(--color-bg-alt);
-  border: 1px solid var(--color-border);
+  /* 头像描边用中性色(不是品牌暖色)—— 暖描边会顺着头像边缘渗进去,
+     照片看着发黄;亮色中性黑 10%,暗色中性白 10%。 */
+  border: 1px solid var(--color-image-outline);
   transition: border-color 260ms ease, transform 260ms ease;
 }
 

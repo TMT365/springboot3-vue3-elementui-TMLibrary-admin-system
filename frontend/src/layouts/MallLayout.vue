@@ -436,7 +436,10 @@ function onSearchEnter(): void {
   gap: 24px;
   height: 64px;
   padding: 0 24px;
-  background: var(--color-bg);
+  /* 和后台顶栏同一种材质(毛玻璃)—— 商城与后台是两个布局但属于同一站 */
+  background: var(--color-glass);
+  -webkit-backdrop-filter: blur(14px) saturate(180%);
+  backdrop-filter: blur(14px) saturate(180%);
   border-bottom: 1px solid var(--color-border);
 }
 
@@ -478,7 +481,7 @@ function onSearchEnter(): void {
   display: grid;
   place-items: center;
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
   font-family: 'DM Serif Display', Georgia, serif;
   font-size: 20px;
   border-radius: 8px;
@@ -558,7 +561,7 @@ function onSearchEnter(): void {
   display: grid;
   place-items: center;
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
   font-family: 'DM Serif Display', Georgia, serif;
   font-size: 14px;
   border-radius: 50%;
@@ -584,32 +587,21 @@ function onSearchEnter(): void {
   bottom: 0;
   width: 240px;
   z-index: 9;
-  /* 亮色:暖米白玻璃 = --color-bg(#faf8f3)+ 透明度 */
-  background: rgba(250, 248, 243, 0.78);
+  /* 玻璃材质统一走 token:亮色是暖米白半透明,暗色是近黑半透明,
+     描边和投影也跟着换 —— 之前这里是三段各自写死的 rgba,主题切换要改三处 */
+  background: var(--color-glass-strong);
   -webkit-backdrop-filter: blur(20px) saturate(180%);
   backdrop-filter: blur(20px) saturate(180%);
-  /* 白描边在浅底上不可见 → 淡墨描边定义边界(暗色由下方 dark 块覆盖) */
-  border-right: 1px solid rgba(17, 25, 40, 0.07);
+  border-right: 1px solid var(--color-glass-border);
   /* 多层阴影 - 桌面端浮起感 */
-  box-shadow:
-    4px 0 12px rgba(17, 25, 40, 0.05),
-    16px 0 40px rgba(17, 25, 40, 0.08),
-    32px 0 80px rgba(17, 25, 40, 0.05);
+  box-shadow: var(--color-glass-shadow);
   overflow: hidden;
   transition: transform 320ms cubic-bezier(0.4, 0, 0.2, 1), box-shadow 320ms cubic-bezier(0.4, 0, 0.2, 1);
   will-change: transform;
 }
 
-/* 暗色:侧栏底色必须跟着换 —— 之前没有 dark 覆盖,奶白面板上压着
-   --color-text(#f5f5f5 近白)的标题,直接看不见;边框也用亮棱边 */
-:root[data-theme='dark'] .sidebar {
-  background: rgba(26, 26, 26, 0.82);
-  border-right-color: rgba(255, 255, 255, 0.08);
-  box-shadow:
-    4px 0 12px rgba(0, 0, 0, 0.32),
-    16px 0 40px rgba(0, 0, 0, 0.26),
-    32px 0 80px rgba(0, 0, 0, 0.18);
-}
+/* 暗色下的玻璃底色 / 描边 / 投影由 --color-glass-* token 自动带过来,
+   不再需要在这里手写一份 dark 覆盖。 */
 
 .is-collapsed .sidebar {
   transform: translateX(-100%);
@@ -712,7 +704,7 @@ function onSearchEnter(): void {
 
 
 .category-menu :deep(.el-menu-item.is-active) {
-  background-color: rgba(76, 175, 80, 0.12);
+  background-color: var(--color-accent-soft);
   color: var(--color-accent);
   font-weight: 600;
   position: relative;
@@ -740,10 +732,10 @@ function onSearchEnter(): void {
 }
 
 .category-menu :deep(.el-menu .el-menu .el-menu-item.is-active) {
-  background-color: rgba(76, 175, 80, 0.12);
+  background-color: var(--color-accent-soft);
   color: var(--color-accent);
   font-weight: 600;
-  padding-left: 52px; 
+  padding-left: 52px;
 }
 
 
@@ -802,7 +794,7 @@ function onSearchEnter(): void {
 .category-menu :deep(.el-menu-item.is-active) .cat-count,
 .category-menu :deep(.el-sub-menu__title:hover) .cat-count {
   color: var(--color-accent);
-  background: rgba(76, 175, 80, 0.12);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
 }
 
 /* 分类加载中 / 失败 */
@@ -823,7 +815,7 @@ function onSearchEnter(): void {
 .sidebar-promo {
   margin: auto 16px 20px;
   padding: 16px;
-  background: linear-gradient(135deg, rgba(76, 175, 80, 0.08) 0%, rgba(76, 175, 80, 0.02) 100%);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 8%, transparent) 0%, color-mix(in srgb, var(--color-accent) 2%, transparent) 100%);
   border: 1px dashed var(--color-accent);
   border-radius: 12px;
   text-align: center;
@@ -918,6 +910,21 @@ function onSearchEnter(): void {
   /* 移动端 sidebar-toggle 强制显示(桌面默认隐藏) */
   .sidebar-toggle {
     display: grid !important;
+  }
+}
+
+/* 手机(≤ 600px)—— 顶栏只留头像
+ *
+ * 顶栏右侧是"头像 + 用户名 + 下拉箭头",桌面没问题,但 390px 宽的手机上
+ * 品牌区 + 用户名加起来超出视口,整页被顶出一条 27px 的横向滚动。
+ * 头像本身已经是可点的下拉入口,手机上不需要再显示名字。 */
+@media (max-width: 600px) {
+  .user-name {
+    display: none;
+  }
+
+  .user-trigger {
+    padding: 4px;
   }
 }
 
