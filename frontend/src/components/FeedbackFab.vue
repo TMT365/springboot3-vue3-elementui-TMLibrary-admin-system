@@ -182,6 +182,14 @@ async function submit(): Promise<void> {
  *
  * 位置/尺寸一律走 theme.css 的 --fab-* token —— 同角的 BackToTop
  * 靠 --fab-bottom-2 叠在它上方,两边共用一套值才不会错位。
+ *
+ * ⚠ 静止时收成一枚 48px 的圆,hover / 键盘聚焦时才展开成
+ *   "图标 + 反馈"的胶囊。两个原因:
+ *   1) 每页右下角杵着一个 91px 宽的绿胶囊 —— 视觉噪音;
+ *   2) 它是 position:fixed,永远钉在视口右下角,而分页器跟着文档流。
+ *      页面短到需要滚动时,分页器会滑进那个角,被按钮压住
+ *      (实测 1264×768 滚到底:"前往 __ 页"输入框整个被盖住)。
+ *      收成 48px 的圆之后,右下角只占一小块,分页器让 60px 就够。
  * ============================================================ */
 .feedback-fab {
   position: fixed;
@@ -191,14 +199,18 @@ async function submit(): Promise<void> {
 
   display: inline-flex;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   gap: 6px;
   /* 高度锁死成 --fab-size,和 BackToTop 的圆一样高 —— 竖排两个件才能对齐 */
   height: var(--fab-size);
-  padding: 0 20px;
+  /* 静止宽度 = 一个圆;padding-left 让图标在圆里居中((48-17)/2) */
+  width: var(--fab-size);
+  padding: 0 0 0 calc((var(--fab-size) - 17px) / 2);
+  overflow: hidden;
 
   background: var(--color-accent);
-  color: #fff;
+  /* 暗色下 accent 是亮绿,白字只有 2.36:1 —— 走 --color-on-accent(墨字) */
+  color: var(--color-on-accent);
   font-family: inherit;
   font-size: 14px;
   font-weight: 600;
@@ -207,17 +219,26 @@ async function submit(): Promise<void> {
   cursor: pointer;
 
   box-shadow:
-    0 6px 16px rgba(76, 175, 80, 0.32),
+    0 6px 16px color-mix(in srgb, var(--color-accent) 32%, transparent),
     0 2px 6px rgba(17, 25, 40, 0.16);
   transition:
+    width 280ms cubic-bezier(0.2, 0, 0, 1),
+    padding 280ms cubic-bezier(0.2, 0, 0, 1),
     transform 220ms cubic-bezier(0.2, 0, 0, 1),
     box-shadow 220ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+/* hover / 键盘聚焦:展开成带文字的胶囊(right 固定,所以是往左长) */
+.feedback-fab:hover,
+.feedback-fab:focus-visible {
+  width: calc(var(--fab-size) + 40px);
+  padding-right: 18px;
 }
 
 .feedback-fab:hover {
   transform: translateY(-2px);
   box-shadow:
-    0 10px 24px rgba(76, 175, 80, 0.38),
+    0 10px 24px color-mix(in srgb, var(--color-accent) 38%, transparent),
     0 4px 10px rgba(17, 25, 40, 0.18);
 }
 
@@ -227,6 +248,24 @@ async function submit(): Promise<void> {
 
 .fab-icon {
   font-size: 17px;
+  flex: none;
+}
+
+/* 文字标签:静止时宽度压到 0(藏在圆里),展开时滑出来 */
+.fab-text {
+  max-width: 0;
+  opacity: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  transition:
+    max-width 280ms cubic-bezier(0.2, 0, 0, 1),
+    opacity 200ms ease;
+}
+
+.feedback-fab:hover .fab-text,
+.feedback-fab:focus-visible .fab-text {
+  max-width: 30px;
+  opacity: 1;
 }
 
 /* 暗色下按钮和背景对比够(accent 是亮绿),不用改色;
@@ -244,7 +283,7 @@ async function submit(): Promise<void> {
 }
 
 /* ============================================================
- * 手机(≤600):只留图标,收成和 BackToTop 一样的圆
+ * 手机(≤600):同样只留图标,收成和 BackToTop 一样的圆
  * —— 文字版会挡住底部操作栏
  * ============================================================ */
 @media (max-width: 600px) {

@@ -53,10 +53,17 @@ function verticalGradient(rgb: string, fromAlpha: number, toAlpha: number) {
   }
 }
 
-/** accent 绿的 rgb 分量 —— 与 theme.css 的 #4caf50 / #66bb6a 对齐 */
-const ACCENT_RGB = '76, 175, 80'
-/** 琥珀强调色 rgb */
-const EMPHASIS_RGB = '255, 193, 7'
+/** accent / emphasis 的 rgb 分量 —— 由调色板实时算出来,跟着主题走。
+ *  以前这里写死 '76, 175, 80'(Material Green 500),线和填充是两种绿,
+ *  换成墨绿体系后不更新就会对不上。 */
+function rgbOf(hex: string, fallback: string): string {
+  const m = /^#?([0-9a-f]{3}|[0-9a-f]{6})$/i.exec(hex.trim())
+  if (!m) return fallback
+  let h = m[1]
+  if (h.length === 3) h = h.split('').map((c) => c + c).join('')
+  const n = parseInt(h, 16)
+  return `${(n >> 16) & 255}, ${(n >> 8) & 255}, ${n & 255}`
+}
 
 /** 各图共用的 tooltip 样式 —— 卡片化,和页面卡片一致的圆角与描边 */
 function tooltipStyle(p: ChartPalette) {
@@ -120,7 +127,7 @@ export function buildSalesTrendConfig(
           data: data.map((d) => d.amount),
           yAxisID: 'yAmount',
           borderColor: p.accent,
-          backgroundColor: verticalGradient(ACCENT_RGB, 0.28, 0.02),
+          backgroundColor: verticalGradient(rgbOf(p.accent, '51, 122, 62'), 0.28, 0.02),
           fill: true,
           tension: 0.35,
           borderWidth: 2,
@@ -135,7 +142,7 @@ export function buildSalesTrendConfig(
           data: data.map((d) => d.orders),
           yAxisID: 'yOrders',
           borderColor: p.emphasis,
-          backgroundColor: verticalGradient(EMPHASIS_RGB, 0.18, 0.02),
+          backgroundColor: verticalGradient(rgbOf(p.emphasis, '184, 122, 18'), 0.18, 0.02),
           fill: true,
           tension: 0.35,
           borderWidth: 2,
@@ -216,7 +223,7 @@ export function buildNewUsersConfig(
           label: '新增用户',
           data: data.map((d) => d.count),
           borderColor: p.accent,
-          backgroundColor: verticalGradient(ACCENT_RGB, 0.3, 0.02),
+          backgroundColor: verticalGradient(rgbOf(p.accent, '51, 122, 62'), 0.3, 0.02),
           fill: true,
           tension: 0.35,
           borderWidth: 2,
@@ -274,7 +281,7 @@ export function buildBookSalesConfig(
         {
           label: '销量',
           data: data.map((d) => d.quantity),
-          backgroundColor: verticalGradient(ACCENT_RGB, 0.85, 0.55),
+          backgroundColor: verticalGradient(rgbOf(p.accent, '51, 122, 62'), 0.85, 0.55),
           hoverBackgroundColor: p.accent,
           borderRadius: 6,
           borderSkipped: false,

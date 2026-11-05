@@ -242,8 +242,17 @@ watch(canRender, (ok) => {
   padding: 16px;
 }
 
+/* 空态图标套一个圆形底 —— 光秃秃一个 EP 图标浮在 280px 的空白里,
+   看起来像"加载失败"而不是"暂时没有数据" */
 .chart-fallback .el-icon {
-  font-size: 24px;
+  font-size: 22px;
+  width: 46px;
+  height: 46px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: var(--color-bg-alt);
+  color: var(--color-text-soft);
 }
 
 /* 窄屏:内边距收紧,把宽度让给 canvas —— 双轴折线图在手机上本来就挤 */
