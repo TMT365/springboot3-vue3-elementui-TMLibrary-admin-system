@@ -123,7 +123,7 @@ onMounted(fetchDetail)
       <el-button link type="primary" @click="fetchDetail">重试</el-button>
     </div>
 
-    <el-skeleton v-else-if="loading" :rows="8" animated />
+    <AppSkeleton v-else-if="loading" variant="rows" :rows="8" />
 
     <template v-else-if="detail">
       <!-- ============ 工单正文 ============ -->

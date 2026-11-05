@@ -157,7 +157,7 @@ function roleLabel(role: string): string {
 
     <!-- 表格 -->
     <div class="table-card">
-      <el-skeleton v-if="loading && items.length === 0" :rows="6" animated />
+      <AppSkeleton v-if="loading && items.length === 0" variant="table" :rows="6" :columns="8" />
 
       <el-empty
         v-else-if="!loading && items.length === 0"

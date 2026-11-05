@@ -62,7 +62,7 @@ onMounted(fetchList)
       <span>{{ error }}</span>
     </div>
 
-    <el-skeleton v-else-if="loading && items.length === 0" :rows="5" animated />
+    <AppSkeleton v-else-if="loading && items.length === 0" variant="rows" :rows="5" />
 
     <el-empty v-else-if="items.length === 0" description="还没提过反馈">
       <el-button type="primary" @click="router.push('/mall')">去逛逛商城</el-button>

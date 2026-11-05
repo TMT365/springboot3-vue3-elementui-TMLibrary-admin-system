@@ -916,6 +916,84 @@ html:root .chart-tip-value {
 }
 
 /* =============================================================
+ * 4.6 骨架屏  -  AppSkeleton 组件的全局外观
+ *
+ * 之前十几个页面各自用 el-skeleton,形状 / 动画 / 圆角 / 间距各写各的;
+ * 收进 AppSkeleton 组件后,这里一份样式管全部:
+ *   - 底色:在 --color-bg-alt(凹下去的纸色)上再叠一层淡淡描边,
+ *     和卡片的"凸起"形成一凹一凸的对比
+ *   - 高光:一条白色光从左到右扫过(明暗下都柔和),不抢正文视线
+ *   - 圆角 / 间距 / 动画时长都是全站同一套
+ * ============================================================= */
+.app-skeleton {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.app-skeleton-row {
+  display: grid;
+  grid-template-columns: repeat(var(--skeleton-cols, 4), minmax(0, 1fr));
+  gap: 14px;
+}
+
+.app-skeleton-cell {
+  height: 14px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-alt);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-border) 55%, transparent);
+  overflow: hidden;
+  position: relative;
+}
+
+/* 扫光 —— 覆盖在底色上的一层从左到右的白色高光 */
+.app-skeleton-cell::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in srgb, var(--color-card) 55%, transparent) 50%,
+    transparent 80%
+  );
+  animation: app-skeleton-shimmer 1.5s ease-in-out infinite;
+  animation-delay: var(--skeleton-delay, 0ms);
+}
+
+/* rows:一行只放一根长条,像一段文字 */
+.app-skeleton.is-rows .app-skeleton-cell {
+  height: 13px;
+}
+.app-skeleton.is-rows .app-skeleton-row:nth-child(3n) .app-skeleton-cell {
+  width: 86%;
+}
+.app-skeleton.is-rows .app-skeleton-row:nth-child(3n + 1) .app-skeleton-cell {
+  width: 96%;
+}
+
+/* grid:等高的卡片块(图书封面 / 商城商品) —— 用 aspect-ratio 撑高度,
+   这样不依赖外层容器给高度,放进任何网格都成立 */
+.app-skeleton.is-grid .app-skeleton-cell {
+  height: auto;
+  aspect-ratio: 3 / 4;
+  border-radius: var(--radius-lg);
+}
+
+/* block:占满容器的一整块(图表区) */
+.app-skeleton.is-block .app-skeleton-cell {
+  height: 100%;
+  border-radius: var(--radius-md);
+}
+
+@keyframes app-skeleton-shimmer {
+  to {
+    transform: translateX(100%);
+  }
+}
+
+/* =============================================================
  * 5. 全局动效减弱  -  尊重系统的 prefers-reduced-motion 设置
  *    覆盖所有动画 / 过渡,让减弱动态效果的用户立即看到最终态
  * ============================================================= */

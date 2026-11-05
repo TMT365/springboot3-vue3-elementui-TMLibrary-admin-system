@@ -355,13 +355,7 @@ onMounted(async () => {
         <span>{{ error }}</span>
       </div>
 
-      <el-skeleton v-else-if="loading" :rows="2" animated>
-        <template #template>
-          <div class="grid-skel">
-            <el-skeleton-item v-for="i in 8" :key="i" variant="rect" style="height: 320px; border-radius: 14px;" />
-          </div>
-        </template>
-      </el-skeleton>
+      <AppSkeleton v-else-if="loading" variant="grid" :rows="2" :columns="4" />
 
       <div v-else-if="books.length === 0" class="empty-block">
         <el-empty
@@ -403,13 +397,7 @@ onMounted(async () => {
         <span>{{ error }}</span>
       </div>
 
-      <el-skeleton v-else-if="loading" :rows="2" animated>
-        <template #template>
-          <div class="grid-skel">
-            <el-skeleton-item v-for="i in 8" :key="i" variant="rect" style="height: 320px; border-radius: 14px;" />
-          </div>
-        </template>
-      </el-skeleton>
+      <AppSkeleton v-else-if="loading" variant="grid" :rows="2" :columns="4" />
 
       <div v-else-if="picks.length === 0" class="empty-block">
         <el-empty description="暂无推荐" />
@@ -943,12 +931,6 @@ onMounted(async () => {
   text-align: center;
 }
 
-.grid-skel {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 20px;
-}
-
 /* ============ Book grid (Editor's picks) ============ */
 .book-grid {
   display: grid;
@@ -1256,8 +1238,7 @@ onMounted(async () => {
 /* ============ Responsive ============ */
 @media (max-width: 1100px) {
   .book-grid,
-  .deal-grid,
-  .grid-skel {
+  .deal-grid {
     grid-template-columns: repeat(3, 1fr);
   }
 }
@@ -1272,8 +1253,7 @@ onMounted(async () => {
     height: 240px;
   }
   .book-grid,
-  .deal-grid,
-  .grid-skel {
+  .deal-grid {
     grid-template-columns: repeat(2, 1fr);
   }
   .arrival-row {
@@ -1307,8 +1287,7 @@ onMounted(async () => {
 /* 窄屏手机(≤480):保持两列(单列一张卡占满整屏太大),把卡片整体缩小一档 */
 @media (max-width: 480px) {
   .book-grid,
-  .deal-grid,
-  .grid-skel {
+  .deal-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 12px;
   }

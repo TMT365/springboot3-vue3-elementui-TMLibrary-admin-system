@@ -83,7 +83,7 @@ onMounted(fetchBooks)
       <span>{{ error }}</span>
     </div>
 
-    <el-skeleton v-else-if="loading" :rows="6" animated class="skeleton" />
+    <AppSkeleton v-else-if="loading" variant="grid" :rows="2" :columns="4" class="skeleton" />
 
     <el-empty v-else-if="!loading && books.length === 0" description="暂无图书" />
 

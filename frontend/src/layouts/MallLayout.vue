@@ -372,7 +372,7 @@ function onSearchEnter(): void {
 
           <!-- 分类加载中:占位骨架,避免侧栏空一下又蹦出来 -->
           <div v-if="categoryLoading" class="cat-placeholder">
-            <el-skeleton :rows="5" animated />
+            <AppSkeleton variant="rows" :rows="5" />
           </div>
 
           <div v-else-if="categoryError" class="cat-placeholder is-error">

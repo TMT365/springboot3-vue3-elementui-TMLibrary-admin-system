@@ -132,7 +132,7 @@ onMounted(() => {
 
     <!-- 表格 -->
     <div class="table-card">
-      <el-skeleton v-if="loading && items.length === 0" :rows="6" animated />
+      <AppSkeleton v-if="loading && items.length === 0" variant="table" :rows="6" :columns="9" />
 
       <el-table
         v-else

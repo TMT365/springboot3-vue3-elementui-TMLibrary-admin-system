@@ -211,7 +211,7 @@ function goTo(path: string): void {
         <div class="stat-body">
           <p class="stat-label">{{ stat.label }}</p>
           <div v-if="stat.loading" class="stat-skeleton">
-            <el-skeleton-item variant="h1" style="width: 60%" />
+            <AppSkeleton variant="rows" :rows="1" />
           </div>
           <p v-else class="stat-value" :class="{ 'is-text': !stat.numeric }">
             <span class="stat-number">{{ stat.value }}</span>
@@ -336,7 +336,7 @@ function goTo(path: string): void {
         </el-button>
       </header>
 
-      <el-skeleton v-if="loading" :rows="3" animated />
+      <AppSkeleton v-if="loading" variant="block" />
 
       <el-empty
         v-else-if="!loading && recentBooks.length === 0"

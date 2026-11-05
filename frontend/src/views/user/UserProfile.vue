@@ -119,7 +119,7 @@ onMounted(fetchProfile)
     </div>
 
     <!-- ============ Loading ============ -->
-    <el-skeleton v-else-if="loading" :rows="10" animated class="skeleton" />
+    <AppSkeleton v-else-if="loading" variant="rows" :rows="10" class="skeleton" />
 
     <!-- ============ Bento Grid ============ -->
     <div v-else-if="profile" class="bento">

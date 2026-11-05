@@ -363,7 +363,7 @@ onMounted(async () => {
     </div>
 
     <div class="form-card">
-      <el-skeleton v-if="loading" :rows="6" animated />
+      <AppSkeleton v-if="loading" variant="rows" :rows="6" />
 
       <el-form
         v-else

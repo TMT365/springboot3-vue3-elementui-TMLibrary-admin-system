@@ -157,7 +157,7 @@ watch(canRender, (ok) => {
       <canvas ref="canvasRef" class="chart-canvas" />
 
       <div v-if="overlayKind === 'loading'" class="chart-overlay">
-        <el-skeleton :rows="3" animated class="chart-skeleton" />
+        <AppSkeleton v-if="overlayKind === 'loading'" variant="block" class="chart-skeleton" />
       </div>
 
       <div v-else-if="overlayKind === 'no-lib'" class="chart-overlay chart-fallback">

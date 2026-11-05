@@ -5,10 +5,11 @@
  * 挂载在 App.vue 根组件,所有路由刷新时都会播一次(每次刷新都播,不做 session 去重)。
  * 加载期间 App.vue 用 v-if 隐藏 router-view,播完调 loadingStore.finish() 放行。
  *
- * 视觉:
- * - 屏幕中央 div 包裹,上下左右 padding 适中
- * - 3D 立体感圆环 + 内部 "Loading..." 文本(圆点逐个出现)
- * - 圆环下方 3 个圆点,从左到右循环高亮
+ * 视觉(与全站 AppSkeleton 骨架屏统一):
+ * - 全屏一个淡淡的纸色遮罩 + 轻微毛玻璃,像"页面正在被拼起来"
+ * - 中央一块品牌徽记(墨绿书本 glyph,和空状态同一个图形语言)
+ * - 下方三条"内容条"用和列表骨架屏同一个 shimmer 动画,明暗自动跟随令牌
+ * - 顶部一行小字提示"正在加载"
  *
  * 时序(三段):
  *   1. 挂载 → 等 window.load(资源全就绪)
@@ -58,18 +59,13 @@ onMounted(() => {
        否则会出现"内容已渲染 + 遮罩还在淡出"的重叠 -->
   <transition name="loading-fade" @after-leave="loadingStore.finish()">
     <div v-if="visible" class="loading-screen" aria-hidden="true">
-      <div class="loader">
-        <div class="spinner">
-          <div class="spinner-ring" />
-          <span class="spinner-text"
-            >Loading<span class="text-dot" /><span class="text-dot" /><span
-              class="text-dot"
-          /></span>
-        </div>
-        <div class="dots" role="presentation">
-          <span class="dot" />
-          <span class="dot" />
-          <span class="dot" />
+      <div class="loader" role="status" aria-label="正在加载页面">
+        <span class="brand-glyph" aria-hidden="true" />
+        <span class="loader-label">正在加载</span>
+        <div class="loader-bars">
+          <span class="loader-bar" />
+          <span class="loader-bar" style="width: 72%" />
+          <span class="loader-bar" style="width: 46%" />
         </div>
       </div>
     </div>
@@ -78,7 +74,8 @@ onMounted(() => {
 
 <style scoped>
 /* ============================================================
- * 容器  -  全屏 fixed,flex 居中
+ * 容器  -  全屏 fixed,一个淡淡的纸色遮罩 + 轻微毛玻璃。
+ * 用 --color-bg 而不是纯白:切到暗色主题时遮罩也随之变暗,不会闪白。
  * ============================================================ */
 .loading-screen {
   position: fixed;
@@ -87,172 +84,80 @@ onMounted(() => {
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none;
+  background: color-mix(in srgb, var(--color-bg) 92%, transparent);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 /* ============================================================
- * Loader  -  包裹 div,padding 留呼吸,纵向 flex 排 spinner + dots
+ * Loader  -  纵向排:徽记 → 提示 → 三条内容条
  * ============================================================ */
 .loader {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 36px;
+  gap: 16px;
   padding: 40px;
+  width: min(320px, 82vw);
 }
 
-/* ============================================================
- * Spinner  -  3D 立体感圆环 + 内部 Loading 文本
- *
- * 亮色:圆盘是白的,白色内高光压在白卡片上等于没有 —— 所以厚度
- *       只能靠「上沿内阴影 + 下沿内阴影 + 加重的双层外投影」来做。
- *   inset 0 3px 10px  -  上沿内阴影(盘面厚度上缘)
- *   inset 0 -3px 8px   -  下沿内阴影(盘面厚度下缘)
- *   0 24px 48px        -  主投影(远)
- *   0 8px 16px         -  接触投影(近)
- *   0 0 0 1px          -  accent 微光描边
- * ============================================================ */
-.spinner {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 160px;
-  height: 160px;
+/* 品牌徽记 —— 墨绿书本 glyph,和空状态、落地页 logo 同一个图形语言。
+ *   mask 里的 SVG 就是 theme.css 空状态那枚书的描边路径(这里复刻一份,
+ *   尺寸缩小到 44px)。stroke 用 %23000,经 mask 后只剩字形,靠 background 上色。 */
+.brand-glyph {
+  width: 44px;
+  height: 44px;
   border-radius: 50%;
-  background: var(--color-card);
-  box-shadow:
-    inset 0 3px 10px rgba(17, 25, 40, 0.10),
-    inset 0 -3px 8px rgba(17, 25, 40, 0.05),
-    0 24px 48px rgba(17, 25, 40, 0.20),
-    0 8px 16px rgba(17, 25, 40, 0.10),
-    0 0 0 1px color-mix(in srgb, var(--color-accent) 14%, transparent);
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 6.5C12 5 10.9 4 9.4 4H4.6A1.6 1.6 0 0 0 3 5.6v12.8A1.6 1.6 0 0 0 4.6 20h4.8c1.5 0 2.6 1 2.6 2.2 0-1.2 1.1-2.2 2.6-2.2h4.8a1.6 1.6 0 0 0 1.6-1.6V5.6A1.6 1.6 0 0 0 19.4 4h-4.8C13.1 4 12 5 12 6.5z'/%3E%3Cpath d='M12 6.5V22.2'/%3E%3C/svg%3E") no-repeat center / 24px;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 6.5C12 5 10.9 4 9.4 4H4.6A1.6 1.6 0 0 0 3 5.6v12.8A1.6 1.6 0 0 0 4.6 20h4.8c1.5 0 2.6 1 2.6 2.2 0-1.2 1.1-2.2 2.6-2.2h4.8a1.6 1.6 0 0 0 1.6-1.6V5.6A1.6 1.6 0 0 0 19.4 4h-4.8C13.1 4 12 5 12 6.5z'/%3E%3Cpath d='M12 6.5V22.2'/%3E%3C/svg%3E") no-repeat center / 24px;
 }
 
-:root[data-theme='dark'] .spinner {
-  box-shadow:
-    inset 0 3px 10px rgba(0, 0, 0, 0.3),
-    inset 0 -2px 8px rgba(255, 255, 255, 0.04),
-    0 24px 48px rgba(0, 0, 0, 0.5),
-    0 8px 16px rgba(0, 0, 0, 0.3),
-    0 0 0 1px color-mix(in srgb, var(--color-accent) 12%, transparent);
-}
-
-.spinner-ring {
-  position: absolute;
-  inset: 14px;
-  border-radius: 50%;
-  border: 7px solid var(--color-text-soft);
-  border-top-color: var(--color-accent);
-  animation: spin 0.8s linear infinite;
-  pointer-events: none;
-}
-
-.spinner-text {
-  font-family: 'Manrope', system-ui, sans-serif;
+/* 提示文字 */
+.loader-label {
+  font-family: var(--font-sans);
   font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.1em;
-  line-height: 1;
+  letter-spacing: 0.12em;
   color: var(--color-text-muted);
-  text-transform: uppercase;
-  white-space: nowrap;
-  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.6);
-  /* 视觉微调:Manrope 在 13px 时字形中线略偏下,补 1px 让 LOADING 文本看上去更居中 */
-  position: relative;
-  top: 1px;
 }
 
-:root[data-theme='dark'] .spinner-text {
-  text-shadow: 0 1px 0 rgba(0, 0, 0, 0.4);
-}
-
-/* "Loading..." 文字内的点循环  -  从左到右逐个出现 */
-.text-dot {
-  display: inline-block;
-  width: 4px;
-  opacity: 0;
-  animation: text-dot 1.5s ease-in-out infinite;
-}
-
-.text-dot:nth-of-type(2) {
-  animation-delay: 0.2s;
-}
-.text-dot:nth-of-type(3) {
-  animation-delay: 0.4s;
-}
-
-@keyframes text-dot {
-  0%,
-  80%,
-  100% {
-    opacity: 0;
-  }
-  40% {
-    opacity: 1;
-  }
-}
-
-/* ============================================================
- * Dots  -  圆环下方 3 个独立圆点,1.5s 循环,高亮相位错开 0.5s
- * ============================================================ */
-.dots {
+/* 三条"内容条" —— 和 AppSkeleton 同一个 shimmer 动画(theme.css 里的
+ *   @keyframes app-skeleton-shimmer),同一套 paper 色,观感完全统一。 */
+.loader-bars {
   display: flex;
-  gap: 12px;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  margin-top: 8px;
 }
 
-.dot {
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  background: var(--color-text-soft);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.4),
-    0 2px 4px rgba(0, 0, 0, 0.1);
-  animation: dot-pulse 1.5s ease-in-out infinite;
+.loader-bar {
+  height: 12px;
+  border-radius: var(--radius-sm);
+  background-color: var(--color-bg-alt);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--color-border) 55%, transparent);
+  overflow: hidden;
+  position: relative;
 }
 
-:root[data-theme='dark'] .dot {
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.06),
-    0 2px 4px rgba(0, 0, 0, 0.3);
-}
-
-.dot:nth-child(2) {
-  animation-delay: 0.5s;
-}
-.dot:nth-child(3) {
-  animation-delay: 1s;
-}
-
-@keyframes dot-pulse {
-  0%,
-  60%,
-  100% {
-    background: var(--color-text-soft);
-    transform: scale(1);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.4),
-      0 2px 4px rgba(0, 0, 0, 0.1);
-  }
-  30% {
-    background: var(--color-accent);
-    transform: scale(1.3);
-    box-shadow:
-      inset 0 1px 0 rgba(255, 255, 255, 0.5),
-      0 0 12px color-mix(in srgb, var(--color-accent) 50%, transparent),
-      0 4px 8px rgba(0, 0, 0, 0.15);
-  }
-}
-
-@keyframes spin {
-  to {
-    transform: rotate(360deg);
-  }
+.loader-bar::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    100deg,
+    transparent 20%,
+    color-mix(in srgb, var(--color-card) 55%, transparent) 50%,
+    transparent 80%
+  );
+  animation: app-skeleton-shimmer 1.5s ease-in-out infinite;
+  animation-delay: var(--skeleton-delay, 0ms);
 }
 
 /* ============================================================
- * Fade-out
+ * Fade-out  -  淡出播完才放行路由内容(见模板 @after-leave)
  * ============================================================ */
 .loading-fade-leave-active {
   transition: opacity 200ms ease-out;

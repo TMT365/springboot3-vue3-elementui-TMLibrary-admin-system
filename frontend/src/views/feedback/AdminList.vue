@@ -119,7 +119,7 @@ onMounted(fetchList)
       <span>{{ error }}</span>
     </div>
 
-    <el-skeleton v-else-if="loading && items.length === 0" :rows="5" animated />
+    <AppSkeleton v-else-if="loading && items.length === 0" variant="rows" :rows="5" />
 
     <el-empty v-else-if="items.length === 0" description="没有符合条件的反馈" />
 
