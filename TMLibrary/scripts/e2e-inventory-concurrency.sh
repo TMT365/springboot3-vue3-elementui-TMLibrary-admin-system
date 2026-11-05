@@ -64,11 +64,15 @@ MAX_ID_BEFORE=$(sql "SELECT COALESCE(MAX(id),0) FROM orders;")
 echo "=== 准备:book=$BOOK_ID 原库存=$ORIG_STOCK ==="
 cleanup() {
   echo "=== 清理 ==="
-  # 先删订单再删订单行 —— 反过来的话,子查询已经查不到订单行了,订单会变成孤儿
-  sql "DELETE FROM orders WHERE id > $MAX_ID_BEFORE
-        AND id IN (SELECT oi2.order_id FROM order_items oi2 WHERE oi2.book_id=$BOOK_ID);"
-  sql "DELETE oi FROM order_items oi JOIN orders o ON o.id=oi.order_id
-        WHERE oi.book_id=$BOOK_ID AND o.id > $MAX_ID_BEFORE;"
+  # 先记录本测试产生的订单 id,再先删订单行、后删订单 ——
+  # 顺序必须固定:删订单后订单行会失去引用(JOIN 不再匹配),只剩先删行才不留孤儿。
+  local test_ids
+  test_ids=$(sql "SELECT GROUP_CONCAT(id) FROM orders WHERE id > $MAX_ID_BEFORE
+                  AND id IN (SELECT oi2.order_id FROM order_items oi2 WHERE oi2.book_id=$BOOK_ID);")
+  if [ -n "$test_ids" ]; then
+    sql "DELETE FROM order_items WHERE order_id IN ($test_ids);"
+    sql "DELETE FROM orders WHERE id IN ($test_ids);"
+  fi
   sql "UPDATE books SET stock_quantity=$ORIG_STOCK WHERE id=$BOOK_ID;"
   r DEL "$KEY" > /dev/null
   echo "  已还原:stock=$(sql "SELECT stock_quantity FROM books WHERE id=$BOOK_ID;")"
