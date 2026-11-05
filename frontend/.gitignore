@@ -25,3 +25,5 @@ dist-ssr
 
 # Temporary build files
 *.tsbuildinfo
+# unplugin-vue-components 自动生成的全局组件类型声明
+src/components.d.ts
