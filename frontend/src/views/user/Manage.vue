@@ -12,7 +12,7 @@
 
 import { ref, onMounted } from 'vue'
 import { userApi } from '@/api/user'
-import { formatDateTime } from '@/utils/format'
+import { formatDateTime, formatDatePart, formatTimePart } from '@/utils/format'
 import Pager from '@/components/Pager.vue'
 import { useMediaQuery } from '@/composables/useMediaQuery'
 import type { UserDto } from '@/types/api'
@@ -170,13 +170,15 @@ function roleLabel(role: string): string {
         :data="items"
         class="premium-table"
       >
-        <el-table-column prop="id" label="ID" width="56" />
-        <el-table-column prop="username" label="用户名" width="128">
+        <!-- 列宽按真实数据校准(用户名 ≤10 字符、邮箱 ≤24、手机号 11 位),
+             用户名与邮箱两列弹性分摊余量,其余按内容收紧 -->
+        <el-table-column prop="id" label="ID" width="44" />
+        <el-table-column prop="username" label="用户名" min-width="113">
           <template #default="{ row }">
             <span class="cell-title" :title="row.username">{{ row.username }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="角色" width="96">
+        <el-table-column label="角色" width="92">
           <template #default="{ row }">
             <el-tag
               :type="row.role === 'BOSS' ? 'danger' : row.role === 'ADMIN' ? 'warning' : 'info'"
@@ -187,35 +189,38 @@ function roleLabel(role: string): string {
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="96">
+        <el-table-column label="状态" width="68">
           <template #default="{ row }">
             <el-tag :type="statusTagType(row.status)" effect="light" size="small">
               {{ statusLabel(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="email" label="邮箱" min-width="170">
+        <el-table-column prop="email" label="邮箱" min-width="211">
           <template #default="{ row }">
             <span class="cell-muted" :title="row.email || ''">
               {{ row.email || ' - ' }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column prop="phoneNumber" label="手机号" width="128">
+        <el-table-column prop="phoneNumber" label="手机号" width="124">
           <template #default="{ row }">
             <span class="cell-mono" :title="row.phoneNumber || ''">
               {{ row.phoneNumber || ' - ' }}
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" width="140">
+        <el-table-column label="创建时间" width="110">
           <template #default="{ row }">
-            <span class="cell-muted">{{ formatDateTime(row.createdTime) }}</span>
+            <span class="cell-datetime" :title="formatDateTime(row.createdTime)">
+              <span class="dt-date">{{ formatDatePart(row.createdTime) || '-' }}</span>
+              <span class="dt-time">{{ formatTimePart(row.createdTime) }}</span>
+            </span>
           </template>
         </el-table-column>
         <el-table-column
           label="操作"
-          width="100"
+          width="104"
           :fixed="isNarrow ? false : 'right'"
           align="center"
         >
@@ -350,8 +355,8 @@ function roleLabel(role: string): string {
   font-size: 14px;
   color: var(--color-text);
   border-bottom: 1px solid var(--color-border);
-  /* 行距:EP 默认 8px 太密,和 book/List 保持一致用 15px */
-  padding: 15px 0;
+  /* 行距:EP 默认 8px 太密;12px 与 book/List、purchase/List 三张表一致 */
+  padding: 12px 0;
 }
 
 .premium-table :deep(.el-table__header-wrapper) th {

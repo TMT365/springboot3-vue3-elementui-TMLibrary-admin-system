@@ -32,22 +32,40 @@ const isNarrow = useMediaQuery('(max-width: 768px)')
 // ------------------------------------------------------------
 const categories = ref<BookCategoryNode[]>([])
 
-/** categoryId → "大类 / 小类" 的查表 —— 分类总共几十条,一次展平比每行现查便宜 */
-const categoryLabel = computed<Map<number, string>>(() => {
-  const map = new Map<number, string>()
+/** categoryId → "大类 / 小类" 的查表 —— 分类总共几十条,一次展平比每行现查便宜。
+ *
+ *  大类与小类分开存,是为了渲染时能给大类降一档字号:
+ *  "计算机 / 系统设计" 连在一起要 140px+,拆成小字大类 + 正常小类
+ *  只要 ~90px,列宽省下来的部分让给书名。 */
+const categoryLabel = computed<Map<number, { parent: string; child: string }>>(() => {
+  const map = new Map<number, { parent: string; child: string }>()
   for (const parent of categories.value) {
-    map.set(parent.id, parent.name)
+    map.set(parent.id, { parent: parent.name, child: '' })
     for (const sub of parent.children ?? []) {
-      map.set(sub.id, `${parent.name} / ${sub.name}`)
+      map.set(sub.id, { parent: parent.name, child: sub.name })
     }
   }
   return map
 })
 
 // 参数只取用得上的字段:el-table 的插槽 row 是 DefaultRow(索引签名),直接收 BookDto 会类型不兼容
-function categoryOf(row: { categoryId?: number | null }): string {
-  if (!row.categoryId) return ''
-  return categoryLabel.value.get(row.categoryId) ?? ''
+function catParts(row: { categoryId?: number | null }): { parent: string; child: string } | null {
+  if (!row.categoryId) return null
+  return categoryLabel.value.get(row.categoryId) ?? null
+}
+
+function catParent(row: { categoryId?: number | null }): string {
+  return catParts(row)?.parent ?? ''
+}
+
+function catChild(row: { categoryId?: number | null }): string {
+  return catParts(row)?.child ?? ''
+}
+
+function catTitle(row: { categoryId?: number | null }): string {
+  const parts = catParts(row)
+  if (!parts) return ''
+  return parts.child ? `${parts.parent} / ${parts.child}` : parts.parent
 }
 
 async function fetchBooks(): Promise<void> {
@@ -123,28 +141,31 @@ onMounted(() => {
         class="premium-table"
         :row-class-name="() => 'premium-row'"
       >
-        <el-table-column prop="id" label="ID" width="56" />
-        <el-table-column prop="title" label="标题" min-width="176">
+        <!-- 列宽按真实数据实测校准(books 12 行:标题最长 13 字/作者 16 字符/
+             ISBN 13 位/分类 9 字),并只留「标题」一列弹性(min-width),
+             其余按内容收紧,空出来的余量全给标题,长标题才有地方展开 -->
+        <el-table-column prop="id" label="ID" width="40" />
+        <el-table-column prop="title" label="标题" min-width="195">
           <template #default="{ row }">
             <span class="cell-title" :title="row.title">{{ row.title }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="author" label="作者" width="104">
+        <el-table-column prop="author" label="作者" width="160">
           <template #default="{ row }">
             <span class="cell-ellipsis" :title="row.author">{{ row.author }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="isbn" label="ISBN" width="132">
+        <el-table-column prop="isbn" label="ISBN" width="136">
           <template #default="{ row }">
             <span class="cell-mono" :title="row.isbn">{{ row.isbn }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="价格" width="88">
+        <el-table-column label="价格" width="78">
           <template #default="{ row }">
             <span class="cell-price">{{ formatPrice(row.price) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="库存" width="68" align="right">
+        <el-table-column label="库存" width="48" align="right">
           <template #default="{ row }">
             <span
               class="cell-stock"
@@ -154,22 +175,23 @@ onMounted(() => {
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="分类" min-width="128">
+        <el-table-column label="分类" width="124">
           <template #default="{ row }">
-            <span v-if="categoryOf(row)" class="cell-cat" :title="categoryOf(row)">
-              {{ categoryOf(row) }}
+            <span v-if="catTitle(row)" class="cell-cat" :title="catTitle(row)">
+              <span class="cat-parent">{{ catParent(row) }}</span>
+              <span v-if="catChild(row)" class="cat-child">{{ catChild(row) }}</span>
             </span>
             <span v-else class="cell-cat is-none">未分类</span>
           </template>
         </el-table-column>
-        <el-table-column label="出版日期" width="112">
+        <el-table-column label="出版日期" width="108">
           <template #default="{ row }">
             <span class="cell-muted">{{ formatDate(row.publishedDate) }}</span>
           </template>
         </el-table-column>
         <el-table-column
           label="操作"
-          width="100"
+          width="96"
           :fixed="isNarrow ? false : 'right'"
           align="center"
         >
@@ -294,8 +316,8 @@ onMounted(() => {
   color: var(--color-text);
   border-bottom: 1px solid var(--color-border);
   /* 行距:EP 默认 padding 只有 8px 上下,密得像电子表格;
-     调到 15px 让每行有呼吸,扫读时不容易串行 */
-  padding: 15px 0;
+     调到 12px 让每行有呼吸,又能一屏多看两行(行高 55 → 49) */
+  padding: 12px 0;
 }
 
 /* 表头同步加厚一点,视觉上压得住下面的行 */
@@ -317,6 +339,7 @@ onMounted(() => {
 .cell-title,
 .cell-ellipsis,
 .cell-mono,
+.cell-muted,
 .cell-cat {
   display: block;
   overflow: hidden;
@@ -337,14 +360,16 @@ onMounted(() => {
   color: var(--color-text);
 }
 
-/* ISBN —— 13 位数字连排,加字距才不糊成一团(同订单号的处理) */
+/* ISBN —— 13 位数字连排,加字距才不糊成一团(同订单号的处理)。
+   字距 0.02em 而不是 0.05em:0.05em 时 13 位 ISBN 要 121px,
+   比列宽多出来的部分只能省略号收尾 —— 编号被切一半就没法当编号用了。 */
 .cell-mono {
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
-  font-size: 13.5px;
+  font-size: 13px;
   font-weight: 500;
   color: var(--color-text);
   font-variant-numeric: tabular-nums;
-  letter-spacing: 0.05em;
+  letter-spacing: 0.02em;
 }
 
 .cell-muted {
@@ -373,10 +398,21 @@ onMounted(() => {
   color: var(--el-color-danger);
 }
 
-/* 分类 —— 「大类 / 小类」,大类弱化、小类正常,扫读时先看小类 */
+/* 分类 —— 「大类 / 小类」,大类弱化、小类正常,扫读时先看小类。
+   大类用 11px 小字,一格能塞下整条路径,还省出宽度给书名。 */
 .cell-cat {
   font-size: 13px;
   color: var(--color-text-soft);
+}
+
+.cell-cat .cat-parent {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.cell-cat .cat-child {
+  margin-left: 5px;
+  color: var(--color-text);
 }
 
 .cell-cat.is-none {

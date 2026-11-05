@@ -713,12 +713,24 @@ html:root .el-message--info { border-left: 3px solid var(--el-color-info); }
  * 亮绿 #66bb6a,白字只有 2.36:1(不过 WCAG AA),所以统一换成
  * --color-on-accent(墨字,8.1:1)。选择器要带上 html:root[data-theme]
  * 才能压过 EP 的类选择器。
+ *
+ * 只管"实心主按钮":文字型(is-link / is-text)按钮没有绿底,字就该是
+ * 亮绿本身 —— 之前不区分,表格里的「编辑 / 查看」被刷成墨字
+ * (rgb(11,18,14) 压在 #1f1f1f 卡片上,对比度约 1.2:1,几乎看不见)。
  */
-html:root[data-theme='dark'] .el-button--primary {
+html:root[data-theme='dark'] .el-button--primary:not(.is-link):not(.is-text) {
   --el-button-text-color: var(--color-on-accent);
   --el-button-hover-text-color: var(--color-on-accent);
   --el-button-active-text-color: var(--color-on-accent);
   --el-button-disabled-text-color: var(--color-on-accent);
+}
+
+/* 文字型主按钮:暗色下用亮绿本身(#66bb6a 压 #1f1f1f 约 6.5:1) */
+html:root[data-theme='dark'] .el-button--primary.is-link,
+html:root[data-theme='dark'] .el-button--primary.is-text {
+  --el-button-text-color: var(--el-color-primary);
+  --el-button-hover-text-color: var(--el-color-primary-light-3);
+  --el-button-active-text-color: var(--el-color-primary-light-2);
 }
 
 html:root[data-theme='dark'] .el-pagination.is-background .el-pager li.is-active {
@@ -767,6 +779,61 @@ summary:focus-visible {
   width: 40px;
   height: 40px;
   transform: translate(-50%, -50%);
+}
+
+/* =============================================================
+ * 4.4 表格时间单元  -  日期 / 时刻两行式
+ * ============================================================= */
+
+/* ---- 4.4.1 为什么两行 ----
+ *
+ * 后端给的时间戳是 "2026-09-18T23:53:06"(ISO-8601)。原样塞进一格,
+ * 19 个字符在 13px 下要 ~140px,而列宽扣掉 .cell 的左右内边距只剩 ~86px ——
+ * 浏览器会在空格处折行,日期和时刻被拆成上下两行,看起来像渲染坏了。
+ *
+ * 主动拆成两行反而是设计:日期一行(给人扫),时刻一行(等宽小字,弱一档,
+ * 像脚注)。既不折行也不省略,信息一个字不少;两个时间列并排时,
+ * "谁更晚"一眼可比 —— 这是折叠成一行做不到的。
+ *
+ * 放全局而不是各视图 scoped:订单表和用户表都要用同一套,
+ * 写两遍迟早会走样(其中一个改了字号,另一个还是旧的)。
+ */
+.cell-datetime {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.3;
+}
+
+.cell-datetime .dt-date {
+  font-size: 13px;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.cell-datetime .dt-time {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--color-text-soft);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
+}
+
+/* ---- 4.4.2 三张后台表统一的单元格内边距 ----
+ *
+ * Element Plus 默认 .cell 左右各 12px。图书表 9 列,一列 4px 就是 36px 正文宽度,
+ * 而真实数据里最长的作者名("Thomas H. Cormen")要 140px、13 位 ISBN 要 113px ——
+ * 12px 内边距下这两列只能切一半,编号被切一半就没法当编号用了。
+ *
+ * 收到 10px:每列多出 4px 正文,作者/ISBN/价格/日期都能完整显示,
+ * 行高不变,视觉上反而更紧凑(列表本来就该让位于内容)。
+ *
+ * 用 html:root 提特异度:EP 的 .el-table .cell 是 (0,2,0),
+ * 而 EP 的组件样式注入晚于 theme.css,同特异度时 EP 会赢。
+ */
+html:root .premium-table .cell {
+  padding-left: 10px;
+  padding-right: 10px;
 }
 
 /* =============================================================

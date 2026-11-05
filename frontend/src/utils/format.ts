@@ -33,6 +33,28 @@ export function formatDateTime(iso: string | null | undefined): string {
 }
 
 /**
+ * 时间戳拆成「日期 / 时刻」两段,给表格里的两行时间单元用。
+ *
+ * <h2>为什么拆</h2>
+ * 后端给的是 "2026-09-18T23:53:06" 这种 ISO 串,直接塞进一格要么撑爆列宽、
+ * 要么被省略号切掉后半截(2026-09-18 23:53:… 看不出是几点)。
+ * 拆成两行后:日期是给人扫的,时刻是给人对齐的,一眼能比"谁更晚"。
+ *
+ * @param iso ISO 时间串,允许 null/undefined
+ * @returns 日期段 "YYYY-MM-DD";时刻段 "HH:mm:ss";空值返回 ''
+ */
+export function formatDatePart(iso: string | null | undefined): string {
+  if (!iso) return ''
+  return iso.slice(0, 10)
+}
+
+export function formatTimePart(iso: string | null | undefined): string {
+  if (!iso) return ''
+  // ISO 串第 11 位起是 "HH:mm:ss"("2026-09-18T23:53:06" → 索引 11 = '2')
+  return iso.slice(11, 19)
+}
+
+/**
  * 取用户名的首字符,给头像占位用(MallLayout / AdminLayout / UserProfile 共用)。
  *
  * <h2>为什么不用 str.slice(0, 1)</h2>
