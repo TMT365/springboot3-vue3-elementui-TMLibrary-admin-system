@@ -17,6 +17,7 @@ import { useRouter } from 'vue-router'
 import { formatPrice, formatDateTime } from '@/utils/format'
 import { purchaseApi } from '@/api/purchase'
 import Pager from '@/components/Pager.vue'
+import { useMediaQuery } from '@/composables/useMediaQuery'
 import type { OrderListItem } from '@/types/api'
 
 const router = useRouter()
@@ -26,6 +27,9 @@ const total = ref<number>(0)
 const items = ref<OrderListItem[]>([])
 const loading = ref<boolean>(true)
 const error = ref<string | null>(null)
+
+/* 窄屏不固定「操作」列 —— 否则一根固定列正好盖住订单号 */
+const isNarrow = useMediaQuery('(max-width: 768px)')
 
 /** 拉取订单列表 —— 全量分页(后端按 id 倒序,最新在前) */
 async function fetchOrders(): Promise<void> {
@@ -80,6 +84,27 @@ function payMethodLabel(method: string): string {
   }
 }
 
+/**
+ * 时间戳拆成"日期 + 时刻"两段。
+ *
+ * <h2>为什么拆</h2>
+ * "2026-09-18 23:53:06" 19 个字符在 13px 下要 ~140px,而列宽只有 140px
+ * (扣掉 .cell 的左右 12px 内边距只剩 116px),于是浏览器在空格处折行 ——
+ * 日期和时刻被拆成上下两行,看起来像渲染坏了。
+ * 主动拆成两行反而是设计:日期一行、时刻一行(时刻用等宽小字弱一档),
+ * 既不折行也不省略,信息一个字不少。
+ */
+function dtDate(iso: string | null | undefined): string {
+  if (!iso) return '-'
+  return iso.slice(0, 10)
+}
+
+function dtTime(iso: string | null | undefined): string {
+  if (!iso) return ''
+  const t = iso.replace('T', ' ')
+  return t.slice(11)
+}
+
 function goCreate(): void {
   router.replace('/admin/purchases/new')
 }
@@ -122,24 +147,24 @@ function goCreate(): void {
         class="premium-table"
         :row-class-name="() => 'premium-row'"
       >
-        <el-table-column prop="orderNumber" label="订单号" min-width="200">
+        <el-table-column prop="orderNumber" label="订单号" min-width="180">
           <template #default="{ row }">
-            <span class="cell-mono">{{ row.orderNumber }}</span>
+            <span class="cell-mono" :title="row.orderNumber">{{ row.orderNumber }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="110">
+        <el-table-column label="状态" width="96">
           <template #default="{ row }">
             <el-tag :type="statusTagType(row.status)" effect="light" size="small">
               {{ statusLabel(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="总额" width="130" align="right">
+        <el-table-column label="总额" width="104" align="right">
           <template #default="{ row }">
             <span class="cell-price">{{ formatPrice(row.totalAmount) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="支付方式" width="110">
+        <el-table-column label="支付方式" width="96">
           <template #default="{ row }">
             <!-- 未支付 = null;加这列之前就付过的老订单也是 null(当时没记录),
                  统一显示「-」,不是渲染失败 -->
@@ -149,19 +174,33 @@ function goCreate(): void {
             <span v-else class="cell-muted">-</span>
           </template>
         </el-table-column>
-        <el-table-column label="下单时间" width="180">
+        <el-table-column label="下单时间" width="140">
           <template #default="{ row }">
-            <span class="cell-muted">{{ formatDateTime(row.createdTime) }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column label="支付时间" width="180">
-          <template #default="{ row }">
-            <span class="cell-muted">
-              {{ row.paidTime ? formatDateTime(row.paidTime) : '-' }}
+            <span class="cell-datetime" :title="formatDateTime(row.createdTime)">
+              <span class="dt-date">{{ dtDate(row.createdTime) }}</span>
+              <span class="dt-time">{{ dtTime(row.createdTime) }}</span>
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right" align="center">
+        <el-table-column label="支付时间" width="140">
+          <template #default="{ row }">
+            <span
+              v-if="row.paidTime"
+              class="cell-datetime"
+              :title="formatDateTime(row.paidTime)"
+            >
+              <span class="dt-date">{{ dtDate(row.paidTime) }}</span>
+              <span class="dt-time">{{ dtTime(row.paidTime) }}</span>
+            </span>
+            <span v-else class="cell-muted">-</span>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="操作"
+          width="100"
+          :fixed="isNarrow ? false : 'right'"
+          align="center"
+        >
           <template #default="{ row }">
             <el-button link type="primary" size="small">查看</el-button>
             <el-button
@@ -230,8 +269,8 @@ function goCreate(): void {
   align-items: center;
   gap: 8px;
   padding: 14px 18px;
-  background: rgba(245, 108, 108, 0.08);
-  color: #f56c6c;
+  background: color-mix(in srgb, var(--el-color-danger) 8%, transparent);
+  color: var(--el-color-danger);
   border-radius: 10px;
   margin-bottom: 16px;
   font-size: 14px;
@@ -305,6 +344,11 @@ function goCreate(): void {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.055em;
   color: var(--color-text);
+  /* 16 位 ID 比列宽长 —— 省略号收尾,别把数字切一半 */
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .cell-muted {
@@ -321,6 +365,30 @@ function goCreate(): void {
   color: var(--color-accent);
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.01em;
+}
+
+/* 时间戳 —— 主动分两行:日期一行、时刻一行。
+   浏览器在空格处自动折行会被看成"排版坏了",主动分行是设计:
+   时刻用等宽小字弱一档,读起来像脚注,层次清楚又不丢信息。 */
+.cell-datetime {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  line-height: 1.3;
+}
+
+.cell-datetime .dt-date {
+  font-size: 13px;
+  color: var(--color-text);
+  font-variant-numeric: tabular-nums;
+}
+
+.cell-datetime .dt-time {
+  font-family: var(--font-mono);
+  font-size: 11.5px;
+  color: var(--color-text-soft);
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.02em;
 }
 
 /* 响应式 */

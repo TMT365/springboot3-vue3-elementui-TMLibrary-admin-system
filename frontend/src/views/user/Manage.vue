@@ -14,9 +14,13 @@ import { ref, onMounted } from 'vue'
 import { userApi } from '@/api/user'
 import { formatDateTime } from '@/utils/format'
 import Pager from '@/components/Pager.vue'
+import { useMediaQuery } from '@/composables/useMediaQuery'
 import type { UserDto } from '@/types/api'
 
 const searchKeyword = ref<string>('')
+
+/* 窄屏不固定「操作」列 —— 否则固定列正好盖住用户名/邮箱 */
+const isNarrow = useMediaQuery('(max-width: 768px)')
 
 /**
  * 筛选条件 —— 默认「全部」。
@@ -166,13 +170,13 @@ function roleLabel(role: string): string {
         :data="items"
         class="premium-table"
       >
-        <el-table-column prop="id" label="ID" width="64" />
-        <el-table-column prop="username" label="用户名" width="140">
+        <el-table-column prop="id" label="ID" width="56" />
+        <el-table-column prop="username" label="用户名" width="128">
           <template #default="{ row }">
-            <span class="cell-title">{{ row.username }}</span>
+            <span class="cell-title" :title="row.username">{{ row.username }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="角色" width="110">
+        <el-table-column label="角色" width="96">
           <template #default="{ row }">
             <el-tag
               :type="row.role === 'BOSS' ? 'danger' : row.role === 'ADMIN' ? 'warning' : 'info'"
@@ -183,29 +187,38 @@ function roleLabel(role: string): string {
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="状态" width="110">
+        <el-table-column label="状态" width="96">
           <template #default="{ row }">
             <el-tag :type="statusTagType(row.status)" effect="light" size="small">
               {{ statusLabel(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="email" label="邮箱" min-width="200">
+        <el-table-column prop="email" label="邮箱" min-width="170">
           <template #default="{ row }">
-            <span class="cell-muted">{{ row.email || ' - ' }}</span>
+            <span class="cell-muted" :title="row.email || ''">
+              {{ row.email || ' - ' }}
+            </span>
           </template>
         </el-table-column>
-        <el-table-column prop="phoneNumber" label="手机号" width="150">
+        <el-table-column prop="phoneNumber" label="手机号" width="128">
           <template #default="{ row }">
-            <span class="cell-mono">{{ row.phoneNumber || ' - ' }}</span>
+            <span class="cell-mono" :title="row.phoneNumber || ''">
+              {{ row.phoneNumber || ' - ' }}
+            </span>
           </template>
         </el-table-column>
-        <el-table-column label="创建时间" width="180">
+        <el-table-column label="创建时间" width="140">
           <template #default="{ row }">
             <span class="cell-muted">{{ formatDateTime(row.createdTime) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="100" fixed="right" align="center">
+        <el-table-column
+          label="操作"
+          width="100"
+          :fixed="isNarrow ? false : 'right'"
+          align="center"
+        >
           <template #default>
             <el-dropdown trigger="click">
               <el-button link type="primary" size="small">
@@ -216,7 +229,7 @@ function roleLabel(role: string): string {
                   <el-dropdown-item disabled>编辑</el-dropdown-item>
                   <el-dropdown-item disabled divided>重置密码</el-dropdown-item>
                   <el-dropdown-item disabled divided>
-                    <span style="color: #f56c6c;">删除</span>
+                    <span style="color: var(--el-color-danger);">删除</span>
                   </el-dropdown-item>
                 </el-dropdown-menu>
               </template>
@@ -295,8 +308,8 @@ function roleLabel(role: string): string {
   align-items: center;
   gap: 8px;
   padding: 14px 18px;
-  background: rgba(245, 108, 108, 0.08);
-  color: #f56c6c;
+  background: color-mix(in srgb, var(--el-color-danger) 8%, transparent);
+  color: var(--el-color-danger);
   border-radius: 10px;
   margin-bottom: 16px;
   font-size: 14px;
@@ -353,12 +366,23 @@ function roleLabel(role: string): string {
   background: var(--color-bg-alt);
 }
 
+/* 长文本统一省略号收尾,别把字符切一半 */
+.cell-title,
+.cell-mono,
+.cell-muted {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .cell-title {
   font-family: 'DM Serif Display', Georgia, serif;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: var(--color-text);}
+  color: var(--color-text);
+}
 
 /* 手机号 —— 11 位数字连排,加字距(同订单号 / ISBN 的处理) */
 .cell-mono {

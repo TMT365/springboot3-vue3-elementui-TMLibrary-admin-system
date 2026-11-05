@@ -11,6 +11,7 @@ import { useRouter } from 'vue-router'
 import { bookApi } from '@/api/book'
 import { formatPrice, formatDate } from '@/utils/format'
 import Pager from '@/components/Pager.vue'
+import { useMediaQuery } from '@/composables/useMediaQuery'
 import type { BookCategoryNode, BookDto, PageResult } from '@/types/api'
 
 const router = useRouter()
@@ -20,6 +21,11 @@ const total = ref<number>(0)
 const items = ref<BookDto[]>([])
 const loading = ref<boolean>(true)
 const error = ref<string | null>(null)
+
+/* 窄屏:「操作」列不再固定在右侧。
+   EP 的固定列是 sticky,吸附在表格内部滚动容器上,390px 宽的屏上
+   一根 150px 的固定列会正好压在「标题」上面,把标题切掉半个字。 */
+const isNarrow = useMediaQuery('(max-width: 768px)')
 
 // ------------------------------------------------------------
 // 分类:列表只返回 categoryId,名字要靠分类树翻译
@@ -117,24 +123,28 @@ onMounted(() => {
         class="premium-table"
         :row-class-name="() => 'premium-row'"
       >
-        <el-table-column prop="id" label="ID" width="64" />
-        <el-table-column prop="title" label="标题" min-width="220">
+        <el-table-column prop="id" label="ID" width="56" />
+        <el-table-column prop="title" label="标题" min-width="176">
           <template #default="{ row }">
             <span class="cell-title" :title="row.title">{{ row.title }}</span>
           </template>
         </el-table-column>
-        <el-table-column prop="author" label="作者" width="140" />
-        <el-table-column prop="isbn" label="ISBN" width="170">
+        <el-table-column prop="author" label="作者" width="104">
           <template #default="{ row }">
-            <span class="cell-mono">{{ row.isbn }}</span>
+            <span class="cell-ellipsis" :title="row.author">{{ row.author }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="价格" width="110">
+        <el-table-column prop="isbn" label="ISBN" width="132">
+          <template #default="{ row }">
+            <span class="cell-mono" :title="row.isbn">{{ row.isbn }}</span>
+          </template>
+        </el-table-column>
+        <el-table-column label="价格" width="88">
           <template #default="{ row }">
             <span class="cell-price">{{ formatPrice(row.price) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="库存" width="90" align="right">
+        <el-table-column label="库存" width="68" align="right">
           <template #default="{ row }">
             <span
               class="cell-stock"
@@ -144,18 +154,25 @@ onMounted(() => {
             </span>
           </template>
         </el-table-column>
-        <el-table-column label="分类" min-width="170">
+        <el-table-column label="分类" min-width="128">
           <template #default="{ row }">
-            <span v-if="categoryOf(row)" class="cell-cat">{{ categoryOf(row) }}</span>
+            <span v-if="categoryOf(row)" class="cell-cat" :title="categoryOf(row)">
+              {{ categoryOf(row) }}
+            </span>
             <span v-else class="cell-cat is-none">未分类</span>
           </template>
         </el-table-column>
-        <el-table-column label="出版日期" width="120">
+        <el-table-column label="出版日期" width="112">
           <template #default="{ row }">
             <span class="cell-muted">{{ formatDate(row.publishedDate) }}</span>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="160" fixed="right" align="center">
+        <el-table-column
+          label="操作"
+          width="100"
+          :fixed="isNarrow ? false : 'right'"
+          align="center"
+        >
           <template #default="{ row }">
             <el-button link type="primary" size="small" @click="goEdit(row.isbn)">
               编辑
@@ -228,8 +245,8 @@ onMounted(() => {
   align-items: center;
   gap: 8px;
   padding: 14px 18px;
-  background: rgba(245, 108, 108, 0.08);
-  color: #f56c6c;
+  background: color-mix(in srgb, var(--el-color-danger) 8%, transparent);
+  color: var(--el-color-danger);
   border-radius: 10px;
   margin-bottom: 16px;
   font-size: 14px;
@@ -295,12 +312,30 @@ onMounted(() => {
 }
 
 /* 单元格样式 */
+/* 长文本统一省略号:之前窄屏上「标题」是被切掉半个字,
+   不是优雅地收尾 —— 显示 … 才知道「后面还有」 */
+.cell-title,
+.cell-ellipsis,
+.cell-mono,
+.cell-cat {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .cell-title {
   font-family: 'DM Serif Display', Georgia, serif;
   font-size: 15px;
   font-weight: 700;
   letter-spacing: -0.01em;
-  color: var(--color-text);}
+  color: var(--color-text);
+}
+
+.cell-ellipsis {
+  font-size: 14px;
+  color: var(--color-text);
+}
 
 /* ISBN —— 13 位数字连排,加字距才不糊成一团(同订单号的处理) */
 .cell-mono {
@@ -335,7 +370,7 @@ onMounted(() => {
 }
 
 .cell-stock.is-low {
-  color: #f56c6c;
+  color: var(--el-color-danger);
 }
 
 /* 分类 —— 「大类 / 小类」,大类弱化、小类正常,扫读时先看小类 */

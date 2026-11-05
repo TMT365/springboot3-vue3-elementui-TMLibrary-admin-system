@@ -64,12 +64,21 @@ const layout = computed<string>(() =>
   display: flex;
   justify-content: flex-end;
   margin-top: 16px;
+  /* 右侧给右下角的"反馈"悬浮按钮留位。
+     悬浮按钮是 position:fixed,永远钉在视口右下角(直径 --fab-size = 48px,
+     右边距 --fab-edge = 24px);而分页器是跟着文档流的 —— 页面短到需要滚动时,
+     分页器会滑进那个角,被按钮压住(实测 1264×768 滚到底:
+     "前往 __ 页"输入框整个被盖住)。
+     60px 的让位 = 按钮左沿(视口右起 72px)再留一点余量。 */
+  padding-right: 60px;
 }
 
 /* 窄屏:分页器居中,并且允许换行(页码多的时候不要顶破容器) */
 @media (max-width: 600px) {
   .pager {
     justify-content: center;
+    /* 居中后右边不再有控件,让位就没意义了 */
+    padding-right: 0;
   }
 
   .pager :deep(.el-pagination) {
