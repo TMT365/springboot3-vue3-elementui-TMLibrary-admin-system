@@ -492,7 +492,7 @@ onMounted(loadMe)
 
 .field-dirty-tag {
   margin-left: auto;
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;

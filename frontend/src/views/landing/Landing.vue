@@ -1517,21 +1517,33 @@ const { progress, activeSection, scrollToSection, sections } = useScrollNarrativ
 }
 
 .showcase-dot {
-  width: 10px;
-  height: 10px;
+  /* 视觉是 10px 的小圆点,但命中区撑到 24px(WCAG 2.5.8 最小 24×24);
+     视觉圆点改由 ::after 画,按钮本身保持透明 */
+  position: relative;
+  width: 24px;
+  height: 24px;
   border-radius: 50%;
-  background: var(--color-border);
+  background: transparent;
   border: none;
   padding: 0;
   cursor: pointer;
+  transition: transform 250ms ease;
+}
+
+.showcase-dot::after {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border-radius: 50%;
+  background: var(--color-border);
   transition: background 250ms ease, transform 250ms ease;
 }
 
-.showcase-dot:hover {
+.showcase-dot:hover::after {
   background: var(--color-text-soft);
 }
 
-.showcase-dot.active {
+.showcase-dot.active::after {
   background: var(--color-accent);
   transform: scale(1.3);
 }

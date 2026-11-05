@@ -406,7 +406,7 @@ function roleLabel(role: string): string {
 
 .caret {
   margin-left: 2px;
-  font-size: 10px;
+  font-size: 11px;
 }
 
 /* 响应式 */

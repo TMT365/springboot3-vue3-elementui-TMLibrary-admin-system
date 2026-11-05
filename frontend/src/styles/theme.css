@@ -994,6 +994,80 @@ html:root .chart-tip-value {
 }
 
 /* =============================================================
+ * 4.7 触控目标与排版底线  -  移动端(≤768px)的可点面积与字号下限
+ * ============================================================= */
+
+/* ---- 4.7.1 为什么只在移动端把按钮加高 ----
+ *
+ * EP 的 size="small" 按钮只有 24px 高、链接型按钮只有 20px 高,
+ * 那是"桌面信息密度"的取值:在鼠标上很紧凑,在手指上很难点中
+ * (实测 390px 视口下 .el-button--small 渲染成 146×24)。
+ *
+ * 桌面端保持紧凑(密度优先),移动端统一抬到 32~34px,
+ * 这是 iOS HIG / WCAG 2.5.8 的量级;768px 竖屏平板一并覆盖,
+ * 因为 iPad 的触点同样比鼠标粗。
+ *
+ * 用 html:root 提特异度:EP 的组件样式由 unplugin 按需 import,
+ * 注入时机晚于 theme.css,同特异度会输给它(见 §2 的同类问题)。
+ */
+@media (max-width: 768px) {
+  html:root .el-button--small {
+    min-height: 34px;
+    padding: 0 14px;
+    font-size: 13px;
+  }
+
+  /* 链接型按钮(表格里的「编辑」「查看」「操作」)只有 20px 高 */
+  html:root .el-button.is-link,
+  html:root .el-button--small.is-link {
+    min-height: 32px;
+    padding: 0 8px;
+  }
+
+  /* 复选框 13px → 18px,并把整行抬到 32px,点中行内空白也算命中 */
+  html:root .el-checkbox__inner {
+    width: 18px;
+    height: 18px;
+  }
+  html:root .el-checkbox {
+    height: 32px;
+  }
+
+  /* 分页按钮 32px,拇指点得准 */
+  html:root .el-pagination button,
+  html:root .el-pagination .el-pager li {
+    min-width: 32px;
+    height: 32px;
+  }
+
+  /* 面包屑链接 28px → 32px */
+  html:root .crumb-link {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  /* 认证页页脚链接(「忘记密码?」「去登录」)原本只有 18px 高 */
+  html:root .footer-link,
+  html:root .fp-foot-link {
+    min-height: 32px;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+/* ---- 4.7.2 字号下限 11px ----
+ *
+ * 全站最小字号定在 11px(角标 / 微标签 / 元信息这一层)。
+ * 再小就必须在 320px 屏上糊成一团;WCAG 1.4.4 也要求用户能把文字
+ * 放大到 200% 而不丢内容。
+ *
+ * 已经是 11px 的都是"装饰性微标签"(letter-spacing 0.16em 的英文小标签、
+ * 角标、状态点)—— 它们承载的信息量很小,但要让用户看清"是什么",
+ * 11px 是这个尺寸级下的平衡点。
+ */
+
+/* =============================================================
  * 5. 全局动效减弱  -  尊重系统的 prefers-reduced-motion 设置
  *    覆盖所有动画 / 过渡,让减弱动态效果的用户立即看到最终态
  * ============================================================= */

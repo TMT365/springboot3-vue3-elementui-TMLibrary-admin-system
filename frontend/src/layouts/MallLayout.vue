@@ -501,7 +501,7 @@ function onSearchEnter(): void {
   color: var(--color-text);}
 
 .brand-sub {
-  font-size: 10px;
+  font-size: 11px;
   color: var(--color-text-soft);
   letter-spacing: 0.16em;
   text-transform: uppercase;
@@ -823,7 +823,7 @@ function onSearchEnter(): void {
 }
 
 .promo-tag {
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
   color: var(--color-accent);

@@ -386,7 +386,7 @@ onMounted(fetchBooks)
 
   /* ISBN / 出版日期两行在窄卡里太占地方,小屏只留出版日期(详情页有完整信息) */
   .book-meta {
-    font-size: 10.5px;
+    font-size: 11px;
     gap: 2px;
   }
 
@@ -399,7 +399,7 @@ onMounted(fetchBooks)
   }
 
   .book-stock {
-    font-size: 10.5px;
+    font-size: 11px;
   }
 
   /* 价格 + 库存在 ~165px 里并排会挤,上下摞起来 */

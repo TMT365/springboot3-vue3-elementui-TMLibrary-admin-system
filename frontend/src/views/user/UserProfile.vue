@@ -458,7 +458,7 @@ onMounted(fetchProfile)
   right: 16px;
   display: flex;
   gap: 4px;
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.18em;
   color: var(--color-text-soft);
   font-family: ui-monospace, 'SF Mono', Menlo, monospace;
@@ -528,7 +528,7 @@ onMounted(fetchProfile)
 }
 
 .warn-tag {
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 700;
   letter-spacing: 0.06em;
   color: var(--el-color-warning);

@@ -1314,7 +1314,7 @@ onMounted(async () => {
     left: 7px;
     max-width: calc(100% - 14px);
     padding: 2px 7px;
-    font-size: 10px;
+    font-size: 11px;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -1324,7 +1324,7 @@ onMounted(async () => {
     top: 7px;
     right: 7px;
     padding: 2px 6px;
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .info,
@@ -1355,7 +1355,7 @@ onMounted(async () => {
 
   .stock,
   .deal-was {
-    font-size: 10px;
+    font-size: 11px;
   }
 
   .buy {
