@@ -107,7 +107,6 @@ onMounted(fetchBooks)
           </div>
 
           <el-button
-            type="primary"
             size="small"
             class="add-to-cart-btn"
             :disabled="(book.stockQuantity ?? 0) <= 0"
@@ -295,12 +294,24 @@ onMounted(fetchBooks)
   border-top: 1px dashed var(--color-border);
 }
 
-/* 「加入购物车」按钮  -  全宽,小尺寸 */
+/* 「加入购物车」按钮  -  全宽,小尺寸
+   与商城卡片(mall/Mall.vue 的 .buy)保持同一层级:描边次级按钮,
+   悬停才填实心绿。一屏十几张卡片如果每张都是实心绿按钮,
+   视觉上就没有主次了。 */
 .add-to-cart-btn {
   margin-top: 12px;
   width: 100%;
   font-weight: 500;
   border-radius: 8px;
+  --el-button-text-color: var(--color-accent);
+  --el-button-bg-color: transparent;
+  --el-button-border-color: var(--color-accent);
+  --el-button-hover-text-color: var(--color-on-accent);
+  --el-button-hover-bg-color: var(--color-accent);
+  --el-button-hover-border-color: var(--color-accent);
+  --el-button-active-text-color: var(--color-on-accent);
+  --el-button-active-bg-color: var(--color-accent-hover);
+  --el-button-active-border-color: var(--color-accent-hover);
 }
 
 .add-to-cart-btn :deep(.el-icon) {

@@ -194,10 +194,16 @@ function onSocialClick(): void {
         <div class="visual-copy">
           <p class="visual-kicker">TMLibrary</p>
 
-          <h2 class="visual-title">
+          <!--
+            左半屏是纯装饰(aria-hidden),所以这里用 <p> 而不是 <h2>:
+            页面真正的 H1 是右侧表单卡片的 .auth-title「登录 / 注册」。
+            若这里也用 h2,文档里就会出现 H2 排在 H1 之前的倒序,
+            读屏/大纲工具会先念到宣传语再念到页面标题。
+          -->
+          <p class="visual-title">
             让每一本书<br />
             都<em>各得其所</em>
-          </h2>
+          </p>
 
           <p class="visual-lede">
             从图书著录、检索到借阅与订单流转,一套界面把馆藏、读者和每一笔交易都照看到。

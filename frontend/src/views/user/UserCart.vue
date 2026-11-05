@@ -63,6 +63,32 @@ async function handleCheckout(): Promise<void> {
 }
 
 /**
+ * 清空购物车  -  破坏性操作,先确认再执行。
+ *
+ * 原来点一下直接清空,手滑就没了(而且是 localStorage 持久化的,
+ * 没法撤销)。这里补一个二次确认,并把按钮换成 danger plain,
+ * 让"破坏性"在视觉上就说清楚。
+ */
+async function handleClearCart(): Promise<void> {
+  try {
+    await ElMessageBox.confirm(
+      `确定要清空购物车吗?共 ${cartStore.totalItems} 件商品,清空后无法恢复。`,
+      '清空购物车',
+      {
+        type: 'warning',
+        confirmButtonText: '清空',
+        cancelButtonText: '再想想',
+        confirmButtonClass: 'el-button--danger',
+      },
+    )
+  } catch {
+    return // 用户取消
+  }
+  cartStore.clear()
+  ElMessage.success('购物车已清空')
+}
+
+/**
  * 数量变化通过 input-number 的 @change 事件
  * ElMessage 提示已经在 store / 全局请求层处理,这里只调 store
  */
@@ -88,8 +114,10 @@ const itemCountLabel = computed<string>(() => {
       </div>
       <el-button
         v-if="!cartStore.isEmpty"
+        type="danger"
+        plain
         :disabled="submitting"
-        @click="cartStore.clear()"
+        @click="handleClearCart"
       >
         清空购物车
       </el-button>

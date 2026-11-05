@@ -112,6 +112,11 @@ onMounted(fetchProfile)
 
 <template>
   <div class="user-profile">
+    <!-- 页面级 H1:整个资料页没有顶层标题,读屏会直接落到 H2 的
+         用户名上,没有"这是哪个页面"的上下文。加一个 sr-only 的 H1
+         补上(视觉不可见,aria 播报时先念「我的主页」)。 -->
+    <h1 class="sr-only">我的主页</h1>
+
     <!-- ============ Error banner ============ -->
     <div v-if="error" class="error-banner">
       <el-icon><CircleClose /></el-icon>

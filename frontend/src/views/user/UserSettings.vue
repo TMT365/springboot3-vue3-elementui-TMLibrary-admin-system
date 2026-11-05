@@ -159,20 +159,48 @@ function confirmField(key: FieldKey): void {
   ElMessage.success(`${fieldDefs.find((d) => d.key === key)?.label}已确认`)
 }
 
-async function onConfirm(): Promise<void> {
-  // 整体 validate 所有 dirty 字段(只校验 dirty 的话更精准,但实现复杂;这里全校验)
-  if (!formRef.value) return
-  const valid = await formRef.value.validate().catch(() => false)
-  if (valid) {
-    ElMessage.success(`全部字段格式合法,${dirtyCount.value} 项待提交`)
-  } else {
-    ElMessage.error('部分字段格式有误,请检查')
-  }
+/**
+ * 只校验"已确认(dirty)"的字段。
+ *
+ * 为什么不全量校验:规则里全是 required:true
+ * (用户名/邮箱/手机号/新密码/确认密码),而这个表单是"按需改"的 ——
+ * 用户只想改手机号时,密码框本来就是空的。全量校验必然报一堆
+ * "请输入新密码"之类的无关错误,用户根本不知道该改哪一条。
+ * 只校验 dirty 字段,报出来的错才是真的错。
+ */
+function validateDirtyFields(): Promise<boolean> {
+  const dirtyKeys = fieldDefs.filter((d) => fields[d.key].dirty).map((d) => d.key)
+  if (!dirtyKeys.length) return Promise.resolve(true)
+  return new Promise<boolean>((resolve) => {
+    // EP:传了 callback 就不会 reject,失败时 callback(false, invalidFields)
+    formRef.value?.validateField(dirtyKeys, (isValid: boolean) => resolve(isValid))
+  })
 }
 
-function onApply(): void {
-  // 不发请求,只标记 dirty 字段已「应用」+ toast 提醒用户下一步
-  ElMessage.success(`已本地应用 ${dirtyCount.value} 项修改,请点「提交修改」保存到数据库`)
+/**
+ * 放弃本次修改 —— 从服务端把原值读回来,清掉所有"已确认"标记。
+ *
+ * 原来这里有个「应用」按钮,点它不发请求、只弹一句
+ * "请点「提交修改」保存到数据库" —— 一个什么都不做的按钮,
+ * 只会让人以为改完已经生效了。现在换成真正有用的「放弃修改」。
+ */
+async function onDiscard(): Promise<void> {
+  await loadMe()
+  for (const def of fieldDefs) {
+    fields[def.key].dirty = false
+    fields[def.key].newValue = ''
+  }
+  ElMessage.info('已放弃本次修改')
+}
+
+/** 保存修改:先校验已确认的字段,再落库 */
+async function onSave(): Promise<void> {
+  const valid = await validateDirtyFields()
+  if (!valid) {
+    ElMessage.error('有字段格式不对,请检查后再保存')
+    return
+  }
+  await onSubmit()
 }
 
 async function onSubmit(): Promise<void> {
@@ -266,11 +294,11 @@ onMounted(loadMe)
           <div class="header-text">
             <h1 class="card-title">设置</h1>
             <p class="card-desc">
-              每字段改完点「确认修改」标记,最后右下「提交修改」写入数据库
+              每字段改完点「确认修改」标记,最后右下「保存修改」写入数据库
             </p>
           </div>
           <span class="header-badge" :class="{ 'is-active': hasChanges }">
-            {{ hasChanges ? `${dirtyCount} 项待提交` : '暂无修改' }}
+            {{ hasChanges ? `${dirtyCount} 项已确认` : '暂无修改' }}
           </span>
         </header>
 
@@ -317,28 +345,26 @@ onMounted(loadMe)
           </div>
         </div>
 
-        <!-- ====== Footer Actions(右下角 3 按钮) ====== -->
+        <!-- ====== Footer Actions(右下角 2 按钮) ====== -->
         <footer class="card-footer">
           <div class="footer-hint" :class="{ 'is-active': hasChanges }">
             {{ hasChanges
-              ? `${dirtyCount} 项已确认,可继续点「应用」或「提交修改」`
+              ? '改动尚未保存,点「保存修改」写入数据库'
               : '未做修改'
             }}
           </div>
           <div class="footer-actions">
-            <el-button class="action-btn" @click="onConfirm">确认</el-button>
+            <el-button
+              class="action-btn"
+              :disabled="!hasChanges"
+              @click="onDiscard"
+            >放弃修改</el-button>
             <el-button
               class="action-btn"
               type="primary"
               :disabled="!hasChanges"
-              @click="onApply"
-            >应用</el-button>
-            <el-button
-              class="action-btn"
-              type="danger"
-              :disabled="!hasChanges"
-              @click="onSubmit"
-            >提交修改</el-button>
+              @click="onSave"
+            >保存修改</el-button>
           </div>
         </footer>
       </div>

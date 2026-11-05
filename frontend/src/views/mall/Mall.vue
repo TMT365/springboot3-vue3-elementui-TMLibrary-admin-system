@@ -268,13 +268,18 @@ onMounted(async () => {
     <section class="hero">
       <div class="hero-grid">
         <div class="hero-text">
+          <!-- 页面级 H1:这里整页没有"这是哪"的标题 —— 第一个 H1 是
+               下面那本「本周精选」的书名,读屏会以为整页就叫这本书。
+               加一个 sr-only 的 H1「商城」当页面标题,视觉中心仍是下面的
+               hero-title(那本精选书,语义上是 H2,是这个区块的内容标题)。 -->
+          <h1 class="sr-only">商城</h1>
           <span class="eyebrow">本周精选 · Editor's Pick</span>
-          <h1 class="hero-title" v-if="featured">
+          <h2 class="hero-title" v-if="featured">
             {{ featured.title }}
-          </h1>
-          <h1 class="hero-title hero-title-placeholder" v-else>
+          </h2>
+          <h2 class="hero-title hero-title-placeholder" v-else>
             从书架到生活, 让阅读重新变得郑重
-          </h1>
+          </h2>
           <p class="hero-author" v-if="featured">
             <span class="by">{{ featured.author }}</span>
             <span class="sep">·</span>
