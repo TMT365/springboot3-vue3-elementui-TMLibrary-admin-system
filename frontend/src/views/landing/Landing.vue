@@ -35,6 +35,8 @@ import HeroTerminal from './HeroTerminal.vue'
 // 学习经历的数据源 —— 首页只展示三张分类摘要卡,全文在 /journey
 import { CATEGORY_META, JOURNEY_ENTRIES } from '@/views/journey/entries'
 import type { JourneyCategory } from '@/views/journey/entries'
+// 滚动叙事 —— 顶部阅读进度条 + 右侧章节导航轨,见其注释
+import { useScrollNarrative } from '@/composables/useScrollNarrative'
 
 const router = useRouter()
 
@@ -390,12 +392,45 @@ function resumeShowcase(): void {
 
 onMounted(startShowcase)
 onUnmounted(pauseShowcase)
+
+/* =============================================================
+ * 滚动叙事
+ * ============================================================= */
+const { progress, activeSection, scrollToSection, sections } = useScrollNarrative()
 </script>
 
 <template>
   <a href="#landing-main" class="skip-link">跳过导航,直达主内容</a>
 
   <LandingNav />
+
+  <!-- 顶部阅读进度条 —— 整页滚到哪,细线就到哪(纯装饰,aria-hidden) -->
+  <div
+    class="read-progress"
+    role="presentation"
+    :style="{ '--read-p': progress }"
+  >
+    <span class="read-progress__bar" aria-hidden="true" />
+  </div>
+
+  <!-- 右侧章节导航轨 —— 当前章节高亮,点某一节平滑滚过去 -->
+  <nav class="section-rail" aria-label="章节导航">
+    <ul class="section-rail__list">
+      <li v-for="sec in sections" :key="sec.id" class="section-rail__item">
+        <button
+          type="button"
+          class="section-rail__link"
+          :class="{ 'is-active': activeSection === sec.id }"
+          :aria-current="activeSection === sec.id ? 'location' : undefined"
+          :title="sec.label"
+          @click="scrollToSection(sec.id)"
+        >
+          <span class="section-rail__dot" aria-hidden="true" />
+          <span class="section-rail__label">{{ sec.label }}</span>
+        </button>
+      </li>
+    </ul>
+  </nav>
 
   <main id="landing-main" class="landing">
     <!-- ============== Hero ============== -->
@@ -481,7 +516,7 @@ onUnmounted(pauseShowcase)
     </section>
 
     <!-- ============== Features ============== -->
-    <section class="features" v-reveal>
+    <section id="features" class="features" v-reveal>
       <header class="section-head">
         <h2 class="section-title">核心功能一览</h2>
         <p class="section-sub">一个后台,管好一座图书馆</p>
@@ -917,6 +952,135 @@ onUnmounted(pauseShowcase)
   /* 顶部导航条(LandingNav)的高度:14px×2 内边距 + 44px 内容 = 72px。
      Hero 用它算"导航条以下的整屏高度",改导航条高度时这里要跟着改。 */
   --landing-nav-h: 72px;
+}
+
+/* =============================================================
+ * 滚动叙事 -  顶部阅读进度条 + 右侧章节导航轨
+ * ============================================================= */
+
+/* 顶部细进度条:贴住视口顶端(z-index 高于导航),3px 高的热练色细线。
+   --read-p 由 JS 每帧下发(0..1)。只起"看到哪了"的指示作用,纯装饰。 */
+.read-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  z-index: 200; /* 压在 LandingNav(z-index 100)之上 */
+  pointer-events: none;
+}
+
+.read-progress__bar {
+  display: block;
+  height: 100%;
+  width: 100%;
+  background: var(--color-accent);
+  border-radius: 0 2px 2px 0;
+  transform: scaleX(var(--read-p, 0));
+  transform-origin: left center;
+  opacity: calc(var(--read-p, 0) * 0.85 + 0.15);
+  transition:
+    transform 120ms ease-out,
+    opacity 120ms ease-out;
+}
+
+/* 右侧章节导航轨:竖直排布 8 个圆点 + 悬停时展开短标签。
+   只在宽屏显示(窄屏贴右会被内容遮挡,且点小难点)。 */
+.section-rail {
+  position: fixed;
+  right: 20px;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 90;
+}
+
+.section-rail__list {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  list-style: none;
+  margin: 0;
+  padding: 10px 6px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill, 999px);
+  background: color-mix(in srgb, var(--color-card) 72%, transparent);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  box-shadow: var(--shadow-card, 0 2px 8px rgba(0, 0, 0, 0.06));
+}
+
+.section-rail__item {
+  list-style: none;
+}
+
+.section-rail__link {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.section-rail__dot {
+  display: block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-border-strong, #d9d2c0);
+  transition:
+    background 180ms ease,
+    transform 180ms ease,
+    box-shadow 180ms ease;
+}
+
+/* 当前章节:圆点变墨绿实心 + 略放大 + 一圈柔光,标签展开 */
+.section-rail__link.is-active .section-rail__dot {
+  background: var(--color-accent);
+  transform: scale(1.3);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-accent) 18%, transparent);
+}
+
+.section-rail__label {
+  /* 默认收成 0 宽,悬停 / 当前时用 max-width 展开 —— 纯 CSS 的平滑滑出 */
+  max-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--color-text-muted);
+  opacity: 0;
+  transition:
+    max-width 220ms cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 160ms ease,
+    color 160ms ease;
+}
+
+.section-rail__link:hover .section-rail__label,
+.section-rail__link.is-active .section-rail__label {
+  max-width: 5em; /* 中文两字 + 一点余量 */
+  opacity: 1;
+}
+
+/* 窄屏:右侧轨道贴边会压内容,而且 10px 圆点对触摸不友好 —— 整体隐藏。
+   顶部进度条保留(不占空间、不挡交互)。 */
+@media (max-width: 900px) {
+  .section-rail {
+    display: none;
+  }
+}
+
+.section-rail__link.is-active .section-rail__label {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+
+/* 键盘可达:焦点落到轨道链接时给出可见焦点环 */
+.section-rail__link:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+  border-radius: 6px;
 }
 
 /* =============================================================
