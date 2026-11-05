@@ -3,10 +3,25 @@
 把 src/main/resources/db/ 下的 8 份独立 SQL 合并成一份完整建库脚本。
 
 用法:
-    python3 scripts/gen-full-schema.py
+    python3 scripts/gen-full-schema.py          # 生成(覆盖写 scripts/full-schema.sql)
+    python3 scripts/gen-full-schema.py --check  # 只校验:产物与 db/*.sql 不同步就退出码 1
 
 产物:
     scripts/full-schema.sql
+
+为什么要 --check
+--------------
+full-schema.sql 是**生成物**,但它被提交进仓库,又是 README 里「一键建库」的入口。
+只要有人改了 src/main/resources/db/*.sql 却忘了重跑本脚本,产物就会悄悄过期 ——
+
+    实际踩过的坑:db/orders.sql 加了 payment_method 列,
+    但 full-schema.sql 没重跑,于是 README 里的建库命令建出来的库
+    少这一列,应用一查订单就 "Unknown column 'payment_method'"。
+
+--check 模式把这个坑变成 CI 里的一条命令:
+    python3 scripts/gen-full-schema.py --check
+产物过期 → 退出码 1 + 打印差异行,不会漏到线上。
+(JUnit 侧还有一道同样的防线:src/test/java/.../SchemaConsistencyTest.java)
 
 设计:按行过滤 + 原样拼接,**不做 SQL 语句切分**
 ------------------------------------------------
@@ -23,7 +38,9 @@
 所以改成逐行过滤器 —— 只删明确不要的行,其余原样保留,顺序不动。
 """
 
+import difflib
 import re
+import sys
 from pathlib import Path
 
 HERE = Path(__file__).resolve().parent
@@ -103,7 +120,8 @@ def filter_lines(text: str) -> tuple[list[str], list[str]]:
     return body, deferred
 
 
-def main() -> None:
+def build() -> str:
+    """按 db/*.sql 生成 full-schema.sql 的完整文本(不落盘)。"""
     header = """-- ============================================================================
 -- TMLibrary 完整建库脚本
 --
@@ -189,7 +207,35 @@ def main() -> None:
 
     parts.append(f'-- 合计:{table_count} 张表 + {len(all_deferred)} 条分类分配')
 
-    OUT.write_text('\n'.join(parts), encoding='utf-8')
+    return '\n'.join(parts)
+
+
+def main() -> None:
+    args = sys.argv[1:]
+    unknown = [a for a in args if a not in ('--check',)]
+    if unknown:
+        print(f'未知参数:{" ".join(unknown)}(只支持 --check)', file=sys.stderr)
+        sys.exit(2)
+
+    content = build()
+
+    if '--check' in args:
+        current = OUT.read_text(encoding='utf-8') if OUT.exists() else ''
+        if current == content:
+            print(f'✓ {OUT.name} 与 src/main/resources/db/ 同步({OUT.stat().st_size / 1024:.1f} KB)')
+            return
+        print(f'✗ {OUT.name} 与 src/main/resources/db/ 不同步 —— 产物过期了!', file=sys.stderr)
+        print('  修法:python3 scripts/gen-full-schema.py   (会覆盖写产物)', file=sys.stderr)
+        diff = list(difflib.unified_diff(
+            current.splitlines(), content.splitlines(),
+            fromfile=f'{OUT.name}(仓库里的)', tofile='重新生成的结果', lineterm='', n=1))
+        if diff:
+            print('\n'.join(diff[:60]), file=sys.stderr)
+            if len(diff) > 60:
+                print(f'... (还有 {len(diff) - 60} 行差异)', file=sys.stderr)
+        sys.exit(1)
+
+    OUT.write_text(content, encoding='utf-8')
     print(f'\n✓ 生成 {OUT}  ({OUT.stat().st_size / 1024:.1f} KB)')
 
 

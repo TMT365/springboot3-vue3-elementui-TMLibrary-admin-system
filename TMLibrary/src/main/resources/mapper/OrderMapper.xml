@@ -198,7 +198,7 @@
          ============================================================ -->
     <select id="selectOrderPage" resultMap="OrderResultMap">
         SELECT id, order_number, user_id, total_amount, order_status,
-               created_time, updated_time, expire_time, payment_method
+               created_time, updated_time, expire_time, paid_time, payment_method
         FROM orders
         ORDER BY id DESC
         LIMIT #{offset}, #{limit}

@@ -56,11 +56,13 @@ services:
       # 建表脚本。这里的挂载顺序就是执行顺序 —— MySQL 官方镜像会按**文件名字典序**
       # 依次执行 /docker-entrypoint-initdb.d/ 下的 .sql,所以前缀 01/02/03/04 不能乱。
       #
-      # ⚠️ 注意:scripts/schema.sql **不在这里**。它是一份给人看的总体规划表,
-      #    只含 users/books/orders/order_items 四张核心表,**不能用来建库** ——
-      #    照它跑出来的库缺 book_categories / feedbacks / feedback_replies / ip_bans,
+      # ⚠️ 下面挂的是 scripts/schema.sql(01-schema.sql)。它是**给人看的总体规划表**,
+      #    只含 users/books/orders/order_items 四张核心表,**不要手动拿它建库** ——
+      #    照它建出来的库缺 book_categories / feedbacks / feedback_replies / ip_bans,
       #    分类接口和反馈系统会直接 500。
-      #    真正完整的建表脚本是下面这四个(都在 src/main/resources/db/ 下)。
+      #    手动建库请用 TMLibrary/scripts/full-schema.sql(8 张表齐全)。
+      #    它的建表语句由 TMLibrary 的 SchemaConsistencyTest 盯着,必须与
+      #    src/main/resources/db/*.sql 逐列一致 —— 与下面 02~04 同一个真源。
       # ---------------------------------------------------------------------
       - ./TMLibrary/scripts/schema.sql:/docker-entrypoint-initdb.d/01-schema.sql:ro
       - ./TMLibrary/src/main/resources/db/book_categories.sql:/docker-entrypoint-initdb.d/02-book-categories.sql:ro
