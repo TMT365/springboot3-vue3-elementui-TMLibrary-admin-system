@@ -578,6 +578,24 @@ body {
   transition: background 200ms ease, color 200ms ease;
 }
 
+/* ---- 3.1 视觉隐藏(留给读屏软件) ----
+ *
+ * .sr-only 的元素在视觉上不存在,但仍在无障碍树里 ——
+ * 用来放"页面已切换到 XX"这类播报,以及纯装饰性的冗余文本。
+ */
+.sr-only {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  padding: 0 !important;
+  margin: -1px !important;
+  overflow: hidden !important;
+  clip: rect(0, 0, 0, 0) !important;
+  clip-path: inset(50%) !important;
+  white-space: nowrap !important;
+  border: 0 !important;
+}
+
 /* =============================================================
  * 4. 字体细节
  * ============================================================= */

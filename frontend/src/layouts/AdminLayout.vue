@@ -20,7 +20,7 @@
  *   └────────────────────────────────────────────────┘
  */
 
-import { ref, computed, watch, onMounted, onUnmounted } from 'vue'
+import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRoute, useRouter, type RouteLocationMatched } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useTheme } from '@/composables/useTheme'
@@ -68,6 +68,8 @@ watch(sidebarCollapsed, (v) => {
 const MOBILE_BREAKPOINT = 900
 const isMobile = ref<boolean>(false)
 const isMobileMenuOpen = ref<boolean>(false)
+/** 顶栏汉堡按钮 —— 抽屉关闭后要把焦点还给它(见 closeMobileMenu) */
+const menuBtnRef = ref<HTMLButtonElement | null>(null)
 
 function updateIsMobile(): void {
   if (typeof window === 'undefined') return
@@ -78,8 +80,14 @@ function updateIsMobile(): void {
   if (!mobile) isMobileMenuOpen.value = false
 }
 
-function closeMobileMenu(): void {
+function closeMobileMenu(refocus = false): void {
+  const wasOpen = isMobileMenuOpen.value
   isMobileMenuOpen.value = false
+  // 抽屉是键盘用户的"当前上下文":Esc 关掉之后焦点必须回到触发它的按钮,
+  // 否则焦点掉到 body 上,再按 Tab 会从页面最上面重新开始绕。
+  if (refocus && wasOpen) {
+    nextTick(() => menuBtnRef.value?.focus())
+  }
 }
 
 /** 顶栏那个按钮:桌面切折叠宽度,移动端开关抽屉 */
@@ -104,7 +112,7 @@ watch(isMobileMenuOpen, (open) => {
 })
 
 function onKeydown(e: KeyboardEvent): void {
-  if (e.key === 'Escape') closeMobileMenu()
+  if (e.key === 'Escape') closeMobileMenu(true)
 }
 
 /* ============================================================
@@ -194,7 +202,7 @@ async function handleCommand(command: string): Promise<void> {
       v-if="isMobile && isMobileMenuOpen"
       class="sidebar-mask"
       aria-hidden="true"
-      @click="closeMobileMenu"
+      @click="closeMobileMenu(true)"
     />
 
     <!-- 侧栏:桌面动态宽度 + 折叠 transition;移动端浮层抽屉 -->
@@ -246,6 +254,7 @@ async function handleCommand(command: string): Promise<void> {
         <!-- 操作区:折叠 / 主题 / 用户 -->
         <div class="topbar-actions">
           <button
+            ref="menuBtnRef"
             class="icon-btn"
             :title="isMobile ? '菜单' : (sidebarCollapsed ? '展开侧栏' : '收起侧栏')"
             :aria-label="isMobile ? '菜单' : (sidebarCollapsed ? '展开侧栏' : '收起侧栏')"

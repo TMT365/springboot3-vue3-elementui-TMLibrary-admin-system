@@ -50,6 +50,57 @@ const STATS_DAYS = 30
 
 const isAdmin = computed<boolean>(() => userStore.isAdmin)
 
+/* ============================================================
+ * 图表的无障碍摘要
+ *
+ * canvas 对读屏软件是纯黑盒 —— 它只会念"图像",图形化的数据
+ * 在无障碍语境里等于不存在。这里把每张图的数据翻译成一句人话,
+ * 交给 BaseChart 挂到 canvas 的 aria-label 上。
+ * ============================================================ */
+
+/** 订单状态 code → 中文(和 dashboardCharts.ts 的圆环图例保持一致) */
+const ORDER_STATUS_LABEL: Record<number, string> = {
+  0: '待支付',
+  1: '已支付',
+  2: '已取消',
+  3: '超时取消',
+}
+
+const salesTrendSummary = computed<string>(() => {
+  const rows = dashboardStats.value?.salesTrend ?? []
+  if (!rows.length) return `销量趋势:最近 ${STATS_DAYS} 天没有成交订单`
+  const orders = rows.reduce((s, r) => s + r.orders, 0)
+  const amount = rows.reduce((s, r) => s + r.amount, 0)
+  const peak = rows.reduce((max, r) => (r.amount > max.amount ? r : max), rows[0])
+  return `销量趋势:最近 ${STATS_DAYS} 天成交 ${orders} 单,销售额合计 ${formatPrice(amount)},最高一天 ${peak.date} ${formatPrice(peak.amount)}`
+})
+
+const orderStatusSummary = computed<string>(() => {
+  const rows = dashboardStats.value?.orderStatusDistribution ?? []
+  if (!rows.length) return `订单状态分布:最近 ${STATS_DAYS} 天没有订单`
+  const total = rows.reduce((s, r) => s + r.count, 0)
+  const parts = rows
+    .filter((r) => r.count > 0)
+    .map((r) => `${ORDER_STATUS_LABEL[r.status] ?? '未知状态'} ${r.count} 单`)
+  return `订单状态分布:共 ${total} 单,${parts.join(',')}`
+})
+
+const newUsersSummary = computed<string>(() => {
+  const rows = dashboardStats.value?.newUsersTrend ?? []
+  if (!rows.length) return `最近新增用户:最近 ${STATS_DAYS} 天没有新注册`
+  const total = rows.reduce((s, r) => s + r.count, 0)
+  const peak = rows.reduce((max, r) => (r.count > max.count ? r : max), rows[0])
+  return `最近新增用户:最近 ${STATS_DAYS} 天新增 ${total} 人,单日最多 ${peak.date} ${peak.count} 人`
+})
+
+const bookSalesSummary = computed<string>(() => {
+  const rows = dashboardStats.value?.bookSalesTop ?? []
+  if (!rows.length) return '每本书销量:还没有已支付订单'
+  const total = rows.reduce((s, r) => s + r.quantity, 0)
+  const top = rows[0]
+  return `每本书销量:共售出 ${total} 本,最高的是《${top.title}》(${top.author}) ${top.quantity} 本`
+})
+
 const roleLabel = computed<string>(() => {
   switch (userStore.role) {
     case 'BOSS': return '老板'
@@ -235,6 +286,7 @@ function goTo(path: string): void {
           :subtitle="`最近 ${STATS_DAYS} 天成交订单与销售额`"
           :data="dashboardStats?.salesTrend ?? []"
           :build="buildSalesTrendConfig"
+          :aria-summary="salesTrendSummary"
           :loading="loading"
           empty-text="最近 30 天没有成交订单"
           :height="280"
@@ -245,6 +297,7 @@ function goTo(path: string): void {
           :subtitle="`最近 ${STATS_DAYS} 天`"
           :data="dashboardStats?.orderStatusDistribution ?? []"
           :build="buildOrderStatusConfig"
+          :aria-summary="orderStatusSummary"
           :loading="loading"
           empty-text="最近 30 天没有订单"
           :height="280"
@@ -255,6 +308,7 @@ function goTo(path: string): void {
           :subtitle="`最近 ${STATS_DAYS} 天注册`"
           :data="dashboardStats?.newUsersTrend ?? []"
           :build="buildNewUsersConfig"
+          :aria-summary="newUsersSummary"
           :loading="loading"
           empty-text="最近 30 天没有新增用户"
           :height="280"
@@ -265,6 +319,7 @@ function goTo(path: string): void {
           subtitle="按售出件数排序(仅统计已支付订单)"
           :data="dashboardStats?.bookSalesTop ?? []"
           :build="buildBookSalesConfig"
+          :aria-summary="bookSalesSummary"
           :loading="loading"
           empty-text="还没有已支付订单"
           :height="280"

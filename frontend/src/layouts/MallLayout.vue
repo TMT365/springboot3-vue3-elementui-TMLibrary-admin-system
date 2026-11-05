@@ -17,7 +17,7 @@
  * 公开页:任何人都能访问(未登录也能逛商城);登录后右上角「我的」展开 profile 菜单
  */
 
-import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useTheme } from '@/composables/useTheme'
@@ -43,6 +43,8 @@ const sidebarCollapsed = ref(false)
  */
 const isMobile = ref(false)
 const MOBILE_BREAKPOINT = 900
+/** 顶栏汉堡按钮 —— 浮层关闭后要把焦点还给它(见 closeSidebar) */
+const sidebarToggleRef = ref<HTMLButtonElement | null>(null)
 
 function updateIsMobile(): void {
   if (typeof window === 'undefined') return
@@ -55,8 +57,25 @@ function toggleSidebar(): void {
   sidebarCollapsed.value = !sidebarCollapsed.value
 }
 
-function closeSidebar(): void {
+/**
+ * 关闭侧栏浮层。
+ *
+ * refocus=true 时把焦点还给汉堡按钮 —— 抽屉关掉后焦点若掉到 body,
+ * 键盘用户再按 Tab 会从页面最上面重新绕一圈,等于把抽屉弹窗的行为学了一遍。
+ * 路由切换导致的关闭(refocus=false)不还焦点:那一步会把焦点交给新页面的主内容区。
+ */
+function closeSidebar(refocus = false): void {
+  const wasOpen = !sidebarCollapsed.value
   sidebarCollapsed.value = true
+  if (refocus && wasOpen) {
+    nextTick(() => sidebarToggleRef.value?.focus())
+  }
+}
+
+/** Esc 关掉移动端浮层(桌面端不参与:那里 Esc 没有"关抽屉"的语义) */
+function onKeydown(e: KeyboardEvent): void {
+  if (e.key !== 'Escape') return
+  if (isMobile.value && !sidebarCollapsed.value) closeSidebar(true)
 }
 
 /**
@@ -136,9 +155,11 @@ onMounted(() => {
   updateIsMobile()
   resizeHandler = updateIsMobile
   window.addEventListener('resize', resizeHandler)
+  window.addEventListener('keydown', onKeydown)
 })
 onUnmounted(() => {
   if (resizeHandler) window.removeEventListener('resize', resizeHandler)
+  window.removeEventListener('keydown', onKeydown)
 })
 
 async function handleCommand(command: string): Promise<void> {
@@ -221,13 +242,14 @@ function onSearchEnter(): void {
     <div
       v-if="isMobile && !sidebarCollapsed"
       class="sidebar-backdrop"
-      @click="closeSidebar"
+      @click="closeSidebar(true)"
     />
 
     <!-- TopBar -->
     <el-header class="topbar">
       <div class="topbar-left">
         <button
+          ref="sidebarToggleRef"
           class="sidebar-toggle"
           :aria-label="sidebarCollapsed ? '展开侧栏' : '收起侧栏'"
           :aria-expanded="!sidebarCollapsed"

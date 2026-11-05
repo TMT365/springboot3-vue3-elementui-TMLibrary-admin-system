@@ -33,12 +33,22 @@ const props = withDefaults(
     emptyText?: string
     /** canvas 高度(px) */
     height?: number
+    /**
+     * 无障碍:给读屏软件的一句话数据摘要。
+     *
+     * canvas 对读屏软件是纯黑盒 —— 读屏只会说"图像"或干脆跳过,
+     * 图形化的数据在无障碍语境里等于不存在。
+     * 这里给 canvas 一个 role="img" + aria-label,把这张图讲清楚。
+     * 不传时会自动退化成「标题,副标题,共 N 条数据」。
+     */
+    ariaSummary?: string
   }>(),
   {
     subtitle: '',
     loading: false,
     emptyText: '暂无数据',
     height: 260,
+    ariaSummary: '',
   },
 )
 
@@ -109,6 +119,18 @@ const overlayKind = computed<'loading' | 'no-lib' | 'empty' | null>(() => {
   return null
 })
 
+/**
+ * 无障碍标签 —— canvas 讲给读屏软件听的一句话。
+ * 父组件可以传 ariaSummary 精确描述(例如"最近 30 天成交 12 单,销售额合计 ¥3,280"),
+ * 不传就退化成"标题 + 副标题 + 数据条数"。
+ */
+const ariaLabel = computed<string>(() => {
+  if (props.ariaSummary) return props.ariaSummary
+  const rows = Array.isArray(props.data) ? props.data.length : 0
+  const head = props.subtitle ? `${props.title},${props.subtitle}` : props.title
+  return `${head},共 ${rows} 条数据`
+})
+
 function destroyChart(): void {
   chart?.destroy()
   chart = null
@@ -154,7 +176,7 @@ watch(canRender, (ok) => {
     <div class="chart-body" :style="{ height: `${height}px` }">
       <!-- canvas 常驻 DOM:Chart.js 在 display:none 下量不到尺寸,
            加载中/空态用遮罩盖住,而不是隐藏 canvas -->
-      <canvas ref="canvasRef" class="chart-canvas" />
+      <canvas ref="canvasRef" class="chart-canvas" role="img" :aria-label="ariaLabel" />
 
       <div v-if="overlayKind === 'loading'" class="chart-overlay">
         <AppSkeleton v-if="overlayKind === 'loading'" variant="block" class="chart-skeleton" />

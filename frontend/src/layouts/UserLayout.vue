@@ -10,7 +10,7 @@
  * 路由:父路径 /user,所有子路由都套在这个 layout 下
  */
 
-import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
+import { computed, onBeforeUnmount, onMounted, ref, watch, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useTheme } from '@/composables/useTheme'
@@ -22,6 +22,8 @@ const { theme, toggleTheme } = useTheme()
 const isCollapsed = ref(false)
 const isMobile = ref(false)
 const isMobileMenuOpen = ref(false)
+/** 顶栏菜单按钮(el-button 实例)—— 抽屉关闭后要把焦点还给它 */
+const menuBtnRef = ref<{ $el?: HTMLElement } | null>(null)
 
 const pageTitle = computed<string>(() => (route.meta.title as string) || '我的空间')
 
@@ -64,8 +66,21 @@ function toggleSidebar(): void {
   isCollapsed.value = !isCollapsed.value
 }
 
-function closeMobileMenu(): void {
-  if (isMobile.value) isMobileMenuOpen.value = false
+function closeMobileMenu(refocus = false): void {
+  if (!isMobile.value) return
+  const wasOpen = isMobileMenuOpen.value
+  isMobileMenuOpen.value = false
+  // 抽屉关掉后焦点必须回到触发它的按钮,否则焦点掉到 body 上,
+  // 键盘用户再按 Tab 会从页面最上面重新开始绕。
+  if (refocus && wasOpen) {
+    nextTick(() => menuBtnRef.value?.$el?.focus?.())
+  }
+}
+
+/** Esc 关掉移动端抽屉(桌面端不参与:那里 Esc 没有"关抽屉"的语义) */
+function onKeydown(e: KeyboardEvent): void {
+  if (e.key !== 'Escape') return
+  if (isMobile.value && isMobileMenuOpen.value) closeMobileMenu(true)
 }
 
 /** 下拉菜单分发:m 商城 / 其他交给注销 */
@@ -100,10 +115,12 @@ async function goAdmin(): Promise<void> {
 onMounted(() => {
   syncViewport()
   window.addEventListener('resize', syncViewport)
+  window.addEventListener('keydown', onKeydown)
 })
 
 onBeforeUnmount(() => {
   window.removeEventListener('resize', syncViewport)
+  window.removeEventListener('keydown', onKeydown)
   document.body.style.overflow = ''
 })
 
@@ -129,7 +146,7 @@ watch(isMobileMenuOpen, (open) => {
       v-if="isMobile"
       class="sidebar-mask"
       :class="{ 'is-open': isMobileMenuOpen }"
-      @click="closeMobileMenu"
+      @click="closeMobileMenu(true)"
     />
 
     <el-aside class="sidebar">
@@ -164,6 +181,7 @@ watch(isMobileMenuOpen, (open) => {
       <el-header class="topbar">
         <div class="topbar-left">
           <el-button
+            ref="menuBtnRef"
             circle
             text
             class="menu-btn"
