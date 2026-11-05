@@ -72,7 +72,7 @@ function goBack(): void {
   font-size: clamp(80px, 16vw, 128px);
   font-weight: 400;
   line-height: 1;
-  color: var(--color-accent, #4caf50);
+  color: var(--color-accent, #337a3e);
   letter-spacing: -0.04em;
   margin-bottom: 16px;
 }
@@ -104,8 +104,8 @@ function goBack(): void {
   align-items: center;
   gap: 8px;
   padding: 12px 28px;
-  background: var(--color-accent, #4caf50);
-  color: #fff;
+  background: var(--color-accent, #337a3e);
+  color: var(--color-on-accent);
   font-size: 15px;
   font-weight: 500;
   border: none;
@@ -116,7 +116,7 @@ function goBack(): void {
 }
 
 .cta-primary:hover {
-  background: var(--color-accent-hover, #43a047);
+  background: var(--color-accent-hover, #2c6b35);
   transform: translateY(-1px);
 }
 
@@ -142,8 +142,8 @@ function goBack(): void {
 }
 
 .cta-ghost:hover {
-  border-color: var(--color-accent, #4caf50);
-  color: var(--color-accent, #4caf50);
+  border-color: var(--color-accent, #337a3e);
+  color: var(--color-accent, #337a3e);
 }
 
 .not-found-deco {
@@ -158,7 +158,7 @@ function goBack(): void {
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    rgba(76, 175, 80, 0.12) 0%,
+    color-mix(in srgb, var(--color-accent) 12%, transparent) 0%,
     transparent 70%
   );
 }

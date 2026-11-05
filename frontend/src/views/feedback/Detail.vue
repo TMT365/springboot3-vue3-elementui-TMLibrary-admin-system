@@ -276,8 +276,8 @@ onMounted(fetchDetail)
   align-items: center;
   gap: 8px;
   padding: 14px 18px;
-  background: rgba(245, 108, 108, 0.1);
-  color: #f56c6c;
+  background: color-mix(in srgb, var(--el-color-danger) 10%, transparent);
+  color: var(--el-color-danger);
   border-radius: 10px;
   font-size: 14px;
 }
@@ -438,8 +438,8 @@ onMounted(fetchDetail)
 }
 
 .bubble-row.is-mine .bubble {
-  background: rgba(76, 175, 80, 0.1);
-  border-color: rgba(76, 175, 80, 0.28);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
+  border-color: color-mix(in srgb, var(--color-accent) 28%, transparent);
   border-radius: 14px 14px 4px 14px;
 }
 
@@ -481,10 +481,11 @@ onMounted(fetchDetail)
   gap: 10px;
   width: 100%;
   padding: 12px 15px;
-  background: rgba(230, 162, 60, 0.1);
-  border: 1px dashed rgba(230, 162, 60, 0.45);
+  background: color-mix(in srgb, var(--el-color-warning) 10%, transparent);
+  border: 1px dashed color-mix(in srgb, var(--el-color-warning) 45%, transparent);
   border-radius: 12px;
-  color: #b88230;
+  /* 字色跟警示色阶走(原来写死 #b88230,暗色下还是那个偏深的琥珀,发闷) */
+  color: var(--el-color-warning);
 }
 
 .internal-note .el-icon {

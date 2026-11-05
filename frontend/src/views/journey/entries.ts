@@ -41,19 +41,21 @@ export const CATEGORY_META: Record<
 > = {
   tech: {
     label: '技术难点',
-    color: '#f56c6c',
+    // 颜色走 CSS 变量:这些值以内联 style(--c)落到 DOM,
+    // 写死十六进制的话暗色主题下还是 Material 旧色,和墨绿体系不搭。
+    color: 'var(--el-color-danger)',
     icon: 'WarningFilled',
     desc: '卡住过、排查过、最后解决掉的问题',
   },
   arch: {
     label: '架构决策',
-    color: '#9c27b0',
+    color: 'var(--hue-violet)',
     icon: 'Share',
     desc: '选了什么、放弃了什么、为什么',
   },
   skill: {
     label: '技能习得',
-    color: '#4caf50',
+    color: 'var(--color-accent)',
     icon: 'MagicStick',
     desc: '这次开发新掌握的东西',
   },

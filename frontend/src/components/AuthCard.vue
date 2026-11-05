@@ -334,7 +334,7 @@ function onSocialClick(): void {
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    rgba(76, 175, 80, 0.14) 0%,
+    color-mix(in srgb, var(--color-accent) 14%, transparent) 0%,
     transparent 70%
   );
 }
@@ -343,7 +343,7 @@ function onSocialClick(): void {
 :root[data-theme='dark'] .auth-page .deco-circle {
   background: radial-gradient(
     circle,
-    rgba(102, 187, 106, 0.10) 0%,
+    color-mix(in srgb, var(--color-accent) 10%, transparent) 0%,
     transparent 70%
   );
 }
@@ -595,7 +595,7 @@ function onSocialClick(): void {
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    rgba(76, 175, 80, 0.16) 0%,
+    color-mix(in srgb, var(--color-accent) 16%, transparent) 0%,
     transparent 68%
   );
   animation: halo-breathe 9s ease-in-out infinite;
@@ -834,7 +834,7 @@ function onSocialClick(): void {
 :root[data-theme='dark'] .stage-halo {
   background: radial-gradient(
     circle,
-    rgba(102, 187, 106, 0.14) 0%,
+    color-mix(in srgb, var(--color-accent) 14%, transparent) 0%,
     transparent 68%
   );
 }
@@ -908,11 +908,11 @@ function onSocialClick(): void {
     var(--color-accent) 0%,
     var(--color-accent-hover) 100%
   );
-  color: #fff;
+  color: var(--color-on-accent);
   font-family: 'DM Serif Display', Georgia, serif;
   font-size: 26px;
   line-height: 1;
-  box-shadow: 0 8px 20px -6px rgba(76, 175, 80, 0.55);
+  box-shadow: 0 8px 20px -6px color-mix(in srgb, var(--color-accent) 55%, transparent);
 }
 
 .auth-title {
@@ -1064,13 +1064,13 @@ function onSocialClick(): void {
   font-size: 15px;
   font-weight: 600;
   letter-spacing: 0.02em;
-  color: #fff;
+  color: var(--color-on-accent);
   background: linear-gradient(
     135deg,
     var(--color-accent) 0%,
     var(--color-accent-hover) 100%
   );
-  box-shadow: 0 10px 24px -8px rgba(76, 175, 80, 0.65);
+  box-shadow: 0 10px 24px -8px color-mix(in srgb, var(--color-accent) 65%, transparent);
   transition:
     transform 200ms cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 200ms ease,
@@ -1080,7 +1080,7 @@ function onSocialClick(): void {
 .auth-card :deep(.auth-submit:hover) {
   transform: scale(1.03);
   filter: brightness(1.05);
-  box-shadow: 0 14px 28px -8px rgba(76, 175, 80, 0.7);
+  box-shadow: 0 14px 28px -8px color-mix(in srgb, var(--color-accent) 70%, transparent);
 }
 
 .auth-card :deep(.auth-submit:active) {

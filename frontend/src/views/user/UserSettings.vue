@@ -439,7 +439,7 @@ onMounted(loadMe)
 
 .header-badge.is-active {
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
 }
 
 /* ============ 字段列表(flex column) ============ */
@@ -462,7 +462,7 @@ onMounted(loadMe)
 }
 
 .field-row.is-dirty {
-  background: rgba(76, 175, 80, 0.06);
+  background: color-mix(in srgb, var(--color-accent) 6%, transparent);
 }
 
 /* 上排:label + 旧值 + dirty tag */
@@ -498,7 +498,7 @@ onMounted(loadMe)
   text-transform: uppercase;
   color: var(--color-accent);
   padding: 2px 8px;
-  background: rgba(76, 175, 80, 0.12);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
   border-radius: 999px;
 }
 
@@ -543,8 +543,8 @@ onMounted(loadMe)
   /* 聚焦 - 多层 shadow + 微 translateY,让 input 浮起 */
   box-shadow:
     0 0 0 1px var(--color-accent),
-    0 0 0 4px rgba(76, 175, 80, 0.15),
-    0 4px 12px rgba(76, 175, 80, 0.18),
+    0 0 0 4px color-mix(in srgb, var(--color-accent) 15%, transparent),
+    0 4px 12px color-mix(in srgb, var(--color-accent) 18%, transparent),
     var(--edge-highlight);
   transform: translateY(-1px);
 }
@@ -631,7 +631,7 @@ onMounted(loadMe)
 
 /* dirty 态的绿底:深底上 0.06 几乎看不出,提到 0.12 */
 :root[data-theme='dark'] .field-row.is-dirty {
-  background: rgba(102, 187, 106, 0.12);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
 }
 
 /* ============================================================

@@ -181,9 +181,9 @@ onMounted(fetchBooks)
   align-items: center;
   gap: 8px;
   padding: 14px 18px;
-  background: rgba(245, 108, 108, 0.12);
-  color: #f56c6c;
-  border: 1px solid rgba(245, 108, 108, 0.2);
+  background: color-mix(in srgb, var(--el-color-danger) 12%, transparent);
+  color: var(--el-color-danger);
+  border: 1px solid color-mix(in srgb, var(--el-color-danger) 20%, transparent);
   border-radius: 12px;
   backdrop-filter: blur(10px);
   margin-bottom: 16px;
@@ -220,7 +220,7 @@ onMounted(fetchBooks)
   transform: translateY(-4px);
   box-shadow:
     0 14px 30px rgba(17, 25, 40, 0.18),
-    0 20px 40px rgba(76, 175, 80, 0.14),
+    0 20px 40px color-mix(in srgb, var(--color-accent) 14%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 

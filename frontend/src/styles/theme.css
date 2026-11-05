@@ -6,25 +6,69 @@
  *           之后才引入 style.css(全局 reset)。
  *
  * 章节:
- * 1. CSS 变量(亮色 / 暗色)
- * 2. 基础元素(html / body)
- * 3. 字体渲染
- * 4. 全局动效减弱
+ * 1. 设计 token(亮色 / 暗色)  —— 表面层级 / 文字 / 品牌 / 边框 / 阴影
+ * 2. Element Plus 变量对齐   —— 语义色阶 / 表面 / 圆角 / 表格
+ * 3. 基础元素(html / body)
+ * 4. 字体渲染
+ * 5. 全局动效减弱
+ * 6. Reveal 入场动画
  *
  * 历史:
  *   - v2 §7-#3 footer tokens 加在这里
  *   - v2 §7-#7 prefers-reduced-motion 从 Landing 迁到这里
  *   - v2 §7-#10 从 Landing.vue 的非 scoped <style> 块搬出
+ *   - v3 设计系统统一:EP 主色从默认蓝收编为品牌墨绿,表面层级明暗同向
  */
 
 /* =============================================================
- * 1. CSS 变量(light + dark)
+ * 1. 设计 token(light + dark)
  * ============================================================= */
+
+/* -------------------------------------------------------------------------
+ * 1.0 表面层级 —— 全站唯一的"高度"语言
+ *
+ * 之前亮色和暗色的层级方向是反的:
+ *   亮色:侧栏 #faf8f3(浅) → 内容区 #f5f5f5 → 卡片 #fff   卡片最亮 = 最高
+ *   暗色:侧栏 #1a1a1a(深) → 内容区 #212121 → 卡片 #1f1f1f 卡片最暗 = 最低
+ * 同一套布局在两个主题下"谁比谁高"不一样,换主题时整个界面会"翻面"。
+ *
+ * 现在定死一条规则,两个主题完全同向:
+ *
+ *        chrome(导航带)  <  canvas(画布)  <  card(凸面)  <  overlay(浮层)
+ *            最凹              纸面              最亮            最高
+ *
+ *   --color-chrome   侧栏 / 导航带 —— 凹面,比画布深一档
+ *   --color-bg       页面画布 —— 暖纸面,内容区与 body 同色
+ *   --color-bg-alt   次级表面 —— 表格表头、hover 行、表单井、hover 底
+ *   --color-card     凸面 —— 卡片 / 面板
+ *
+ * 亮色:chrome #ece7db → canvas #faf8f3 → card #ffffff
+ * 暗色:chrome #141414 → canvas #1a1a1a → card #1f1f1f
+ * ------------------------------------------------------------------------- */
+:root {
+  --color-bg: #faf8f3;
+  --color-bg-alt: #f0ebe0;
+  --color-card: #ffffff;
+  /* 侧栏 / 导航带:比画布深一档的暖沙色,暗色下是接近黑的深炭 */
+  --color-chrome: #ece7db;
+  /* 侧栏菜单项的 hover —— 侧栏是凹面,hover 要"提亮"而不是"压暗",
+     否则鼠标经过时反而像被按下去 */
+  --color-chrome-hover: color-mix(in srgb, #ffffff 55%, var(--color-chrome));
+}
+
+:root[data-theme='dark'] {
+  --color-bg: #1a1a1a;
+  --color-bg-alt: #262626;
+  --color-card: #1f1f1f;
+  --color-chrome: #141414;
+  --color-chrome-hover: color-mix(in srgb, #ffffff 7%, var(--color-chrome));
+}
+
 /* -------------------------------------------------------------------------
  * 关于「立体感」的取舍(2026-09 调整)
  *
  * 暗色下卡片显得有 3D:因为 border #2a2a2a 比卡片底 #1f1f1f 亮 —— 亮边 = 受光棱边。
- * 亮色下这套不成立:border #e8e5dc 比卡片底 #fff 暗,只是一条描边,
+ * 亮色下这套不成立:border 比卡片底暗,只是一条描边,
  * 而原来的 --color-shadow 只有 0.06 不透明度,几乎看不见 → 整体发平。
  *
  * 所以亮色的深度只能靠**阴影**,并且要用多层(环境光 + 直射光)才像实物:
@@ -34,16 +78,37 @@
  * 暗色沿用原值(本身已足够),只补语义变量保持 API 对称。
  * ------------------------------------------------------------------------- */
 :root {
-  --color-bg: #faf8f3;
-  --color-bg-alt: #f5f5f5;
-  --color-card: #ffffff;
+  /* 文字 —— 三级色阶,全部按 WCAG AA 核过(见下方注释) */
   --color-text: #212121;
-  --color-text-muted: #616161;
-  --color-text-soft: #9e9e9e;
-  --color-accent: #4caf50;
-  --color-accent-hover: #43a047;
-  --color-emphasis: #ffc107;
-  --color-border: #e8e5dc;
+  --color-text-muted: #5f5b52;
+  --color-text-soft: #746f62;
+
+  /* 品牌墨绿 —— 比原来的 Material Green 500(#4caf50)沉一档,
+     白底对比度从 2.78:1 提到 5.26:1(绿字/绿链接现在合规了) */
+  --color-accent: #337a3e;
+  --color-accent-hover: #2c6b35;
+  /* 选中态底色 —— 用 color-mix 而不是 rgba:亮色下 accent 是墨绿、暗色下是亮绿,
+     写死 rgba 会让暗色主题的选中块"发闷"(绿色被黑吃掉)。
+     写成 color-mix 后它自动跟着当前主题的 accent 走。 */
+  --color-accent-soft: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  /* 压在品牌色块上的字 —— 亮色下 accent 是墨绿,白字 5.27:1 ✓ */
+  --color-on-accent: #ffffff;
+  /* 压在危险色块上的字 —— 亮色 danger #b5432f,白字 5.18:1 ✓ */
+  --color-on-danger: #ffffff;
+  /* 强调色(图表第二序列 / 次级强调) —— 与品牌琥珀同值,
+     不用 Material Amber 500 的 #ffc107:那个黄太跳,和 editorial 的
+     暖纸 + 墨绿不搭,放到折线图里像贴了块荧光贴。 */
+  --color-emphasis: #b87a12;
+
+  /* 边框 —— 发丝线。strong 用于侧栏分隔线这类"结构性"边界 */
+  --color-border: #e6e0d2;
+  --color-border-strong: #d9d2c0;
+
+  /* 图片描边 —— 照片/头像这类"内容本身有色"的图,描边不能用品牌暖色:
+     暖色描边会顺着图片边缘渗进去,照片看着发黄。
+     用中性黑 10%(暗色下反过来用中性白 10%)。 */
+  --color-image-outline: rgba(0, 0, 0, 0.1);
+
   /* 亮色阴影加深:0.06 在白底上等于没有,0.10 才看得出层次 */
   --color-shadow: rgba(17, 25, 40, 0.10);
   --color-shadow-strong: rgba(17, 25, 40, 0.18);
@@ -64,16 +129,31 @@
 }
 
 :root[data-theme='dark'] {
-  --color-bg: #1a1a1a;
-  --color-bg-alt: #212121;
-  --color-card: #1f1f1f;
   --color-text: #f5f5f5;
   --color-text-muted: #bdbdbd;
-  --color-text-soft: #757575;
+  /* 暗色下 soft 原值 #757575 在 #1f1f1f 上只有 3.58:1,小字不够看 → 提到 4.77:1 */
+  --color-text-soft: #8a8a8a;
+
   --color-accent: #66bb6a;
   --color-accent-hover: #81c784;
-  --color-emphasis: #ffd54f;
+  --color-accent-soft: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  /* 压在品牌色块上的字 —— 暗色下 accent 是亮绿 #66bb6a:
+     白字只有 2.36:1(不过 AA),换成近黑墨字是 8.1:1 ✓
+     (墨字取 #0b120e 而不是更浅的值:按钮 hover 底色 primary-light-3
+      #4f8b52 配白字 4.1:1 也不达标,配这个墨字是 4.75:1 ✓)
+     —— 所以暗色下所有"绿底 + 白字"的地方都要走这个 token。 */
+  --color-on-accent: #0b120e;
+  /* 压在危险色块上的字 —— 暗色 danger 是浅红 #e58471,白字只有 3.1:1,
+     换成近黑墨字是 5.6:1 ✓ */
+  --color-on-danger: #2a0e09;
+  --color-emphasis: #e0a83c;
+
   --color-border: #2a2a2a;
+  --color-border-strong: #353535;
+
+  /* 暗色下图片描边反过来用中性白 —— 黑描边压在深底照片上等于没有 */
+  --color-image-outline: rgba(255, 255, 255, 0.1);
+
   --color-shadow: rgba(0, 0, 0, 0.3);
   --color-shadow-strong: rgba(0, 0, 0, 0.5);
   --color-footer-bg: #0d0d0d;
@@ -90,6 +170,49 @@
   /* 暗色下亮棱边本身就是 3D 的关键 —— 保持低不透明度防"发灰" */
   --edge-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.06);
   --edge-shade: inset 0 -1px 0 rgba(0, 0, 0, 0.4);
+}
+
+/* -------------------------------------------------------------------------
+ * 1.1 文字对比度(按 WCAG 2.1 AA 核过,全部实测)
+ *
+ *   亮色                      on #faf8f3   on #ffffff
+ *   --color-text      #212121   15.17:1      16.1:1
+ *   --color-text-muted #5f5b52   6.37:1      7.0:1
+ *   --color-text-soft  #746f62   4.72:1      5.01:1
+ *   --color-accent     #337a3e   4.59:1      5.26:1
+ *
+ *   暗色                      on #1a1a1a   on #1f1f1f
+ *   --color-text      #f5f5f5   15.03:1     15.12:1
+ *   --color-text-muted #bdbdbd   9.35:1      9.15:1
+ *   --color-text-soft  #8a8a8a   5.05:1      4.77:1
+ *
+ * 改版前 --color-text-soft 是 #9e9e9e,在纸底上只有 2.52:1 ——
+ * 占位符、时间戳、说明文字全是"看不清"的灰,这次统一提到 AA 以上。
+ * ------------------------------------------------------------------------- */
+
+/* -------------------------------------------------------------------------
+ * 1.2 字体族
+ * ------------------------------------------------------------------------- */
+:root {
+  --font-sans: 'Manrope', system-ui, -apple-system, 'Segoe UI', 'PingFang SC',
+    'Hiragino Sans GB', 'Microsoft YaHei', sans-serif;
+  --font-display: 'DM Serif Display', Georgia, 'Songti SC', serif;
+  /* 焦点环 —— 全站统一,键盘可达性靠它 */
+  --focus-ring: 0 0 0 2px var(--color-bg), 0 0 0 4px var(--color-accent);
+}
+
+/* -------------------------------------------------------------------------
+ * 1.3 圆角与间距
+ *
+ * 组件自己写死的 8px / 10px / 12px 现在有名字了,
+ * 新组件不用再猜该用哪个。
+ * ------------------------------------------------------------------------- */
+:root {
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
 }
 
 /* -------------------------------------------------------------------------
@@ -150,6 +273,9 @@
   --hue-amber: #b87a12;
   --hue-teal: #4a7c8c;
   --hue-moss: #5c8a4a;
+  /* 紫 —— 只给"根因"这类中性偏冷的语义用(journey 页的三段徽标:
+     症状=红 / 根因=紫 / 解法=绿)。暗色下提亮,否则深底上糊成一团。 */
+  --hue-violet: #8e24aa;
 }
 
 /**
@@ -168,10 +294,237 @@
   --hue-amber: #e0a83c;
   --hue-teal: #6fa8bb;
   --hue-moss: #86b86f;
+  --hue-violet: #ce93d8;
 }
 
 /* -------------------------------------------------------------------------
- * 1.6 Element Plus 变量对齐(暗色)
+ * 1.6 毛玻璃层(顶栏 / 悬浮侧栏)
+ *
+ * 三个布局(Admin / Mall / User)都有一块"浮在内容上面"的玻璃:
+ * 顶栏是横向长条,商城侧栏和用户侧栏是竖向浮层。它们要看起来是同一种材质,
+ * 所以底色透明度、描边、投影各留一个 token,而不是每个布局各写一份 rgba。
+ *
+ * 亮色下玻璃 = 暖纸半透明(不是纯白,纯白会发灰);
+ * 暗色下玻璃 = 近黑半透明,描边换成一道半透明白线才有"玻璃边"。
+ * ------------------------------------------------------------------------- */
+:root {
+  --color-glass: rgba(250, 248, 243, 0.72);
+  --color-glass-strong: rgba(250, 248, 243, 0.82);
+  --color-glass-border: rgba(17, 25, 40, 0.07);
+  --color-glass-shadow:
+    0 4px 12px rgba(17, 25, 40, 0.05),
+    16px 0 40px rgba(17, 25, 40, 0.08),
+    32px 0 80px rgba(17, 25, 40, 0.05);
+}
+
+:root[data-theme='dark'] {
+  --color-glass: rgba(26, 26, 26, 0.72);
+  --color-glass-strong: rgba(26, 26, 26, 0.82);
+  --color-glass-border: rgba(255, 255, 255, 0.08);
+  --color-glass-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.32),
+    16px 0 40px rgba(0, 0, 0, 0.26),
+    32px 0 80px rgba(0, 0, 0, 0.18);
+}
+
+/* =============================================================
+ * 2. Element Plus 变量对齐
+ *
+ * ⚠ 本节所有块都用 html:root(0,1,1) 而不是 :root(0,1,0):
+ * EP 自己有两条 :root 规则会重新写回默认蓝(#409eff)——
+ * element-plus/dist/index.css,以及 element-plus/theme-chalk/base.css。
+ * 后者是被各组件样式(el-button.css 等)按需 import 的,注入时机
+ * 晚于 main.ts 里 import 的本文件;同特异度下"后出现者赢",
+ * 于是本文件写的墨绿主色会被 base.css 悄悄改回蓝。
+ * 提一级到 html:root 后,无论注入顺序如何,墨绿都压得住。
+ * 暗色块用 html:root[data-theme='dark'](0,2,1):既压得住亮色块
+ * html:root(0,1,1),也压得住 EP 暗色包的 html.dark(0,1,1)。
+ * ============================================================= */
+
+/* -------------------------------------------------------------------------
+ * 2.1 亮色:语义色阶
+ *
+ * 之前全站 EP 组件用的还是 Element Plus 默认蓝(#409eff),而品牌色是绿的 ——
+ * 一个后台页面里能同时出现:品牌绿 + EP 蓝 + EP 成功绿(#67c23a)+ EP 危险粉红
+ * (#f56c6c = 旧 danger),四个绿加一个蓝再加一个红,主 CTA 反而不是品牌色。
+ *
+ * 现在把 EP 的语义色阶整套重算,收编进暖纸 + 墨绿体系:
+ *
+ *   primary  #337a3e  墨绿  = 品牌色(--color-accent 同值)
+ *   success  #4a7239  苔绿  = 比 primary 黄一点、暗一点,状态标签专用
+ *   warning  #8f5d08  赭石  = 暖黄,替代 EP 的橙黄
+ *   danger   #b5432f  砖红  = 替代 EP 的粉红
+ *   info     #6f6d66  暖灰  = 替代 EP 的冷灰
+ *
+ * 每个色都按 WCAG AA 核过(底色 = 各自的 light-9 标签底):
+ *   primary 4.62:1 / success 4.89:1 / warning 4.91:1 / danger 4.77:1 / info 4.55:1
+ * 在纯白底上分别是 5.26 / 5.59 / 5.62 / 5.51 / 5.18,全部 ≥ 4.5。
+ *
+ * light-N 的定义沿用 EP 约定(实测 element-plus/dist/index.css:
+ * primary #409eff → light-3 #79bbff = 70% 基色,light-9 #ecf5ff = 10% 基色),
+ * 即 light-N = (100 - N×10)% 基色 + N×10% 白色。
+ * ------------------------------------------------------------------------- */
+html:root {
+  --el-color-primary: var(--color-accent);
+  --el-color-primary-light-3: #70a278;
+  --el-color-primary-light-5: #99bd9f;
+  --el-color-primary-light-7: #c2d7c5;
+  --el-color-primary-light-8: #d6e4d8;
+  --el-color-primary-light-9: #ebf2ec;
+  --el-color-primary-dark-2: #296232;
+
+  --el-color-success: #4a7239;
+  --el-color-success-light-3: #809c74;
+  --el-color-success-light-5: #a5b99c;
+  --el-color-success-light-7: #c9d5c4;
+  --el-color-success-light-8: #dbe3d7;
+  --el-color-success-light-9: #edf1eb;
+  --el-color-success-dark-2: #3b5b2e;
+
+  --el-color-warning: #8f5d08;
+  --el-color-warning-light-3: #b18e52;
+  --el-color-warning-light-5: #c7ae84;
+  --el-color-warning-light-7: #ddceb5;
+  --el-color-warning-light-8: #e9dfce;
+  --el-color-warning-light-9: #f4efe6;
+  --el-color-warning-dark-2: #724a06;
+
+  --el-color-danger: #b5432f;
+  --el-color-danger-light-3: #cb7b6d;
+  --el-color-danger-light-5: #daa197;
+  --el-color-danger-light-7: #e9c7c1;
+  --el-color-danger-light-8: #f0d9d5;
+  --el-color-danger-light-9: #f8ecea;
+  --el-color-danger-dark-2: #913626;
+
+  --el-color-error: #b5432f;
+  --el-color-error-light-3: #cb7b6d;
+  --el-color-error-light-5: #daa197;
+  --el-color-error-light-7: #e9c7c1;
+  --el-color-error-light-8: #f0d9d5;
+  --el-color-error-light-9: #f8ecea;
+  --el-color-error-dark-2: #913626;
+
+  --el-color-info: #6f6d66;
+  --el-color-info-light-3: #9a9994;
+  --el-color-info-light-5: #b7b6b3;
+  --el-color-info-light-7: #d4d3d1;
+  --el-color-info-light-8: #e2e2e0;
+  --el-color-info-light-9: #f1f0f0;
+  --el-color-info-dark-2: #595752;
+}
+
+/* -------------------------------------------------------------------------
+ * 2.2 暗色:语义色阶
+ *
+ * 暗色下 light-N 要往深底混(EP 暗色包就是这么做的:
+ * primary #409eff → light-9 #18222b),否则标签底会变成一块亮绿。
+ * 这里的基色就是暗色主题下的 --color-accent / --hue-* :
+ * primary #66bb6a / success #86b86f / warning #e0a83c / danger #e58471 / info #a8a49b。
+ * ------------------------------------------------------------------------- */
+html:root[data-theme='dark'] {
+  --el-color-primary: var(--color-accent);
+  --el-color-primary-light-3: #4f8b52;
+  --el-color-primary-light-5: #406b42;
+  --el-color-primary-light-7: #314a32;
+  --el-color-primary-light-8: #293a2a;
+  --el-color-primary-light-9: #222a22;
+  --el-color-primary-dark-2: #e0f1e1;
+
+  --el-color-success: #86b86f;
+  --el-color-success-light-3: #668955;
+  --el-color-success-light-5: #506945;
+  --el-color-success-light-7: #3a4934;
+  --el-color-success-light-8: #303a2b;
+  --el-color-success-light-9: #252a23;
+  --el-color-success-dark-2: #e7f1e2;
+
+  --el-color-warning: #e0a83c;
+  --el-color-warning-light-3: #a57d32;
+  --el-color-warning-light-5: #7d612b;
+  --el-color-warning-light-7: #554524;
+  --el-color-warning-light-8: #423621;
+  --el-color-warning-light-9: #2e281d;
+  --el-color-warning-dark-2: #f9eed8;
+
+  --el-color-danger: #e58471;
+  --el-color-danger-light-3: #a86457;
+  --el-color-danger-light-5: #804f46;
+  --el-color-danger-light-7: #573a34;
+  --el-color-danger-light-8: #432f2b;
+  --el-color-danger-light-9: #2e2523;
+  --el-color-danger-dark-2: #fae6e3;
+
+  --el-color-error: #e58471;
+  --el-color-error-light-3: #a86457;
+  --el-color-error-light-5: #804f46;
+  --el-color-error-light-7: #573a34;
+  --el-color-error-light-8: #432f2b;
+  --el-color-error-light-9: #2e2523;
+  --el-color-error-dark-2: #fae6e3;
+
+  --el-color-info: #a8a49b;
+  --el-color-info-light-3: #7d7b74;
+  --el-color-info-light-5: #615f5b;
+  --el-color-info-light-7: #454341;
+  --el-color-info-light-8: #363634;
+  --el-color-info-light-9: #282827;
+  --el-color-info-dark-2: #eeedeb;
+}
+
+/* -------------------------------------------------------------------------
+ * 2.3 表面 / 文字 / 圆角 / 表格(亮色)
+ *
+ * EP 默认的灰阶是冷灰(#dcdfe6 边框 / #f5f7fa 填充),和暖纸底放在一起
+ * 会有"贴上去的灰盒子"感,这里全部换成暖调,并接上项目自己的 token。
+ * ------------------------------------------------------------------------- */
+html:root {
+  --el-bg-color: var(--color-card);
+  --el-bg-color-page: var(--color-bg);
+  --el-bg-color-overlay: #ffffff;
+  --el-fill-color-blank: var(--color-card);
+  --el-fill-color: var(--color-bg-alt);
+  --el-fill-color-light: #f5f1e8;
+  --el-fill-color-lighter: #f9f6ef;
+  --el-border-color: var(--color-border);
+  --el-border-color-light: #ece7db;
+  --el-border-color-lighter: #f2eee5;
+  --el-border-color-extra-light: #f7f4ec;
+  --el-text-color-primary: var(--color-text);
+  --el-text-color-regular: #33312d;
+  --el-text-color-secondary: var(--color-text-muted);
+  --el-text-color-placeholder: var(--color-text-soft);
+  --el-text-color-disabled: #a5a096;
+
+  /* 圆角 —— EP 默认 4px,和项目自己的卡片(8~12px)差一档,看着像两套 UI */
+  --el-border-radius-base: var(--radius-md);
+  --el-border-radius-small: var(--radius-sm);
+  --el-border-radius-round: 20px;
+  --el-border-radius-circle: 100%;
+
+  --el-font-family: var(--font-sans);
+  --el-font-size-base: 14px;
+
+  /* 阴影 —— 暖调,别用 EP 的纯黑 */
+  --el-box-shadow: 0 12px 32px 4px rgba(17, 25, 40, 0.10), 0 8px 20px rgba(17, 25, 40, 0.08);
+  --el-box-shadow-light: 0 0 12px rgba(17, 25, 40, 0.10);
+  --el-box-shadow-lighter: 0 0 6px rgba(17, 25, 40, 0.08);
+  --el-box-shadow-dark: 0 16px 48px 16px rgba(17, 25, 40, 0.14);
+
+  /* 表格 —— 之前每个页面各写一份,这里统一,页面里那份可留可删 */
+  --el-table-border-color: var(--color-border);
+  --el-table-border: 1px solid var(--color-border);
+  --el-table-header-bg-color: var(--color-bg-alt);
+  --el-table-header-text-color: var(--color-text-muted);
+  --el-table-row-hover-bg-color: var(--color-bg-alt);
+  --el-table-text-color: var(--color-text);
+  --el-table-bg-color: transparent;
+  --el-table-tr-bg-color: transparent;
+  --el-table-header-border-color: var(--color-border);
+}
+
+/* -------------------------------------------------------------------------
+ * 2.4 暗色:表面 / 文字
  *
  * EP 的暗色包(element-plus/theme-chalk/dark/css-vars.css,在 main.ts 引入)
  * 只提供了一套通用暗色值:底色 #141414 —— 比本项目的卡片色 #1f1f1f 更黑,
@@ -180,10 +533,11 @@
  * 这里把 EP 的界面色系拉齐到项目 token,并且顺便把 EP 的边框(#4c4d4f,
  * 偏亮)换成项目自己的 #333 —— 深底上 #4c4d4f 的输入框描边太跳。
  *
- * 不改 --el-color-primary:EP 组件的主色(按钮/分页/开关)保持自己的蓝,
- * 与项目的绿色 accent 并存 —— 换主色影响面太大,不在本次范围内。
+ * 注意选择器优先级:EP 暗色包用的是 html.dark(0,1,1),
+ * 这里用 html:root[data-theme='dark'](0,2,1) —— 后者赢,
+ * 所以本块的 primary 阶梯能覆盖掉 EP 自带的蓝色系。
  * ------------------------------------------------------------------------- */
-:root[data-theme='dark'] {
+html:root[data-theme='dark'] {
   --el-bg-color: var(--color-card);
   --el-bg-color-page: var(--color-bg);
   /* 弹层(下拉 / tooltip / 弹窗)比卡片亮一档,才有"浮起来"的层次 */
@@ -191,18 +545,24 @@
   --el-fill-color-blank: var(--color-card);
   --el-fill-color: #2a2a2a;
   --el-fill-color-light: #262626;
+  --el-fill-color-lighter: #232323;
   --el-border-color: #333333;
   --el-border-color-light: #2f2f2f;
   --el-border-color-lighter: var(--color-border);
   --el-text-color-primary: var(--color-text);
-  --el-text-color-regular: var(--color-text);
+  --el-text-color-regular: #e8e8e8;
   --el-text-color-secondary: var(--color-text-muted);
   --el-text-color-placeholder: var(--color-text-soft);
-  --el-text-color-disabled: var(--color-text-soft);
+  --el-text-color-disabled: #6f6f6f;
+
+  --el-box-shadow: 0 12px 32px 4px rgba(0, 0, 0, 0.42), 0 8px 20px rgba(0, 0, 0, 0.30);
+  --el-box-shadow-light: 0 0 12px rgba(0, 0, 0, 0.36);
+  --el-box-shadow-lighter: 0 0 6px rgba(0, 0, 0, 0.30);
+  --el-box-shadow-dark: 0 16px 48px 16px rgba(0, 0, 0, 0.52);
 }
 
 /* =============================================================
- * 2. 基础元素
+ * 3. 基础元素
  * ============================================================= */
 html {
   scroll-behavior: smooth;
@@ -212,20 +572,205 @@ body {
   margin: 0;
   background: var(--color-bg);
   color: var(--color-text);
-  font-family: 'Manrope', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
   transition: background 200ms ease, color 200ms ease;
 }
 
 /* =============================================================
- * 3. 字体细节
+ * 4. 字体细节
  * ============================================================= */
 :root {
   font-feature-settings: 'kern' 1, 'liga' 1, 'calt' 1;
 }
 
 /* =============================================================
- * 4. 全局动效减弱  -  尊重系统的 prefers-reduced-motion 设置
+ * 4.1 组件级微调(全局,只动"气质"不动"布局")
+ *
+ * 这些是 EP 组件和项目自绘组件之间最容易露馅的地方:
+ * 表格头太轻、按钮字太飘、输入框没有统一焦点环。
+ * 写在全局而不是每个页面里,是为了新增页面时自动继承。
+ * ============================================================= */
+.el-table th.el-table__cell {
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.el-table .el-table__cell {
+  padding: 11px 0;
+  line-height: 1.55;
+}
+
+.el-table .cell {
+  word-break: normal;
+}
+
+.el-button {
+  font-weight: 500;
+}
+
+.el-tag {
+  font-weight: 500;
+}
+
+/* 输入类组件的焦点环 —— EP 默认是 1px 品牌色描边,
+   和项目自绘的 2px 双层焦点环不一致,键盘用户能看出差别 */
+.el-input__wrapper.is-focus,
+.el-select__wrapper.is-focused,
+.el-textarea__inner:focus {
+  box-shadow: 0 0 0 1px var(--color-accent) inset !important;
+}
+
+.el-checkbox__input.is-checked .el-checkbox__inner,
+.el-radio__input.is-checked .el-radio__inner {
+  background-color: var(--el-color-primary);
+  border-color: var(--el-color-primary);
+}
+
+/* =============================================================
+ * 4.2 空状态 / 全局消息 / 绿底上的字
+ * ============================================================= */
+
+/* ---- 4.2.1 空状态:EP 默认那台灰柜子 → 品牌书本 ----
+ *
+ * EP 的 el-empty 是一台灰色的空柜子 SVG(--el-svg-monochrome-grey),
+ * 放在暖纸底上像"组件没加载出来"。这里换成:淡绿圆底 + 一枚墨绿书本,
+ * 和"图书馆"的品牌一致。
+ *
+ * ⚠ el-empty__image 的宽度是 EP 用**内联 style** 写的(style="width:160px"),
+ *   内联样式优先级高于普通选择器,所以覆盖它必须用 !important。
+ *   (本项目 12 处 el-empty 都没有自定义图,只有 feedback/Detail.vue 改了
+ *    image-size=80 —— 内联宽度被覆盖后统一成 92px,视觉反而齐了。)
+ */
+/* ⚠ 选择器统一写成 html:root:X —— EP 的组件样式是**按需 import** 的,
+ *   注入时机晚于本文件,同特异度时 EP 会赢(这就是之前 EP 蓝主色
+ *   把墨绿顶掉的原因)。html:root 把特异度提到 (0,2,x),与注入顺序解耦。 */
+html:root .el-empty {
+  --el-empty-padding: 44px 0;
+  --el-empty-description-margin-top: 18px;
+}
+
+html:root .el-empty__image {
+  width: 92px !important;
+  height: 92px;
+  border-radius: 50%;
+  background: var(--color-accent-soft);
+  display: grid;
+  place-items: center;
+}
+
+/* EP 默认图(灰柜子 svg)隐藏,换成下面 ::after 的书本 glyph。
+   如果将来要传自定义 image,删掉 img 那条,并给对应页面单独配图。 */
+html:root .el-empty__image svg,
+html:root .el-empty__image img {
+  display: none;
+}
+
+/* 书本 glyph —— 用 mask 而不是 background-image:
+   颜色交给 background-color(跟着主题走),形状交给 SVG。
+   SVG 里的 '#' 必须写成 %23,'<' '>' 写成 %3C %3E,否则 data URI 会被截断。 */
+html:root .el-empty__image::after {
+  content: '';
+  width: 44px;
+  height: 44px;
+  background-color: var(--color-accent);
+  -webkit-mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 6.5C12 5 10.9 4 9.4 4H4.6A1.6 1.6 0 0 0 3 5.6v12.8A1.6 1.6 0 0 0 4.6 20h4.8c1.5 0 2.6 1 2.6 2.2 0-1.2 1.1-2.2 2.6-2.2h4.8a1.6 1.6 0 0 0 1.6-1.6V5.6A1.6 1.6 0 0 0 19.4 4h-4.8C13.1 4 12 5 12 6.5z'/%3E%3Cpath d='M12 6.5V22.2'/%3E%3C/svg%3E") no-repeat center / contain;
+  mask: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='1.7' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 6.5C12 5 10.9 4 9.4 4H4.6A1.6 1.6 0 0 0 3 5.6v12.8A1.6 1.6 0 0 0 4.6 20h4.8c1.5 0 2.6 1 2.6 2.2 0-1.2 1.1-2.2 2.6-2.2h4.8a1.6 1.6 0 0 0 1.6-1.6V5.6A1.6 1.6 0 0 0 19.4 4h-4.8C13.1 4 12 5 12 6.5z'/%3E%3Cpath d='M12 6.5V22.2'/%3E%3C/svg%3E") no-repeat center / contain;
+}
+
+/* 说明文字用弱一档的灰 —— EP 写死成正文色,空状态的字不该跟正文抢 */
+html:root .el-empty__description p {
+  color: var(--color-text-muted);
+  font-size: 14px;
+}
+
+/* ---- 4.2.2 全局消息:别糊在顶栏面包屑上 ----
+ *
+ * EP 把 offset 默认写成**内联 style**(top:16px),而顶栏高 60(后台/商城/用户)
+ * 或 72(落地页),消息一弹出来正好压住面包屑 —— 看着像"顶栏坏了"。
+ * 内联样式优先级高于普通选择器,所以这里必须 !important。
+ */
+html:root .el-message {
+  top: 80px !important;
+  --el-message-bg-color: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card-hover);
+}
+
+/* 左边一道语义色"书脊" —— 一眼分清成功 / 警告 / 失败,
+   不用靠图标颜色去猜(色觉障碍也看得出来)。 */
+html:root .el-message--primary { border-left: 3px solid var(--el-color-primary); }
+html:root .el-message--success { border-left: 3px solid var(--el-color-success); }
+html:root .el-message--warning { border-left: 3px solid var(--el-color-warning); }
+html:root .el-message--error { border-left: 3px solid var(--el-color-error); }
+html:root .el-message--info { border-left: 3px solid var(--el-color-info); }
+
+/* ---- 4.2.3 暗色下"绿底 + 白字" → "绿底 + 墨字" ----
+ *
+ * EP 把这些组件的字的颜色写死成 var(--el-color-white)。暗色下 accent 是
+ * 亮绿 #66bb6a,白字只有 2.36:1(不过 WCAG AA),所以统一换成
+ * --color-on-accent(墨字,8.1:1)。选择器要带上 html:root[data-theme]
+ * 才能压过 EP 的类选择器。
+ */
+html:root[data-theme='dark'] .el-button--primary {
+  --el-button-text-color: var(--color-on-accent);
+  --el-button-hover-text-color: var(--color-on-accent);
+  --el-button-active-text-color: var(--color-on-accent);
+  --el-button-disabled-text-color: var(--color-on-accent);
+}
+
+html:root[data-theme='dark'] .el-pagination.is-background .el-pager li.is-active {
+  color: var(--color-on-accent);
+}
+
+/* =============================================================
+ * 4.3 键盘可达性  -  焦点环兜底 + 最小点击区
+ * ============================================================= */
+
+/* ---- 4.3.1 焦点环兜底 ----
+ *
+ * 项目里各处自定义焦点环都写在组件的 scoped 样式里(用 :focus-visible +
+ * outline: none + box-shadow)。但只要以后新增一个没写焦点环的元素,
+ * 浏览器默认焦点圈是蓝色的 —— 和墨绿品牌色打架,也不像这个设计系统的东西。
+ *
+ * 这里用一条低特异度的全局规则兜底:只作用于"原生可聚焦元素",
+ * 组件自己写过焦点环的地方(类选择器/属性选择器)特异性更高,不受影响。
+ *
+ * 用 :focus-visible 而不是 :focus —— 鼠标点一下不会亮焦点圈,
+ * 只有键盘 Tab 过去才亮,正好是"键盘导航"的语义。
+ */
+a:focus-visible,
+button:focus-visible,
+[role='button']:focus-visible,
+[role='tab']:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+}
+
+/* ---- 4.3.2 最小点击区 ----
+ *
+ * 触摸目标至少 40×40(WCAG 2.5.8 / Apple HIG)。项目里顶栏的图标按钮
+ * 是 36×36,视觉上是对的,但手指点不准 —— 用伪元素把可点区域撑到 40px,
+ * 不改变视觉尺寸(伪元素绝对定位,不吃布局,也不会盖到邻居的点击)。
+ */
+.icon-btn {
+  position: relative;
+}
+
+.icon-btn::after {
+  content: '';
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 40px;
+  height: 40px;
+  transform: translate(-50%, -50%);
+}
+
+/* =============================================================
+ * 5. 全局动效减弱  -  尊重系统的 prefers-reduced-motion 设置
  *    覆盖所有动画 / 过渡,让减弱动态效果的用户立即看到最终态
  * ============================================================= */
 /* ============================================================
@@ -289,7 +834,7 @@ body {
 
 .book-suggest-popper .el-autocomplete-suggestion__list li:hover,
 .book-suggest-popper .el-autocomplete-suggestion__list li.highlighted {
-  background: rgba(76, 175, 80, 0.08);
+  background: var(--color-accent-soft);
 }
 
 .book-suggest-popper .el-autocomplete-suggestion__list li.highlighted::before {
@@ -314,12 +859,17 @@ body {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+    /* 延迟也要压掉:入场动画常配 stagger 延迟(每个元素 60–120ms),
+       只压时长不压延迟的话,页面会一段一段地"蹦"出来,
+       减弱动态效果的用户等起来反而更慢。 */
+    animation-delay: 0.01ms !important;
+    transition-delay: 0.01ms !important;
     scroll-behavior: auto !important;
   }
 }
 
 /* =============================================================
- * 5. Reveal 入场动画  -  由 v-reveal 指令触发
+ * 6. Reveal 入场动画  -  由 v-reveal 指令触发
  *
  *   默认态:.reveal-up
  *     opacity: 0 + translateY(40px)  -  从下方 40px 隐藏
@@ -327,12 +877,12 @@ body {
  *   触发态:.reveal-up.is-visible(v-reveal 触发)
  *     opacity: 1 + translateY(0)  -  滑回原位
  *
- *   由 v-reveal 指令(IntersectionObserver)在元素进入视口时
- *   自动加 .is-visible 类。700ms cubic-bezier ease-out。
+ * 由 v-reveal 指令(IntersectionObserver)在元素进入视口时
+ * 自动加 .is-visible 类。700ms cubic-bezier ease-out。
  *
- *   prefers-reduced-motion 已在第 4 节用全局 !important 把
- *   transition-duration 压到 0.01ms → 对偏好减弱动态效果的用户
- *   reveal 接近瞬时,符合无障碍要求。
+ * prefers-reduced-motion 已在第 5 节用全局 !important 把
+ * transition-duration 压到 0.01ms → 对偏好减弱动态效果的用户
+ * reveal 接近瞬时,符合无障碍要求。
  * ============================================================= */
 .reveal-up {
   opacity: 0;

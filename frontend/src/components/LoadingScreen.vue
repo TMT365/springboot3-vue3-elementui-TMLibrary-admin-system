@@ -126,7 +126,7 @@ onMounted(() => {
     inset 0 -3px 8px rgba(17, 25, 40, 0.05),
     0 24px 48px rgba(17, 25, 40, 0.20),
     0 8px 16px rgba(17, 25, 40, 0.10),
-    0 0 0 1px rgba(76, 175, 80, 0.14);
+    0 0 0 1px color-mix(in srgb, var(--color-accent) 14%, transparent);
 }
 
 :root[data-theme='dark'] .spinner {
@@ -135,7 +135,7 @@ onMounted(() => {
     inset 0 -2px 8px rgba(255, 255, 255, 0.04),
     0 24px 48px rgba(0, 0, 0, 0.5),
     0 8px 16px rgba(0, 0, 0, 0.3),
-    0 0 0 1px rgba(102, 187, 106, 0.12);
+    0 0 0 1px color-mix(in srgb, var(--color-accent) 12%, transparent);
 }
 
 .spinner-ring {
@@ -240,7 +240,7 @@ onMounted(() => {
     transform: scale(1.3);
     box-shadow:
       inset 0 1px 0 rgba(255, 255, 255, 0.5),
-      0 0 12px rgba(76, 175, 80, 0.5),
+      0 0 12px color-mix(in srgb, var(--color-accent) 50%, transparent),
       0 4px 8px rgba(0, 0, 0, 0.15);
   }
 }

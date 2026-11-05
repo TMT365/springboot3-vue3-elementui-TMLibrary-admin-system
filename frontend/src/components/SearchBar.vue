@@ -42,9 +42,12 @@ function onReset(): void {
   gap: 16px;
   margin-bottom: 16px;
   padding: 16px;
-  background: #fff;
-  border-radius: 4px;
-  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+  /* 走卡片 token:原来写死 #fff + 4px 圆角,暗色下是个白疙瘩,
+     圆角也和全局的 12–14px 不是一套。 */
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-card);
 }
 .search-bar__fields {
   display: flex;

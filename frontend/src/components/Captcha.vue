@@ -276,8 +276,10 @@ defineExpose({
   display: grid;
   place-items: center;
   background: var(--color-bg-alt);
-  border: 1px solid var(--color-border);
-  border-radius: 4px;
+  /* 圆角跟旁边的输入框一致(EP 基准圆角 = --radius-md),
+     原来这里是 4px,和输入框的 8px 并排时两个角对不上。 */
+  border: 1px solid var(--color-image-outline);
+  border-radius: var(--radius-md);
   overflow: hidden;
   cursor: pointer;
   user-select: none;

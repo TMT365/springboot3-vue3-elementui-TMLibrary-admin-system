@@ -424,7 +424,7 @@ onBeforeUnmount(() => {
 
 .toc-item.is-active {
   border-left-color: var(--color-accent);
-  background: rgba(76, 175, 80, 0.08);
+  background: color-mix(in srgb, var(--color-accent) 8%, transparent);
   color: var(--color-accent);
   font-weight: 600;
 }
@@ -510,17 +510,17 @@ onBeforeUnmount(() => {
 
 /* 三段用不同的底色区分:症状(红=有问题)、根因(紫=要理解)、解法(绿=已解决) */
 .block-label.is-symptom {
-  background: rgba(245, 108, 108, 0.12);
-  color: #f56c6c;
+  background: color-mix(in srgb, var(--el-color-danger) 12%, transparent);
+  color: var(--el-color-danger);
 }
 
 .block-label.is-cause {
-  background: rgba(156, 39, 176, 0.1);
-  color: #9c27b0;
+  background: color-mix(in srgb, var(--hue-violet) 10%, transparent);
+  color: var(--hue-violet);
 }
 
 .block-label.is-solution {
-  background: rgba(76, 175, 80, 0.12);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
   color: var(--color-accent);
 }
 
@@ -560,7 +560,7 @@ onBeforeUnmount(() => {
   gap: 9px;
   margin: 0;
   padding: 13px 16px;
-  background: linear-gradient(135deg, rgba(76, 175, 80, 0.09), rgba(76, 175, 80, 0.03));
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 9%, transparent), color-mix(in srgb, var(--color-accent) 3%, transparent));
   border-left: 3px solid var(--color-accent);
   border-radius: 0 10px 10px 0;
   font-size: 14px;
@@ -597,7 +597,7 @@ onBeforeUnmount(() => {
 }
 
 :root[data-theme='dark'] .takeaway {
-  background: rgba(76, 175, 80, 0.1);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
 
 /* ============================================================

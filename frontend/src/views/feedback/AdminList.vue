@@ -238,8 +238,8 @@ onMounted(fetchList)
   gap: 8px;
   padding: 14px 18px;
   margin-bottom: 16px;
-  background: rgba(245, 108, 108, 0.1);
-  color: #f56c6c;
+  background: color-mix(in srgb, var(--el-color-danger) 10%, transparent);
+  color: var(--el-color-danger);
   border-radius: 10px;
   font-size: 14px;
 }
@@ -279,15 +279,15 @@ onMounted(fetchList)
   background: var(--rail);
 }
 
-.fb-card.is-status-0 { --rail: #909399; }
-.fb-card.is-status-1 { --rail: #e6a23c; }
+.fb-card.is-status-0 { --rail: var(--el-color-info); }
+.fb-card.is-status-1 { --rail: var(--el-color-warning); }
 .fb-card.is-status-2 { --rail: var(--color-accent); }
-.fb-card.is-status-3 { --rail: #b0b3b8; }
+.fb-card.is-status-3 { --rail: var(--color-text-soft); }
 
 @media (hover: hover) {
   .fb-card:hover {
     transform: translateY(-2px);
-    border-color: rgba(76, 175, 80, 0.3);
+    border-color: color-mix(in srgb, var(--color-accent) 30%, transparent);
     box-shadow:
       0 8px 20px var(--color-shadow),
       0 2px 6px rgba(17, 25, 40, 0.06);

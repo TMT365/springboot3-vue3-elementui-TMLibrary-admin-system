@@ -137,9 +137,9 @@ const UPDATED_AT = '2026-09'
 .notice-badge {
   /* 徽章底色 / 光晕 / 光环三个色都从这里取 —— 暗色只需覆盖这三个变量,
      keyframes 不用写第二遍(和 IpBanDialog 的 --badge-* 同一套路) */
-  --badge-bg: rgba(76, 175, 80, 0.14);
-  --badge-glow: rgba(76, 175, 80, 0.12);
-  --badge-ring: rgba(76, 175, 80, 0.45);
+  --badge-bg: color-mix(in srgb, var(--color-accent) 14%, transparent);
+  --badge-glow: color-mix(in srgb, var(--color-accent) 12%, transparent);
+  --badge-ring: color-mix(in srgb, var(--color-accent) 45%, transparent);
   position: relative;
   width: 64px;
   height: 64px;
@@ -244,7 +244,7 @@ const UPDATED_AT = '2026-09'
   display: grid;
   place-items: center;
   border-radius: 50%;
-  background: rgba(76, 175, 80, 0.14);
+  background: color-mix(in srgb, var(--color-accent) 14%, transparent);
   color: var(--color-accent);
   font-size: 12.5px;
   font-weight: 700;
@@ -288,12 +288,12 @@ const UPDATED_AT = '2026-09'
     var(--color-accent) 0%,
     var(--color-accent-hover) 100%
   );
-  box-shadow: 0 10px 24px -8px rgba(76, 175, 80, 0.65);
+  box-shadow: 0 10px 24px -8px color-mix(in srgb, var(--color-accent) 65%, transparent);
 }
 
 .notice-ok:hover {
   filter: brightness(1.05);
-  box-shadow: 0 14px 28px -8px rgba(76, 175, 80, 0.7);
+  box-shadow: 0 14px 28px -8px color-mix(in srgb, var(--color-accent) 70%, transparent);
 }
 
 /* ============================================================
@@ -304,18 +304,19 @@ const UPDATED_AT = '2026-09'
  * 弹窗卡片(#1f1f1f)几乎同色,提亮到 #262626 才立得住。
  * ============================================================ */
 :root[data-theme='dark'] .notice-badge {
-  --badge-bg: rgba(102, 187, 106, 0.18);
-  --badge-glow: rgba(102, 187, 106, 0.16);
-  --badge-ring: rgba(102, 187, 106, 0.50);
+  --badge-bg: color-mix(in srgb, var(--color-accent) 18%, transparent);
+  --badge-glow: color-mix(in srgb, var(--color-accent) 16%, transparent);
+  --badge-ring: color-mix(in srgb, var(--color-accent) 50%, transparent);
 }
 
 :root[data-theme='dark'] .notice-item {
-  background: #262626;
-  box-shadow: 0 0 0 1px #343434;
+  /* bg-alt(#262626)比弹窗卡片(#1f1f1f)亮一档,条目才立得住 */
+  background: var(--color-bg-alt);
+  box-shadow: 0 0 0 1px var(--color-border-strong);
 }
 
 :root[data-theme='dark'] .item-no {
-  background: rgba(102, 187, 106, 0.20);
+  background: color-mix(in srgb, var(--color-accent) 20%, transparent);
 }
 
 /* 深底上 soft(#757575)糊成一片,提到 muted(#bdbdbd) */

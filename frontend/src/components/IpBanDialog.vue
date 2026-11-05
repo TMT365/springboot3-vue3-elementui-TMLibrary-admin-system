@@ -316,8 +316,8 @@ const visible = computed({
   gap: 14px;
   padding: 16px;
   border-radius: 12px;
-  background: linear-gradient(135deg, rgba(76, 175, 80, 0.10) 0%, rgba(76, 175, 80, 0.04) 100%);
-  border: 1px solid rgba(76, 175, 80, 0.22);
+  background: linear-gradient(135deg, color-mix(in srgb, var(--color-accent) 10%, transparent) 0%, color-mix(in srgb, var(--color-accent) 4%, transparent) 100%);
+  border: 1px solid color-mix(in srgb, var(--color-accent) 22%, transparent);
   margin-bottom: 18px;
 }
 
@@ -382,12 +382,12 @@ const visible = computed({
 
 :root[data-theme='dark'] .ban-info {
   /* 面板比卡片亮一档,整块才立得住 */
-  background: #262626;
-  border-color: #3a3a3a;
+  background: var(--color-bg-alt);
+  border-color: var(--color-border-strong);
 }
 
 :root[data-theme='dark'] .info-row {
-  border-bottom-color: #343434;
+  border-bottom-color: var(--color-border-strong);
 }
 
 /* 标签/图标:soft(#757575)→ muted(#bdbdbd) */
@@ -404,10 +404,10 @@ const visible = computed({
 :root[data-theme='dark'] .ban-countdown {
   background: linear-gradient(
     135deg,
-    rgba(102, 187, 106, 0.18) 0%,
-    rgba(102, 187, 106, 0.06) 100%
+    color-mix(in srgb, var(--color-accent) 18%, transparent) 0%,
+    color-mix(in srgb, var(--color-accent) 6%, transparent) 100%
   );
-  border-color: rgba(102, 187, 106, 0.38);
+  border-color: color-mix(in srgb, var(--color-accent) 38%, transparent);
 }
 
 :root[data-theme='dark'] .cd-label,

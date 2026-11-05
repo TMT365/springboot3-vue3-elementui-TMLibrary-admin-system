@@ -271,9 +271,10 @@ function onConfirm(): void {
   display: grid;
   place-items: center;
   border-radius: 10px;
-  /* 品牌色底 + 白色图形:亮暗两套主题下对比度都稳定 */
+  /* 品牌色底 + 反色图形:暗色主题下品牌色是亮绿,白字只有 2.36:1,
+     所以文字/图形统一走 --color-on-accent(暗色下是墨色) */
   background: var(--brand);
-  color: #fff;
+  color: var(--color-on-accent);
 }
 
 .pay-icon svg {
@@ -297,7 +298,7 @@ function onConfirm(): void {
   height: 22px;
   border-radius: 50%;
   background: var(--brand);
-  color: #fff;
+  color: var(--color-on-accent);
   font-size: 13px;
   opacity: 0;
   transform: scale(0.7);
@@ -335,12 +336,13 @@ function onConfirm(): void {
 
 /* 暗色下 --color-bg-alt 和弹窗底色太接近,选项会"陷"进去 —— 提亮一档 */
 :root[data-theme='dark'] .pay-method {
-  background: #262626;
-  border-color: #343434;
+  background: var(--color-bg-alt);
+  border-color: var(--color-border-strong);
 }
 
 :root[data-theme='dark'] .pay-method.is-active {
-  background: #2e2e2e;
+  /* 选中项再提亮一点点:4% 的文字色叠在 bg-alt 上 ≈ #2d2d2d */
+  background: color-mix(in srgb, var(--color-text) 4%, var(--color-bg-alt));
 }
 
 :root[data-theme='dark'] .pay-tip {

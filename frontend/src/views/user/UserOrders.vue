@@ -289,9 +289,9 @@ onMounted(fetchOrders)
   align-items: center;
   gap: 8px;
   padding: 14px 18px;
-  background: rgba(245, 108, 108, 0.12);
-  color: #f56c6c;
-  border: 1px solid rgba(245, 108, 108, 0.2);
+  background: color-mix(in srgb, var(--el-color-danger) 12%, transparent);
+  color: var(--el-color-danger);
+  border: 1px solid color-mix(in srgb, var(--el-color-danger) 20%, transparent);
   border-radius: 12px;
   backdrop-filter: blur(10px);
   margin-bottom: 16px;
@@ -353,19 +353,19 @@ onMounted(fetchOrders)
 }
 
 .order-card.is-pending {
-  --rail: #e6a23c;
+  --rail: var(--el-color-warning);
 }
 
 /* 超时关闭 = 系统替你取消了,给一档更重的颜色区别于"用户主动取消" */
 .order-card.is-timeout {
-  --rail: #f56c6c;
+  --rail: var(--el-color-danger);
 }
 
 /* hover 抬起来:接触阴影收紧 + 大气阴影铺开,配合 1px 上浮 */
 @media (hover: hover) {
   .order-card:hover {
     transform: translateY(-3px);
-    border-color: rgba(76, 175, 80, 0.28);
+    border-color: color-mix(in srgb, var(--color-accent) 28%, transparent);
     box-shadow:
       0 16px 32px rgba(17, 25, 40, 0.16),
       0 2px 6px rgba(17, 25, 40, 0.06),
@@ -408,7 +408,7 @@ onMounted(fetchOrders)
   border-radius: 50%;
   flex-shrink: 0;
   background: var(--color-accent);
-  box-shadow: 0 0 0 3px rgba(76, 175, 80, 0.14);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-accent) 14%, transparent);
 }
 
 /* 未支付:节点变灰、光晕收掉 */
@@ -593,7 +593,7 @@ onMounted(fetchOrders)
     var(--color-accent) 0%,
     var(--color-accent-hover) 100%
   );
-  box-shadow: 0 8px 18px -8px rgba(76, 175, 80, 0.65);
+  box-shadow: 0 8px 18px -8px color-mix(in srgb, var(--color-accent) 65%, transparent);
   transition:
     transform 180ms cubic-bezier(0.22, 1, 0.36, 1),
     box-shadow 180ms ease;
@@ -601,7 +601,7 @@ onMounted(fetchOrders)
 
 .pay-btn:hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 22px -8px rgba(76, 175, 80, 0.7);
+  box-shadow: 0 12px 22px -8px color-mix(in srgb, var(--color-accent) 70%, transparent);
 }
 
 .total-label {
@@ -632,16 +632,16 @@ onMounted(fetchOrders)
 }
 
 :root[data-theme='dark'] .order-card.is-pending {
-  --rail: #e6a23c;
+  --rail: var(--el-color-warning);
 }
 
 :root[data-theme='dark'] .order-card.is-timeout {
-  --rail: #f56c6c;
+  --rail: var(--el-color-danger);
 }
 
 @media (hover: hover) {
   :root[data-theme='dark'] .order-card:hover {
-    border-color: rgba(102, 187, 106, 0.32);
+    border-color: color-mix(in srgb, var(--color-accent) 32%, transparent);
     box-shadow:
       0 16px 32px rgba(0, 0, 0, 0.5),
       0 2px 6px rgba(0, 0, 0, 0.3),

@@ -234,9 +234,9 @@ const itemCountLabel = computed<string>(() => {
   align-items: center;
   gap: 8px;
   padding: 14px 18px;
-  background: rgba(245, 108, 108, 0.12);
-  color: #f56c6c;
-  border: 1px solid rgba(245, 108, 108, 0.2);
+  background: color-mix(in srgb, var(--el-color-danger) 12%, transparent);
+  color: var(--el-color-danger);
+  border: 1px solid color-mix(in srgb, var(--el-color-danger) 20%, transparent);
   border-radius: 12px;
   backdrop-filter: blur(10px);
   margin-bottom: 16px;
@@ -282,7 +282,7 @@ const itemCountLabel = computed<string>(() => {
   gap: 6px;
   padding: 10px 22px;
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-on-accent);
   font-size: 15px;
   font-weight: 600;
   border-radius: 999px;
@@ -438,12 +438,12 @@ const itemCountLabel = computed<string>(() => {
 }
 
 .remove-btn:hover {
-  color: #f56c6c;
+  color: var(--el-color-danger);
 }
 
 .remove-btn:focus-visible {
   outline: none;
-  box-shadow: 0 0 0 2px #f56c6c;
+  box-shadow: 0 0 0 2px var(--el-color-danger);
 }
 
 /* ============================================================

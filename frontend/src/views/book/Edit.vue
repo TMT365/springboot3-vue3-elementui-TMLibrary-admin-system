@@ -566,8 +566,8 @@ onMounted(async () => {
   align-items: center;
   gap: 8px;
   padding: 14px 18px;
-  background: rgba(245, 108, 108, 0.08);
-  color: #f56c6c;
+  background: color-mix(in srgb, var(--el-color-danger) 8%, transparent);
+  color: var(--el-color-danger);
   border-radius: 10px;
   margin-bottom: 16px;
   font-size: 14px;
@@ -671,7 +671,7 @@ onMounted(async () => {
 }
 
 .link-btn:hover:not(:disabled) {
-  background: rgba(76, 175, 80, 0.10);
+  background: color-mix(in srgb, var(--color-accent) 10%, transparent);
 }
 
 .link-btn:disabled {

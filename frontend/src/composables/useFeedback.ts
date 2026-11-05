@@ -5,22 +5,28 @@ import type { FeedbackCategory, FeedbackPriority, FeedbackStatus } from '@/types
  *
  * <p>抽出来的原因:三个页面(我的列表 / 管理员列表 / 详情)都要画同一套 chip,
  * 各写一份必然漂移(比如详情页把 RESOLVED 画成蓝的、列表画成绿的)。</p>
+ *
+ * <p>颜色一律走 CSS 变量(而不是写死十六进制):这些值最终是以
+ * <b>内联 style</b> 落到 DOM 上的(FeedbackFab 的图标颜色、chip 的字色),
+ * 内联 style 里写 <code>var(--el-color-danger)</code> 一样能解析,
+ * 于是明暗两套主题自动切换 —— 写死 #f56c6c 的话,暗色下还是那个 EP 粉红,
+ * 跟墨绿体系完全不搭。</p>
  */
 
 /** 状态 —— 和后端 TINYINT 一一对应 */
 export const FEEDBACK_STATUS = {
-  0: { label: '待处理', type: 'info' as const, color: '#909399' },
-  1: { label: '处理中', type: 'warning' as const, color: '#e6a23c' },
-  2: { label: '已解决', type: 'success' as const, color: '#4caf50' },
-  3: { label: '已关闭', type: 'info' as const, color: '#909399' },
+  0: { label: '待处理', type: 'info' as const, color: 'var(--el-color-info)' },
+  1: { label: '处理中', type: 'warning' as const, color: 'var(--el-color-warning)' },
+  2: { label: '已解决', type: 'success' as const, color: 'var(--color-accent)' },
+  3: { label: '已关闭', type: 'info' as const, color: 'var(--el-color-info)' },
 } satisfies Record<FeedbackStatus, { label: string; type: 'info' | 'warning' | 'success' | 'danger'; color: string }>
 
 /** 分类 —— 用不同颜色区分"是 bug 还是建议",扫一眼就能分类 */
 export const FEEDBACK_CATEGORY = {
-  BUG: { label: '缺陷', icon: 'WarningFilled', color: '#f56c6c' },
-  FEATURE: { label: '建议', icon: 'MagicStick', color: '#9c27b0' },
-  QUESTION: { label: '疑问', icon: 'QuestionFilled', color: '#2196f3' },
-  OTHER: { label: '其他', icon: 'MoreFilled', color: '#909399' },
+  BUG: { label: '缺陷', icon: 'WarningFilled', color: 'var(--el-color-danger)' },
+  FEATURE: { label: '建议', icon: 'MagicStick', color: 'var(--hue-violet)' },
+  QUESTION: { label: '疑问', icon: 'QuestionFilled', color: 'var(--hue-teal)' },
+  OTHER: { label: '其他', icon: 'MoreFilled', color: 'var(--el-color-info)' },
 } satisfies Record<FeedbackCategory, { label: string; icon: string; color: string }>
 
 /** 优先级 */

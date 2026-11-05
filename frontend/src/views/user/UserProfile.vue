@@ -341,8 +341,8 @@ onMounted(fetchProfile)
   align-items: center;
   gap: 8px;
   padding: 14px 18px;
-  background: rgba(245, 108, 108, 0.08);
-  color: #f56c6c;
+  background: color-mix(in srgb, var(--el-color-danger) 8%, transparent);
+  color: var(--el-color-danger);
   border-radius: 10px;
 }
 
@@ -360,10 +360,10 @@ onMounted(fetchProfile)
   box-shadow:
     0 2px 4px rgba(0, 0, 0, 0.04),
     0 12px 32px rgba(0, 0, 0, 0.10),
-    0 32px 80px rgba(76, 175, 80, 0.06),
+    0 32px 80px color-mix(in srgb, var(--color-accent) 6%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.7);
   background:
-    linear-gradient(135deg, var(--color-card) 0%, color-mix(in srgb, var(--color-card), var(--color-accent) 4%) 100%);
+    linear-gradient(135deg, var(--color-card) 0%, color-mix(in srgb, var(--color-card), var(--color-accent) 400%) 100%);
 }
 
 .hero-inner {
@@ -382,7 +382,7 @@ onMounted(fetchProfile)
   flex-shrink: 0;
   background:
     linear-gradient(135deg, var(--color-accent) 0%, color-mix(in srgb, var(--color-accent), #000 18%) 100%);
-  color: #fff;
+  color: var(--color-on-accent);
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-size: 42px;
   font-weight: 700;
@@ -390,7 +390,7 @@ onMounted(fetchProfile)
   /* 头像多层阴影 - 真正的 3D 浮起 */
   box-shadow:
     0 4px 8px rgba(0, 0, 0, 0.08),
-    0 16px 32px rgba(76, 175, 80, 0.20),
+    0 16px 32px color-mix(in srgb, var(--color-accent) 20%, transparent),
     inset 0 2px 0 rgba(255, 255, 255, 0.30),
     inset 0 -2px 4px rgba(0, 0, 0, 0.10);
 }
@@ -489,8 +489,8 @@ onMounted(fetchProfile)
 .card-stat.is-warn {
   background: linear-gradient(135deg, #fffbf3 0%, #fef3e2 100%);
   box-shadow:
-    0 1px 2px rgba(245, 158, 11, 0.08),
-    0 4px 12px rgba(245, 158, 11, 0.10),
+    0 1px 2px color-mix(in srgb, var(--el-color-warning) 8%, transparent),
+    0 4px 12px color-mix(in srgb, var(--el-color-warning) 10%, transparent),
     inset 0 1px 0 rgba(255, 255, 255, 0.6);
 }
 
@@ -531,8 +531,8 @@ onMounted(fetchProfile)
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.06em;
-  color: #d97706;
-  background: rgba(245, 158, 11, 0.15);
+  color: var(--el-color-warning);
+  background: color-mix(in srgb, var(--el-color-warning) 15%, transparent);
   padding: 2px 8px;
   border-radius: 999px;
   font-variant-numeric: tabular-nums;
@@ -584,7 +584,7 @@ onMounted(fetchProfile)
 }
 
 .warn-text {
-  color: #d97706;
+  color: var(--el-color-warning);
   font-weight: 500;
 }
 

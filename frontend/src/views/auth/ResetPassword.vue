@@ -233,7 +233,7 @@ async function onSubmit(): Promise<void> {
   border-radius: 50%;
   font-size: 23px;
   line-height: 1;
-  background: rgba(76, 175, 80, 0.12);
+  background: color-mix(in srgb, var(--color-accent) 12%, transparent);
   color: var(--color-accent);
 }
 
