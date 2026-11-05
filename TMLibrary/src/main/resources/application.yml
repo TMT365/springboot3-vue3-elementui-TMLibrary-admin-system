@@ -60,7 +60,10 @@ app:
     register-default-role: ${REGISTER_DEFAULT_ROLE:USER}
 
   cors:
-    origins: http://127.0.0.1:[*]
+    # 两个主机名都要列:browser 地址栏打的是 http://localhost:5173,
+    # Origin 头发的就是 "http://localhost:5173" —— 只写 127.0.0.1 匹配不上,
+    # 结果前端所有 /api 请求都 403 "Invalid CORS request"(验证码图也拉不出来)。
+    origins: http://127.0.0.1:[*],http://localhost:[*]
 
   # ============================================================
   # 前端地址 —— 目前只用于拼「密码重置」邮件里的链接

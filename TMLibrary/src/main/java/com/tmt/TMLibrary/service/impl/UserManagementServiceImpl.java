@@ -187,8 +187,12 @@ public class UserManagementServiceImpl implements UserManagementService {
         if (role.equals(UserRole.USER.getCode())) {
             throw new BusinessException(ResultCode.FORBIDDEN, "No permission to query any users");
         }
-        // userSearchRequest.getRole() 不可能是 null，因为在 UserSearchRequest 中已经添加了 @NotBlank 注解，表示该字段不能为空，如果为空则会抛出异常，所以这里不需要再判断是否为 null。
-        if (role.equals(UserRole.ADMIN.getCode()) && userSearchRequest.getRole().equals(UserRole.BOSS.getCode())) {
+        // 注意:userSearchRequest.getRole() **可能是 null** ——
+        // UserSearchRequest.compact() 把「-1 = 全部角色」的哨兵置成了 null,
+        // 所以前端选「全部角色」时这里拿到 null,直接 .equals() 会 NPE。
+        // (原来的注释说"有 @NotBlank 注解不会为 null"是错的:字段是 Integer,@NotBlank 也管不到。)
+        Integer targetRole = userSearchRequest.getRole();
+        if (role.equals(UserRole.ADMIN.getCode()) && targetRole != null && targetRole.equals(UserRole.BOSS.getCode())) {
             throw new BusinessException(ResultCode.FORBIDDEN, "No permission to query BOSS users");
         }
         // 计算分页的偏移量
