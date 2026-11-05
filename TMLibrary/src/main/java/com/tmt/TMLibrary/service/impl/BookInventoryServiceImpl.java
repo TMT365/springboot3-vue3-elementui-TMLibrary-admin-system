@@ -50,6 +50,7 @@ public class BookInventoryServiceImpl implements BookInventoryService {
     private final DefaultRedisScript<Long> preDeductScript;
     private final DefaultRedisScript<Long> releaseScript;
     private final DefaultRedisScript<Long> confirmScript;
+    private final DefaultRedisScript<Long> restoreScript;
     private final DefaultRedisScript<Long> warmUpScript;
     private final DefaultRedisScript<Long> syncStockScript;
 
@@ -63,6 +64,7 @@ public class BookInventoryServiceImpl implements BookInventoryService {
         this.preDeductScript = loadScript("scripts/redis/pre_deduct_stock.lua");
         this.releaseScript   = loadScript("scripts/redis/release_stock.lua");
         this.confirmScript   = loadScript("scripts/redis/confirm_stock.lua");
+        this.restoreScript   = loadScript("scripts/redis/restore_reserved.lua");
         this.warmUpScript    = loadScript("scripts/redis/warmup_book.lua");
         this.syncStockScript = loadScript("scripts/redis/sync_book_stock.lua");
     }
@@ -127,6 +129,13 @@ public class BookInventoryServiceImpl implements BookInventoryService {
      * 从 DB 读取 book 写入 Redis。
      * <br>用 HSETNX 逐字段写入，并发预热时不会被覆盖（reserved 不会被错误清零）。
      *
+     * <p><b>reserved 必须来自 DB</b>：Hash 缺失可能是"Redis 重启 / Key 被删"，
+     * 此时 DB 里往往还有一堆 PENDING 订单占着这本书。reserved 写死 0 会把
+     * 这些在途预占全忘了 —— 同一份库存能被两个用户各买一次（超卖）。
+     * 所以这里查 DB 的 PENDING 实占量，再反推可用量：
+     * {@code available = DB stock_quantity - reserved}（负数截断为 0），
+     * 与 {@code sync_book_stock.lua} 保持同一套不变式。</p>
+     *
      * @return true=book 在 DB 中存在并已尝试预热；false=book 不存在
      */
     private boolean warmUpBook(Integer bookId) {
@@ -134,6 +143,12 @@ public class BookInventoryServiceImpl implements BookInventoryService {
         if (book == null) {
             return false;
         }
+        // DB 里还没付款的订单占用的量 —— 就是 Redis 该记的 reserved
+        Integer pendingReserved = bookMapper.selectPendingReservedQuantity(bookId);
+        int reserved = pendingReserved == null ? 0 : Math.max(pendingReserved, 0);
+        int dbStock = book.getStockQuantity() == null ? 0 : book.getStockQuantity();
+        // available = DB 库存 - 在途预占（管理端可能把库存改到低于在途预占，截断为 0）
+        int available = Math.max(dbStock - reserved, 0);
         // 单次 Lua 调用完成 5 个字段的 HSETNX — 原子,不会被并发写入插入
         String bookKey = RedisKeys.bookInventory(bookId);
         stringRedisTemplate.execute(
@@ -142,9 +157,38 @@ public class BookInventoryServiceImpl implements BookInventoryService {
             String.valueOf(book.getId()),
             book.getTitle() != null ? book.getTitle() : "",
             book.getPrice() != null ? book.getPrice().toPlainString() : "0",
-            String.valueOf(book.getStockQuantity())
+            String.valueOf(available),
+            String.valueOf(reserved)
         );
         return true;
+    }
+
+    /**
+     * 归还一笔已被 confirm 的预占（{@link #confirm} 的逆操作）。
+     *
+     * <p>只在"DB 事务回滚、但 confirm 已经执行"的补偿钩子里用到：
+     * confirm 把 {@code reserved} 减掉了，事务一回滚这笔预占就得还回来，
+     * 否则 Redis 可用量会比真实值少，别的用户会看到"库存不足"。</p>
+     *
+     * <p>只加 {@code reserved}，不动 {@code stock} —— confirm 也没动过 stock
+     * （预占时就减过一次），所以撤销 confirm 同样不需要碰 stock。</p>
+     *
+     * @param bookId   图书主键
+     * @param quantity 要归还的数量（必须 {@code > 0}）
+     */
+    @Override
+    public void restoreReserved(Integer bookId, Integer quantity) {
+        if (bookId == null || quantity == null || quantity <= 0) {
+            throw new IllegalArgumentException("bookId/quantity must be non-null and positive");
+        }
+        String bookKey = RedisKeys.bookInventory(bookId);
+        Long result = runScript(restoreScript, bookKey, quantity);
+        if (result != null && result < 0) {
+            log.error("INVENTORY DRIFT: restoreReserved failed bookId={}, qty={}, result={} "
+                + "(-1=hash missing), reconcile will repair",
+                bookId, quantity, result);
+            metrics.driftDetected("restoreReserved", bookId);
+        }
     }
 
     private Long runScript(DefaultRedisScript<Long> script, String key, Integer qty) {

@@ -5,6 +5,7 @@
 -- ARGV[2] = title
 -- ARGV[3] = price
 -- ARGV[4] = stock (来自 DB 的 stock_quantity)
+-- ARGV[5] = reserved (DB 里 PENDING 订单占用的量,没有则 0)
 -- 返回值：
 --   1 : 已尝试初始化(至少写入了一个字段)
 --   0 : 所有字段已存在,无需初始化
@@ -18,6 +19,13 @@
 -- 为什么放 Lua：
 --   5 个独立 HSETNX 跨 5 个 RTT,期间可能被其他客户端插入写操作;
 --   Lua 内多条命令由 Redis 单线程连续执行,整段不可打断(真原子)。
+--
+-- ⚠️ reserved 必须来自 DB(PENDING 订单实占),不能写死 0：
+--   Hash 缺失只可能是"从没预热过"或"Redis 重启/Key 被删"。
+--   后一种情况下,DB 里可能还有一堆 PENDING 订单占着这本书 ——
+--   reserved 写 0 就等于把这些在途预占全忘了,同一份库存会被卖两次。
+--   调用方传 DB 算出来的实占量,预热后不变式
+--   Redis(stock + reserved) == DB.stock_quantity 依然成立。
 -- ============================================================
 local key = KEYS[1]
 local wrote = 0
@@ -26,6 +34,6 @@ if redis.call('HSETNX', key, 'id', ARGV[1]) == 1 then wrote = 1 end
 if redis.call('HSETNX', key, 'title', ARGV[2]) == 1 then wrote = 1 end
 if redis.call('HSETNX', key, 'price', ARGV[3]) == 1 then wrote = 1 end
 if redis.call('HSETNX', key, 'stock', ARGV[4]) == 1 then wrote = 1 end
-if redis.call('HSETNX', key, 'reserved', '0') == 1 then wrote = 1 end
+if redis.call('HSETNX', key, 'reserved', ARGV[5] or '0') == 1 then wrote = 1 end
 
 return wrote

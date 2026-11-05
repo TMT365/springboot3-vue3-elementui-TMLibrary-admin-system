@@ -25,11 +25,34 @@ package com.tmt.TMLibrary.service;
  *   <tr><td>{@code tryReserve}</td><td>下单创建 PENDING</td><td>−=N</td><td>+=N</td></tr>
  *   <tr><td>{@code release}</td><td>取消/超时关单</td><td>+=N</td><td>−=N</td></tr>
  *   <tr><td>{@code confirm}</td><td>支付成功</td><td>不变</td><td>−=N</td></tr>
+ *   <tr><td>{@code restoreReserved}</td><td>事务回滚补偿（confirm 的逆）</td><td>不变</td><td>+=N</td></tr>
  * </table>
  *
  * <h2>并发安全</h2>
  *
  * <p>所有库存变更走 Lua 脚本（Redis 单线程串行执行 = 天然原子），不需要额外的分布式锁。</p>
+ *
+ * <h2>不变式与原子性边界</h2>
+ *
+ * <p><b>不变式：{@code Redis(stock + reserved) == DB books.stock_quantity}。</b>
+ * DB 侧只在付款时才真正扣减 {@code stock_quantity}，所以 {@code reserved}
+ * 记录的是"还没付款但已经占住"的量。</p>
+ *
+ * <p><b>边界一：DB 是唯一权威，Redis 只是预占缓存。</b>
+ * 付款时真正的扣减走 {@code UPDATE books SET stock_quantity = stock_quantity - ?}
+ * 的条件更新（{@code stock_quantity >= ?}），外加数据库 CHECK 约束
+ * {@code stock_quantity >= 0} —— <b>物理超卖在 DB 层不可能发生</b>。
+ * Redis 提前扣的是"可用量"，不是"物理库存"。</p>
+ *
+ * <p><b>边界二：Redis 的 release 不改变 {@code stock + reserved} 之和。</b>
+ * 这意味着对账任务（{@link #reconcile}，只校验总和）<b>发现不了</b>
+ * "预占和订单配对错乱"这类漂移 —— 总量对得上，但某个订单占的量
+ * 已经被别人还回池子了。所以 release/confirm 必须在 DB 事务内执行，
+ * 并且事务回滚时由调用方做反向补偿。</p>
+ *
+ * <p><b>边界三：预热不能把 reserved 写死 0。</b>
+ * Hash 缺失可能是 Redis 重启导致，此时 DB 里还有 PENDING 订单占着这本书；
+ * reserved 归零就等于把在途预占全忘了，同一份库存会被卖两次。</p>
  *
  * @see com.tmt.TMLibrary.service.impl.BookInventoryServiceImpl
  * @see <a href="https://redis.io/docs/interact/programmability/eval-intro/">Redis Lua 文档</a>
@@ -70,6 +93,21 @@ public interface BookInventoryService {
      * @param quantity 要确认的数量（必须 {@code > 0}）
      */
     void confirm(Integer bookId, Integer quantity);
+
+    /**
+     * 归还一笔已被 {@link #confirm} 确认掉的预占 —— {@code confirm} 的逆操作。
+     *
+     * <p>{@code reserved} 加 N，<b>{@code stock} 不变</b>（{@code confirm} 时也没动过 stock）。
+     *
+     * <p>用途：{@code confirm} 是在 DB 事务<b>内部</b>执行的（订单状态改成已支付、
+     * DB 库存扣减要和它保持一致）。如果事务随后回滚（订单其实没支付成功），
+     * Redis 侧这笔预占就得还回来，否则 Redis 的可用量会比真实值少，
+     * 别的用户会看到"库存不足"。</p>
+     *
+     * @param bookId   图书主键
+     * @param quantity 要归还的数量（必须 {@code > 0}）
+     */
+    void restoreReserved(Integer bookId, Integer quantity);
 
     /**
      * 管理端修改图书后,把 DB 库存同步到 Redis —— <b>保留在途预占</b>。

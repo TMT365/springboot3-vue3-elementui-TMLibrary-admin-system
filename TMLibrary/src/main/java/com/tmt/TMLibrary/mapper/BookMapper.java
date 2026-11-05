@@ -128,6 +128,23 @@ public interface BookMapper {
         int updateStockById(@Param("bookId") int bookId, @Param("stock") int stock);
 
         /**
+         * 查这本书当前被"未支付订单"占用的总数量 —— Redis 冷启动预热时用。
+         *
+         * <p>Redis Hash 缺失时(从没预热过 / Redis 重启 / Key 被删),预热脚本
+         * {@code warmup_book.lua} 需要知道 {@code reserved} 应该是多少。
+         * 如果写死 0,DB 里还没支付的订单占着的那部分库存就被"忘了",
+         * 同一份库存会被两个用户各买一次 —— 这就是超卖。</p>
+         *
+         * <p>口径与 {@code BookInventoryService} 的不变式一致:
+         * {@code Redis(stock + reserved) == DB stock_quantity},
+         * 所以预热时 {@code stock = DB stock_quantity - 本方法返回值}。</p>
+         *
+         * @param bookId 图书主键
+         * @return 被 PENDING(未支付)订单占用的数量;没有则 0
+         */
+        Integer selectPendingReservedQuantity(@Param("bookId") int bookId);
+
+        /**
          * 每本书的累计销量(已支付订单口径)—— 搜索候选词的"热度"数据源。
          *
          * <p>与 {@code StatsMapper.topBookSales} 的区别:那个带时间窗口、还要金额,

@@ -237,6 +237,19 @@
     </update>
 
     <!--
+        这本书当前被"未支付订单"占用的总数量 —— Redis 冷启动预热时用。
+        预热脚本 warmup_book.lua 的 reserved 参数来自这里:
+        写死 0 会把还没付款的订单占着的库存忘掉,同一份库存能被卖两次。
+    -->
+    <select id="selectPendingReservedQuantity" resultType="java.lang.Integer">
+        SELECT COALESCE(SUM(oi.quantity), 0)
+        FROM order_items oi
+                 INNER JOIN orders o ON o.id = oi.order_id
+        WHERE oi.book_id = #{bookId}
+          AND o.order_status = 0
+    </select>
+
+    <!--
         每本书的已支付累计销量 —— 搜索候选词的热度来源。
         口径与 SearchSuggestMapper 里那段 <sql id="PaidSalesByBook"> 完全一致
         (order_status = 1 且按 quantity 求和,不是订单笔数),

@@ -81,6 +81,32 @@ import tools.jackson.databind.ObjectMapper;
  *   <li>{@code payOrder}（支付成功）：{@code confirm} 库存（reserved 减，stock 不变）</li>
  * </ul>
  *
+ * <h2>并发模型(库存双轨:DB 权威 + Redis 预占)</h2>
+ *
+ * <p><b>DB 是唯一权威,Redis 只是预占缓存</b>:</p>
+ * <ul>
+ *   <li>下单：{@code tryReserve} 在 Redis 里扣"可用量"(Lua 原子),DB 库存不动</li>
+ *   <li>付款：{@code decrementStockIfEnough} 条件 UPDATE 扣 DB 物理库存
+ *       —— {@code WHERE stock_quantity >= qty} + DB 的 CHECK 约束,
+ *       <b>物理超卖在 DB 层不可能发生</b></li>
+ *   <li>取消/超时：{@code release} 把预占还回 Redis</li>
+ * </ul>
+ *
+ * <p><b>三个必须记住的不变式</b>(细节见
+ * {@link com.tmt.TMLibrary.service.BookInventoryService} 的类注释):</p>
+ * <ol>
+ *   <li>{@code Redis(stock + reserved) == DB books.stock_quantity}</li>
+ *   <li>Redis 的 {@code release} <b>不改变</b>上式的和 —— 所以"总量对得上"的
+ *       对账任务<b>发现不了</b>"预占和订单配对错乱"。这就是所有 Redis 库存操作
+ *       都要在 DB 事务内做、并登记回滚补偿的原因。</li>
+ *   <li>Redis 预热时 {@code reserved} 必须来自 DB 的 PENDING 实占量,不能写死 0</li>
+ * </ol>
+ *
+ * <p><b>回滚补偿</b>({@code registerRedisCompensation}):Redis 不参与 DB 事务,
+ * 事务回滚时 Redis 那一步不会自动撤销。所以每次 {@code release}/{@code confirm}
+ * 都会登记一个逆操作(释放的逆 = 重新预占,确认的逆 = 归还 reserved),
+ * 由 {@code afterCompletion} 钩子在回滚时执行。</p>
+ *
  * @see PurchaseService
  */
 @Service
@@ -385,7 +411,7 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         for (OrderItem orderItem : orderItems) {
             try {
-                bookInventoryService.release(orderItem.getBookId(), orderItem.getQuantity());
+                releaseWithRollbackCompensation(orderItem.getBookId(), orderItem.getQuantity());
             } catch (Exception releaseEx) {
                 throw new BusinessException(ResultCode.INTERNAL_ERROR,
                     "释放库存失败:bookId=" + orderItem.getBookId() + ",err=" + releaseEx.getMessage(), releaseEx);
@@ -480,7 +506,7 @@ public class PurchaseServiceImpl implements PurchaseService {
 
         if (orderItems != null && !orderItems.isEmpty()) {
             for (OrderItem orderItem : orderItems) {
-                bookInventoryService.confirm(orderItem.getBookId(), orderItem.getQuantity());
+                confirmWithRollbackCompensation(orderItem.getBookId(), orderItem.getQuantity());
             }
         }
         // Hash 状态翻转(afterCommit 钩子避免 DB 回滚但 Redis 已写)
@@ -508,7 +534,7 @@ public class PurchaseServiceImpl implements PurchaseService {
         }
         for (OrderItem orderItem : orderItems) {
             try {
-                bookInventoryService.release(orderItem.getBookId(), orderItem.getQuantity());
+                releaseWithRollbackCompensation(orderItem.getBookId(), orderItem.getQuantity());
             } catch (Exception e) {
                 log.error("auto-cancel: release failed bookId={}, qty={}",
                     orderItem.getBookId(), orderItem.getQuantity(), e);
@@ -569,7 +595,7 @@ public class PurchaseServiceImpl implements PurchaseService {
         List<OrderItem> orderItems = orderMapper.selectOrderItemsByOrderNumber(orderNumber);
         if (orderItems != null && !orderItems.isEmpty()) {
             for (OrderItem orderItem : orderItems) {
-                bookInventoryService.release(orderItem.getBookId(), orderItem.getQuantity());
+                releaseWithRollbackCompensation(orderItem.getBookId(), orderItem.getQuantity());
             }
         }
 
@@ -612,6 +638,68 @@ public class PurchaseServiceImpl implements PurchaseService {
         } else {
             redisOp.run();
         }
+    }
+
+    /**
+     * 注册"事务回滚补偿" —— 事务回滚时把刚才在 Redis 上做掉的改动原样撤销。
+     *
+     * <h2>为什么需要它</h2>
+     * <p>Redis 不参与 DB 事务。{@code release} / {@code confirm} 必须<b>在 DB 事务内部</b>执行
+     * (订单状态翻转和 DB 扣库存要跟 Redis 保持同一个事务语义,失败要能一起回滚),
+     * 但如果 DB 事务随后回滚,Redis 那一步<b>不会跟着回滚</b>:</p>
+     * <ul>
+     *   <li>{@code release} 的副作用是 {@code stock += N, reserved -= N} —— 总和不变,
+     *       但"某订单占的量"已经被还回池子,别人可以再抢一次 → 该订单付款时会被 DB 守卫拒绝。
+     *       <b>这个方向最危险</b>。</li>
+     *   <li>{@code confirm} 的副作用是 {@code reserved -= N} —— 总和少了 N,
+     *       可用量比真实值少,别的用户会看到"库存不足"(方向安全,10 分钟内被对账修复)。</li>
+     * </ul>
+     * <p>所以在做完 Redis 操作的同时挂一个 afterCompletion 钩子:回滚时执行"逆操作",
+     * 让 Redis 回到操作前的状态。</p>
+     *
+     * <p>注意:没有活动事务时不注册补偿 —— 没有事务就没有回滚,撤销反而会写错。</p>
+     */
+    private void registerRedisCompensation(Runnable undoOp) {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                if (status != TransactionSynchronization.STATUS_ROLLED_BACK) {
+                    return;
+                }
+                try {
+                    undoOp.run();
+                } catch (Exception e) {
+                    // 补偿失败不能抛 —— 此刻事务已经结束,抛出去也回滚不了什么
+                    log.error("Redis rollback compensation failed, inventory drift needs reconcile", e);
+                }
+            }
+        });
+    }
+
+    /**
+     * 释放预占,并登记"回滚补偿"—— 撤销 release 就是重新预占
+     * ({@code stock -= N, reserved += N},正好是 release 的逆操作)。
+     */
+    private void releaseWithRollbackCompensation(Integer bookId, Integer quantity) {
+        bookInventoryService.release(bookId, quantity);
+        registerRedisCompensation(() -> {
+            if (!bookInventoryService.tryReserve(bookId, quantity)) {
+                log.error("INVENTORY DRIFT: rollback compensation could not re-reserve "
+                    + "bookId={}, qty={} (stock was taken by others), reconcile needed", bookId, quantity);
+            }
+        });
+    }
+
+    /**
+     * 确认扣减,并登记"回滚补偿"—— 撤销 confirm 就是把 {@code reserved} 还回去
+     * ({@link com.tmt.TMLibrary.service.BookInventoryService#restoreReserved})。
+     */
+    private void confirmWithRollbackCompensation(Integer bookId, Integer quantity) {
+        bookInventoryService.confirm(bookId, quantity);
+        registerRedisCompensation(() -> bookInventoryService.restoreReserved(bookId, quantity));
     }
 
     @Override
