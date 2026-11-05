@@ -12,6 +12,7 @@ import jakarta.servlet.http.HttpServletRequest;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.redis.core.types.Expiration;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.transaction.annotation.Transactional;
 import com.tmt.TMLibrary.dto.request.LoginRequest;
 import com.tmt.TMLibrary.security.jwt.JwtService;
 import com.tmt.TMLibrary.entity.User;
@@ -76,6 +77,7 @@ public class AuthServiceImpl implements AuthService {
     private static final String NEGATIVE_SENTINEL = "{\"__negative__\":true}";
 
     @Override
+    @Transactional(rollbackFor = Exception.class)
     public LoginResponse login(LoginRequest loginRequest) {
         String uuid = loginRequest.getUuid();
         String username = loginRequest.getUsername();
@@ -190,7 +192,8 @@ public class AuthServiceImpl implements AuthService {
             // 反枚举:用户不存在 / 密码错 同消息(已在前面统一)
             throw new AuthException(ResultCode.UNAUTHORIZED, "用户名或密码错误");
         }
-        // 更新 lastLoginTime / lastLoginIp
+        // 更新 lastLoginTime / lastLoginIp —— 两笔 DB 写在同一个 @Transactional(rollbackFor) 里,
+        // 要么一起提交,要么一起回滚,避免"登录时间已更新但登录 IP 未更新"的半写状态。
         LocalDateTime loginAt = LocalDateTime.now();
         userMapper.setLastLoginTimeById(user.getId(), loginAt);
         userMapper.setLastLoginIpById(user.getId(), loginRequest.getIpAddress());
