@@ -1,13 +1,12 @@
 package com.tmt.TMLibrary.service;
 
-import co.elastic.clients.elasticsearch.ElasticsearchClient;
 import com.tmt.TMLibrary.dto.response.BookSuggestion;
 import com.tmt.TMLibrary.service.impl.EsSearchSuggestServiceImpl;
 import com.tmt.TMLibrary.service.impl.SearchSuggestServiceImpl;
 import com.tmt.TMLibrary.service.search.CachingSearchSuggestService;
+import com.tmt.TMLibrary.service.search.SearchHealthState;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
@@ -15,68 +14,35 @@ import org.springframework.data.redis.core.StringRedisTemplate;
 import tools.jackson.databind.ObjectMapper;
 
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 
 /**
  * {@link SearchSuggestService} Bean 选择 + 自动降级。
  *
  * <h2>选择规则</h2>
  * <ul>
- *   <li>{@code app.search.elasticsearch.enabled=true} → 用 {@link EsSearchSuggestServiceImpl}</li>
+ *   <li>ES 当前可用 → 用 {@link EsSearchSuggestServiceImpl}(走 Elasticsearch)</li>
  *   <li>否则 → 用 MySQL 的 {@link SearchSuggestServiceImpl}</li>
  * </ul>
  *
- * <h2>运行期自动降级</h2>
- * <p>就算开关开了,ES 也可能在某次重启后连不上(密码变了 / 容器挂了)。
- * {@link FallbackSearchSuggestService} 会捕获 ES 实现抛的异常,fallback 到 MySQL,
- * 一次失败不影响后续请求 —— 因为每次调用都会重新判断 ES 是否恢复。</p>
+ * <h2>运行期自动降级 + 恢复</h2>
+ * <p>ES 的可用性由 {@link SearchHealthState} 统一判定(启动探 + 每 30s 重探)。
+ * {@link FallbackSearchSuggestService} 每次调用都问它:<b>ES 可用</b>就试 ES,
+ * 失败则当场标记降级、落回 MySQL;<b>ES 不可用</b>就直接走 MySQL,不再让请求
+ * 去撞一次注定失败的 ES 连接。ES 恢复后 SearchHealthState 探到,自动切回 ——
+ * 不用重启进程。</p>
  *
  * <h2>为什么这里用 @Primary</h2>
- * <p>{@link SearchSuggestService} 有两个候选 Bean(ES 版 + MySQL 版,默认用 @ConditionalOnXxx
- * 来挑),但只有「一个」会被注入。{@code @Primary} 强制把这个 wrapper 排第一,
- * 业务层(@Autowired SearchSuggestService)拿到的是 wrapper,wrapper 内部按需委托。</p>
- *
- * <h2>启动期 healthcheck</h2>
- * <p>开关 = on 时,Spring 启动**之前**对 ES 打一个 1 秒超时的 ping。
- * 连不上就让开关回退到 off,应用照样起来,只是搜索会走 MySQL 实现。</p>
+ * <p>{@link SearchSuggestService} 有两个候选 Bean(ES 版 + MySQL 版,默认用
+ * @ConditionalOnXxx 来挑),但只有「一个」会被注入。{@code @Primary} 强制把这个
+ * wrapper 排第一,业务层(@Autowired SearchSuggestService)拿到的是 wrapper,
+ * wrapper 内部按需委托。</p>
  */
 @Slf4j
 @Configuration
 @RequiredArgsConstructor
 public class SearchSuggestServiceConfig {
 
-    private final ElasticsearchClient esClient;
-
-    @Value("${app.search.elasticsearch.enabled:true}")
-    private boolean esEnabled;
-
-    /**
-     * 启动期 ES 健康检查 —— 失败就把 enabled 改回 false,让下面的 Bean 走 MySQL。
-     *
-     * <p>ping 用 {@code cluster.health},1 秒超时,失败(连不上、超时、401)一律视为
-     * "不可用"。检查是 best-effort,自身异常不能阻塞应用启动。</p>
-     */
-    @Bean
-    public Boolean esHealthAtStartup() throws Exception {
-        if (!esEnabled) return false;
-        try {
-            // esClient 自带超时配置(连接/请求 都设了),这里额外给一层 1s 总预算
-            boolean ok = esClient
-                    .ping()
-                    .value(); // ping 9.x 是 boolean 返回值
-            if (!ok) {
-                log.warn("⚠️ ES ping 返回 false —— 搜索建议将降级回 MySQL 实现");
-                esEnabled = false;
-            } else {
-                log.info("✅ ES 健康检查通过 —— 搜索建议走 Elasticsearch");
-            }
-            return ok;
-        } catch (Exception e) {
-            log.warn("⚠️ ES ping 失败({}) —— 搜索建议将降级回 MySQL 实现", e.getMessage());
-            esEnabled = false;
-            return false;
-        }
-    }
+    private final SearchHealthState searchHealthState;
 
     /**
      * 主 Bean —— 组合顺序:
@@ -96,30 +62,32 @@ public class SearchSuggestServiceConfig {
             StringRedisTemplate stringRedisTemplate,
             ObjectMapper objectMapper) {
         SearchSuggestService fallback =
-                new FallbackSearchSuggestService(esImpl, mysqlImpl, () -> esEnabled);
+                new FallbackSearchSuggestService(esImpl, mysqlImpl, searchHealthState);
         return new CachingSearchSuggestService(fallback, stringRedisTemplate, objectMapper);
     }
 
     /**
      * 包装器:走 ES,失败时 fallback 到 MySQL(同请求内,不影响下次)。
      *
-     * <p>设计成"包 ES + 包 MySQL",既保留接缝(只暴露 {@link SearchSuggestService} 接口),
-     * 又能在 ES 故障时不传递异常。</p>
+     * <p>设计成"包 ES + 包 MySQL",既保留接缝(只暴露 {@link SearchSuggestService}
+     * 接口),又能在 ES 故障时不传递异常。ES 可用性读 {@link SearchHealthState},
+     * 失败一次就把状态翻成"降级",避免后续请求反复撞 ES 连接。</p>
      */
     @RequiredArgsConstructor
     static class FallbackSearchSuggestService implements SearchSuggestService {
         private final EsSearchSuggestServiceImpl es;
         private final SearchSuggestServiceImpl mysql;
-        private final java.util.function.Supplier<Boolean> esEnabled;
+        private final SearchHealthState health;
 
         @Override
         public List<BookSuggestion> suggest(String q, Integer limit) {
-            if (esEnabled.get()) {
+            if (health.isEsHealthy()) {
                 try {
                     List<BookSuggestion> r = es.suggest(q, limit);
                     if (r != null) return r;
                 } catch (Exception ex) {
-                    log.warn("ES 候选词查询失败,降级 MySQL: {}", ex.getMessage());
+                    log.warn("ES 候选词查询失败,降级 MySQL(30s 后自动重试 ES): {}", ex.getMessage());
+                    health.markUnhealthy();
                 }
             }
             return mysql.suggest(q, limit);

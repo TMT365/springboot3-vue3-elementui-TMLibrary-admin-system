@@ -10,6 +10,7 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
+import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
@@ -45,6 +46,7 @@ public class SuggestIndexInitializer {
     private final ElasticsearchClient esClient;
     private final ElasticsearchConfig.Properties esProps;
     private final BookMapper bookMapper;
+    private final SearchHealthState searchHealthState;
 
     /**
      * 启动后触发 —— {@code @PostConstruct} 太早(Spring 上下文还没装完),
@@ -59,15 +61,45 @@ public class SuggestIndexInitializer {
     @Value("${app.search.elasticsearch.enabled:true}")
     private boolean esEnabled;
 
+    /**
+     * 索引是否已初始化。ES 暂不可用时要等它恢复,恢复后由 {@link #retryIfNotReady()}
+     * 补一次同步,别在启动时对挂掉的 ES 抛一长串堆栈。
+     */
+    private volatile boolean indexReady = false;
+
     @EventListener(ApplicationReadyEvent.class)
     public void onAppReady() {
         if (!esEnabled) {
             log.info("Elasticsearch 已通过配置关闭(app.search.elasticsearch.enabled=false),跳过索引初始化");
             return;
         }
+        if (!searchHealthState.isEsHealthy()) {
+            // ES 暂不可用:静默跳过(避免对挂掉的 ES 抛一长串堆栈),恢复后 retryIfNotReady 补上。
+            log.info("ES 暂不可用,索引初始化顺延 —— 恢复后自动执行");
+            return;
+        }
+        doInitialize();
+    }
+
+    /**
+     * ES 恢复后的补初始化 —— 只跑一次:成功就把 indexReady 置 true,以后不再重试。
+     * initialDelay 比 SearchHealthState 的首轮探活晚一些,确保先探到健康再同步。
+     */
+    @Scheduled(initialDelay = 60_000, fixedDelay = 30_000)
+    public void retryIfNotReady() {
+        if (indexReady || !esEnabled || !searchHealthState.isEsHealthy()) {
+            return;
+        }
+        log.info("ES 已恢复 —— 补建索引并全量同步");
+        doInitialize();
+    }
+
+    /** 建索引 + 全量同步,一次失败只 warn(不抛给启动流程、也不级联)。 */
+    private void doInitialize() {
         try {
             ensureIndex();
             fullSyncFromMysql();
+            indexReady = true;
         } catch (Exception e) {
             // 兜底:即便 ensureIndex 抛了,fullSync 也跑一下让数据库侧数据能进 ES
             log.warn("ES 搜索建议索引初始化遇到问题,搜索功能将降级回 MySQL 实现: {}", e.getMessage(), e);
