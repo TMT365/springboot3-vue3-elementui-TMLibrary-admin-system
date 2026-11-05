@@ -164,6 +164,13 @@ public class OrderExpireScheduler {
             for (String orderNumberStr : expired) {
                 try {
                     purchaseService.cancelExpiredOrder(Long.parseLong(orderNumberStr));
+                    // 无条件把成员移出索引(幂等):
+                    //  · 关单成功 → afterCommit 已经 ZREM 过,这里再删一次是 no-op
+                    //  · DB 里没这单(下单事务回滚留下的幽灵成员)→ cancelExpiredOrder 直接返回,
+                    //    成员会永远留在这儿:它永远过期,于是每轮都排在 ZSet 最前面,
+                    //    反复占满批次上限,真正该关的单反而被挤出去(饿死)。
+                    //    这里删掉,幽灵就不会再挡路。
+                    stringRedisTemplate.opsForZSet().remove(idxKey, orderNumberStr);
                 } catch (NumberFormatException e) {
                     // 脏数据 — 直接踢出 idx,否则每轮都会重新扫到
                     log.warn("[order-expire] non-numeric member {}, removing from idx={}",

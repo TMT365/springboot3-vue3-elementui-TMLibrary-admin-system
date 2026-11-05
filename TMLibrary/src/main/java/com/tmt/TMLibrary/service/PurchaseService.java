@@ -123,7 +123,14 @@ public interface PurchaseService {
      * 系统主动关单 — 用于定时任务扫描超时订单。
      *
      * <p><b>不校验用户状态</b>（订单已超时，用户禁用与否不影响关单）。
-     * 幂等：状态非 PENDING 时仅清理 expire idx 不抛异常。
+     * 幂等：状态非 PENDING 时仅清理 expire idx 不抛异常。</p>
+     *
+     * <p><b>落库状态是 {@code TIMEOUT}(3) 而不是 {@code CANCELLED}(2)</b> ——
+     * 超时关单与用户主动取消是两件事，管理端列表与看板分布图要能分开统计。
+     * 库存(Redis 预占)照常释放。</p>
+     *
+     * <p><b>订单不存在时静默返回</b> —— 那多半是下单事务回滚留下的索引幽灵，
+     * 由调用方把该成员从超时索引里清掉。</p>
      *
      * @param orderNumber 订单号
      */

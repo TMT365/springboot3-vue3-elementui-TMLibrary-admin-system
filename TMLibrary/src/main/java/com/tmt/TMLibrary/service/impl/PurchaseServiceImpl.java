@@ -185,6 +185,10 @@ public class PurchaseServiceImpl implements PurchaseService {
         if (order.getOrderStatus().equals(OrderStatus.CANCELLED.getCode())) {
             throw new BusinessException(ResultCode.CONFLICT, "Order is already cancelled: " + orderNumber);
         }
+        if (order.getOrderStatus().equals(OrderStatus.TIMEOUT.getCode())) {
+            // 超时关单是终态 —— 用户再来取消/支付时给一句人话,而不是笼统的"已取消"
+            throw new BusinessException(ResultCode.CONFLICT, "Order has timed out and been closed: " + orderNumber);
+        }
         if (order.getOrderStatus().equals(OrderStatus.PAID.getCode())) {
             throw new BusinessException(ResultCode.CONFLICT, "Order is already paid and cannot be cancelled: " + orderNumber);
         }
@@ -284,12 +288,21 @@ public class PurchaseServiceImpl implements PurchaseService {
                 orderMapper.insertOrderItem(oi);
             }
 
-            // Phase 3: Redis 写入(仅超时索引) — 任何异常 → 下方 catch 反向 release
+            // Phase 3: Redis 写入(仅超时索引) — 放到 afterCommit 执行
             // 只写 scheduler 真正会读的 pending:expire 索引;
             // 订单详情/历史一律以 DB 为准,不再维护只写不读的缓存副本
+            //
+            // ⚠️ 为什么必须等事务提交后才写索引:
+            // 此刻订单还没提交,后面任何一步失败(主键没回填、库存补偿抛异常…)都会回滚,
+            // DB 里没有这单,索引里却多了一个成员 —— 幽灵成员永远过期、又永远删不掉,
+            // 会一直霸占 ZSet 的头部,把真正该关的单挤到批次上限之外(饿死)。
+            //
+            // 写索引失败也不该阻断下单:DB 才是权威,索引真丢了还有 scheduler 的
+            // DB 兜底扫描兜着(按 orders.expire_time 找 PENDING)。
             String expireKey = RedisKeys.userPendingExpireIdx(currentUserId);
             long expireMillis = expireTime.atZone(zoneId).toInstant().toEpochMilli();
-            stringRedisTemplate.opsForZSet().add(expireKey, String.valueOf(order.getOrderNumber()), expireMillis);
+            registerRedisWriteAfterCommit(() ->
+                stringRedisTemplate.opsForZSet().add(expireKey, String.valueOf(order.getOrderNumber()), expireMillis));
 
             if (order.getId() == null) {
                 // useGeneratedKeys 未回填主键 — 返回假的订单号会让前端拿到错误数据
@@ -518,7 +531,7 @@ public class PurchaseServiceImpl implements PurchaseService {
      *   2. 状态守卫:非 PENDING → 直接 ZREM expire idx 兜底,返回
      *   3. Lua release(库存归还)   ← 先于 DB UPDATE
      *      - 若失败:DB 保持 PENDING,scheduler 下次重试
-     *   4. UPDATE orders SET status=CANCELLED WHERE order_number=? AND order_status='PENDING'
+     *   4. UPDATE orders SET status=TIMEOUT WHERE order_number=? AND order_status='PENDING'
      *      ← 状态守卫的原子 SQL,即使 FOR UPDATE 被优化掉也安全
      *   5. @Transactional commit
      *   6. afterCommit 钩子:Hash.put + ZREM
@@ -526,6 +539,12 @@ public class PurchaseServiceImpl implements PurchaseService {
      * 崩溃窗口分析:3 与 4 之间崩 → DB 仍 PENDING,Redis stock 已释放,
      * scheduler 下次扫到该订单 → 重走 3-4-5-6 → release 二次释放(Lua -2 静默)→ UPDATE 0 行 → 早返回。
      * 永远不会泄漏库存。
+     *
+     * <h2>为什么落 TIMEOUT 而不是 CANCELLED</h2>
+     * <p>超时关单和"用户主动取消"是两件事,前端、统计口径都要能分开看:
+     * 管理端订单列表有四种状态标签,看板的订单状态分布图也按四种状态分桶。
+     * 全项目只有这一处能把订单变成 TIMEOUT —— 以前这里写的是 CANCELLED,
+     * 于是超时单永远显示成"已取消",TIMEOUT 分支是死代码,分布图里超时那格恒为 0。</p>
      */
     @Override
     @Transactional(rollbackFor = Exception.class)
@@ -554,9 +573,9 @@ public class PurchaseServiceImpl implements PurchaseService {
             }
         }
 
-        // 步骤 4:状态守卫的 UPDATE — 只有 PENDING 才能转 CANCELLED
+        // 步骤 4:状态守卫的 UPDATE — 只有 PENDING 才能转 TIMEOUT(超时取消)
         int rows = orderMapper.updateStatusByOrderNumberGuard(
-            orderNumber, OrderStatus.PENDING.getCode(), OrderStatus.CANCELLED.getCode(), null);
+            orderNumber, OrderStatus.PENDING.getCode(), OrderStatus.TIMEOUT.getCode(), null);
         if (rows == 0) {
             // 别人抢先改了状态(Paid 或 Cancelled)— 我们的 release 多减一次,但 Lua -2 静默处理
             log.warn("cancelExpiredOrder: order {} status changed concurrently, release may double-count", orderNumber);

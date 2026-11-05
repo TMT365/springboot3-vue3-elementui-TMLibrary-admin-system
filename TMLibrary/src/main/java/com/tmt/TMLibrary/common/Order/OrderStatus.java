@@ -28,7 +28,7 @@ public enum OrderStatus {
                 return status;
             }
         }
-        throw new BusinessException(ResultCode.NOT_FOUND, "Unknown role code: " + code);
+        throw new BusinessException(ResultCode.NOT_FOUND, "Unknown order status code: " + code);
     }
 
 }
